@@ -1,0 +1,295 @@
+You are my coding copilot inside Replit.
+
+Context:
+- I just uploaded a React/TypeScript project that was originally generated in Gemini Studio for my app **Aura Twin**.
+- The codebase has multiple screens (Neural Link chat, Match Test, maybe Night Debrief, Twin Conversation, etc.) and some duplicated type files (`auraTypes.ts` and/or `types.ts`).
+- Right now the app runs but the UI is messy and some features don’t show up. I want a clean, working MVP.
+
+Your job:
+1) Make the project run cleanly in Replit.
+2) Clean up types (one shared types file).
+3) Create a clean VisionOS-style layout: big avatar on the left, tabs on the right.
+4) Keep ALL existing logic and LLM behavior as much as possible.
+
+VERY IMPORTANT STYLE:
+- NO neon.
+- Dark, calm palette: slate / navy / black with soft purple/blue accents.
+- Glassy / Apple Vision / iOS 17 aesthetic:
+  - rounded-2xl/3xl panels
+  - semi-transparent dark backgrounds
+  - subtle borders and blur.
+
+---
+
+STEP 1 – Make sure it runs
+
+1. Inspect `package.json` and tell me:
+   - which framework (Vite? CRA? Next?) and
+   - which dev command to use.
+
+2. Run the right install + dev commands in the Replit shell (or tell me exactly what to run), for example:
+   - `npm install`
+   - `npm run dev`
+
+3. Fix any obvious TypeScript or import errors that stop the dev server from starting.
+   - Do **not** rip out large pieces of logic.
+   - Prefer small fixes: correct import paths, missing types, etc.
+
+Goal: I should see *some* UI in the Replit webview (even if ugly) before we refactor.
+
+---
+
+STEP 2 – Unify shared types
+
+Right now there may be BOTH `src/auraTypes.ts` AND `src/types.ts` or similar.
+
+1. Search the project for these files and show me where they are.
+2. Pick ONE canonical file for shared types (prefer `src/auraTypes.ts`).
+3. Move/merge everything into that single file:
+   - `AuraProfile`
+   - `AuraChatMessage`
+   - `AuraState` / `AuraEmotion`
+   - `MatchResult`
+   - Any default helpers like `defaultAuraProfile`.
+
+Example (you can adjust to match what’s already there):
+
+```ts
+export interface AuraEmotion {
+  mood: "neutral" | "happy" | "sad" | "calm" | "curious" | "flirty" | "focused" | "anxious";
+  intensity: number; // 0–1
+}
+
+export interface AuraChatMessage {
+  id: string;
+  role: "user" | "aura";
+  text: string;
+  timestamp: number;
+  emotion?: AuraEmotion;
+}
+
+export interface AuraProfile {
+  displayName: string;
+  ageRange: string;
+  socialGoal: "friends" | "dating" | "practice" | "unsure";
+  introversionLevel: "very_introvert" | "introvert" | "ambivert" | "extrovert";
+  comfortTopics: string[];
+  dealBreakers: string;
+}
+
+export interface MatchResult {
+  score: number;              // 0–100
+  whyItWorks: string[];
+  thingsToWatch: string[];
+}
+
+export const defaultAuraProfile: AuraProfile = {
+  displayName: "",
+  ageRange: "",
+  socialGoal: "unsure",
+  introversionLevel: "introvert",
+  comfortTopics: [],
+  dealBreakers: "",
+};
+Update ALL imports to use this single file:
+
+Replace from "../types" or from "./types" with from "../auraTypes" (or the path you choose).
+
+Delete any now-unused duplicate types file.
+
+Goal: The app compiles with a single shared types module.
+
+STEP 3 – Clean App shell (App.tsx) into left/right layout
+
+I want a single main layout in src/App.tsx with:
+
+LEFT: big Aura avatar / orb card (character stage).
+
+RIGHT: glass card with tabbed content for:
+
+Neural Link (chat with my Aura)
+
+Match Test (twin matchmaking)
+
+Neural Profile (my vibe & social preferences form)
+
+You can assume components like:
+
+AuraAvatarCard (or whatever is the current avatar/“moon” component)
+
+NeuralLinkScreen / ChatPanel / similar
+
+MatchTestScreen
+
+NeuralProfilePanel
+
+If names differ, adapt to actual components.
+
+Refactor App.tsx like this:
+
+Use a dark gradient full-page background:
+
+radial or linear gradient with slate/navy/black.
+
+Center the content in a max-width container (e.g. max-w-6xl / 7xl).
+
+Layout:
+
+flex → column on mobile, row on large screens.
+
+Left column ~40%, right column ~60%.
+
+Left section:
+
+Render the existing Aura avatar card.
+
+Do NOT change its props or logic, but you can give it a glass container and floating animation.
+
+Right section:
+
+At the top: a segmented control for tabs:
+
+Tabs = "neural" | "match" | "profile" with labels:
+
+Neural Link
+
+Match Test
+
+Neural Profile
+
+Below: a single large glass card with conditional rendering:
+
+tsx
+Copy code
+{activeTab === "neural" && (
+  <NeuralLinkScreen profile={profile} />
+)}
+{activeTab === "match" && (
+  <MatchTestScreen profile={profile} />
+)}
+{activeTab === "profile" && (
+  <NeuralProfilePanel profile={profile} onChange={setProfile} />
+)}
+You may need to create the profile state here:
+
+ts
+Copy code
+const [profile, setProfile] = useState<AuraProfile>(defaultAuraProfile);
+If there is existing profile persistence (profileStorage), keep using it (load on mount, save on change) without removing logic.
+
+STYLE for App:
+
+calm dark background
+
+glass cards:
+
+background: rgba(15,23,42,0.8–0.95)
+
+border: 1px solid rgba(148,163,184,0.3)
+
+backdrop-filter: blur(20–24px)
+
+big rounded corners (24px+)
+
+no neon hot pink/green; use gentle purple/blue accents.
+
+STEP 4 – Make sure these 3 tabs actually show something
+
+For each tab:
+
+Neural Link / chat
+
+Use whatever chat component already exists (ChatWindow / NeuralLinkScreen).
+
+Messages list should be scrollable and live inside a glass card.
+
+Input at the bottom; keep existing logic for sending to Gemini.
+
+Just ensure the styles match the glass/iOS style (no neon gradients).
+
+Match Test
+
+Use the existing match screen component.
+
+It should show:
+
+two Aura profiles
+
+compatibility percent
+
+“Why it works” / “Things to watch”
+
+Wrap it in the same glass card style; no neon.
+
+Neural Profile
+
+If NeuralProfilePanel already exists from earlier work, use it.
+
+If not, create a simple form that edits AuraProfile fields:
+
+displayName
+
+ageRange (select)
+
+socialGoal (segmented buttons)
+
+introversionLevel (segmented buttons)
+
+comfortTopics (chip buttons)
+
+dealBreakers (textarea)
+
+Call onChange with the updated profile object.
+
+STEP 5 – Global style polish (optional but nice)
+
+If there is a global CSS file (e.g. src/index.css):
+
+Ensure body uses a system font and dark background.
+
+Add a simple @keyframes aura-float and apply it to the main avatar circle.
+
+Example:
+
+css
+Copy code
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  background: radial-gradient(circle at top, #0f172a 0, #020617 55%, #000 100%);
+  color: #e5e7eb;
+}
+
+@keyframes aura-float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0px); }
+}
+Apply this to the main orb in AuraAvatarCard.
+
+CONSTRAINTS
+
+Do NOT delete or rewrite the LLM logic files (auraLLM.ts, prompt builders, etc.).
+
+Do NOT remove features like Night Debrief or Twin Conversation if they exist; just don’t show them in the main 3-tab MVP yet unless it’s easy to add as extra tabs.
+
+Keep everything in React/TypeScript, no new frameworks.
+
+OUTPUT
+
+Fix any build/runtime errors so npm run dev works in Replit.
+
+Show me:
+
+the final App.tsx
+
+the final auraTypes.ts (or whichever single shared types file you chose)
+
+and confirm which components are mapped to the 3 tabs.
+
+Then I’ll review the layout in the browser.
+
+vbnet
+Copy code
+
+Paste that into Replit AI in your Repl, and let it do the cleanup + layout pass. After it runs and the app shows those 3 tabs, send me a screenshot and we’ll do the next layer (Twin Talk / Night Debrief) on top.

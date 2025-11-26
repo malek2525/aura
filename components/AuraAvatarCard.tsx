@@ -8,78 +8,98 @@ interface AuraAvatarCardProps {
 }
 
 const AuraAvatarCard: React.FC<AuraAvatarCardProps> = ({ profile, auraState, compact = false }) => {
-  // Determine color based on mood
-  const getMoodColor = (mood: string) => {
+  const getMoodGradient = (mood: string) => {
     switch (mood) {
-      case 'happy': return 'bg-yellow-400 shadow-yellow-400/50';
-      case 'excited': return 'bg-orange-400 shadow-orange-400/50';
-      case 'anxious': return 'bg-purple-500 shadow-purple-500/50';
-      case 'sad': return 'bg-blue-400 shadow-blue-400/50';
-      case 'calm': return 'bg-teal-400 shadow-teal-400/50';
-      case 'curious': return 'bg-pink-400 shadow-pink-400/50';
-      default: return 'bg-white shadow-white/50'; // neutral
+      case 'happy': return 'from-amber-400/60 via-orange-400/40 to-yellow-300/30';
+      case 'excited': return 'from-orange-400/60 via-rose-400/40 to-amber-300/30';
+      case 'anxious': return 'from-violet-500/60 via-purple-400/40 to-indigo-400/30';
+      case 'sad': return 'from-blue-500/60 via-indigo-400/40 to-slate-400/30';
+      case 'calm': return 'from-teal-400/60 via-cyan-400/40 to-blue-300/30';
+      case 'curious': return 'from-pink-400/60 via-fuchsia-400/40 to-violet-300/30';
+      default: return 'from-slate-400/60 via-blue-400/40 to-violet-300/30';
     }
   };
 
-  // Determine pulse speed/scale based on intensity
-  const scale = 1 + (auraState.moodIntensity * 0.2);
+  const getMoodShadow = (mood: string) => {
+    switch (mood) {
+      case 'happy': return 'shadow-amber-400/30';
+      case 'excited': return 'shadow-orange-400/30';
+      case 'anxious': return 'shadow-violet-500/30';
+      case 'sad': return 'shadow-blue-400/30';
+      case 'calm': return 'shadow-teal-400/30';
+      case 'curious': return 'shadow-pink-400/30';
+      default: return 'shadow-slate-400/30';
+    }
+  };
+
+  const scale = 1 + (auraState.moodIntensity * 0.15);
+  const orbSize = compact ? 80 : 140;
 
   return (
-    <div className={`bg-aura-card rounded-xl border border-white/10 flex flex-col items-center justify-center relative overflow-hidden ${compact ? 'p-4' : 'p-8 h-full'}`}>
+    <div className={`flex flex-col items-center justify-center w-full ${compact ? 'py-4' : 'py-8'}`}>
       
-      {/* Background Ambience */}
-      <div className="absolute inset-0 bg-gradient-to-br from-aura-dark to-aura-card opacity-50 z-0" />
-
-      {/* The Aura Orb */}
-      <div className="relative z-10 mb-6">
+      <div className="relative aura-orb mb-6">
         <div 
-          className={`rounded-full transition-all duration-1000 ease-in-out blur-xl shadow-[0_0_60px_rgba(255,255,255,0.3)] ${getMoodColor(auraState.mood)} animate-pulse-slow`}
+          className={`absolute inset-0 rounded-full bg-gradient-radial ${getMoodGradient(auraState.mood)} aura-glow`}
           style={{
-            width: compact ? '80px' : '160px',
-            height: compact ? '80px' : '160px',
-            transform: `scale(${scale})`
+            width: orbSize * 1.8,
+            height: orbSize * 1.8,
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
           }}
         />
+        
         <div 
-          className={`absolute inset-0 rounded-full mix-blend-overlay opacity-80 ${getMoodColor(auraState.mood)}`}
-           style={{
-            width: compact ? '80px' : '160px',
-            height: compact ? '80px' : '160px',
-            transform: `scale(${scale * 0.8})`
+          className={`relative rounded-full bg-gradient-to-br ${getMoodGradient(auraState.mood)} shadow-2xl ${getMoodShadow(auraState.mood)}`}
+          style={{
+            width: orbSize,
+            height: orbSize,
+            transform: `scale(${scale})`,
+            transition: 'transform 1s ease-in-out',
+            boxShadow: `0 0 60px 20px rgba(139, 92, 246, 0.15), 0 0 100px 40px rgba(59, 130, 246, 0.1)`,
           }}
-        />
+        >
+          <div 
+            className="absolute inset-2 rounded-full bg-gradient-to-tr from-white/20 to-transparent"
+          />
+        </div>
       </div>
 
-      {/* Text Info */}
-      <div className="relative z-10 text-center">
-        <h2 className={`font-bold text-aura-text ${compact ? 'text-lg' : 'text-3xl mb-2'}`}>
+      <div className="text-center space-y-3">
+        <h2 className={`font-semibold text-slate-100 ${compact ? 'text-lg' : 'text-2xl'}`}>
           {profile.displayName}'s Aura
         </h2>
         
         {!compact && (
           <>
             <div className="flex flex-wrap justify-center gap-2 mt-4">
-              {profile.vibeWords.map((word, idx) => (
-                <span key={idx} className="px-3 py-1 bg-white/10 rounded-full text-xs text-aura-accent uppercase tracking-wider">
+              {profile.vibeWords?.slice(0, 4).map((word, idx) => (
+                <span 
+                  key={idx} 
+                  className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-violet-300 uppercase tracking-wider"
+                >
                   {word}
                 </span>
               ))}
             </div>
             
-            <p className="mt-6 text-aura-muted text-sm px-4 italic">
-              "{profile.summary}"
-            </p>
+            {profile.summary && (
+              <p className="mt-4 text-slate-400 text-sm leading-relaxed max-w-xs mx-auto">
+                "{profile.summary}"
+              </p>
+            )}
 
-            <div className="mt-6 w-full text-left">
-              <p className="text-xs text-aura-muted uppercase tracking-widest mb-2">Current State</p>
-              <div className="flex items-center gap-2">
-                <span className="capitalize text-white">{auraState.mood}</span>
-                <div className="h-1 bg-white/10 flex-1 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-aura-accent transition-all duration-1000" 
-                    style={{ width: `${auraState.moodIntensity * 100}%`}} 
-                  />
-                </div>
+            <div className="mt-6 w-full max-w-xs mx-auto">
+              <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+                <span className="uppercase tracking-wider">Current State</span>
+                <span className="capitalize text-slate-300">{auraState.mood}</span>
+              </div>
+              <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-violet-500 to-blue-500 rounded-full transition-all duration-1000" 
+                  style={{ width: `${auraState.moodIntensity * 100}%`}} 
+                />
               </div>
             </div>
           </>
