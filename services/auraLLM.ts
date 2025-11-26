@@ -4,6 +4,7 @@ import {
   AuraChatMessage,
   AuraState,
   MatchResult,
+  AuraMatchResult,
 } from "../types";
 
 /* ------------------------------------------------------------------ */
@@ -151,6 +152,7 @@ export interface OnboardingAnswers {
   redFlags: string;
   whatShouldPeopleKnow: string;
   whatFeelsSafe: string;
+  avatarUrl?: string;
 }
 
 export interface ProfileBuildResult {

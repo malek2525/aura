@@ -47,4 +47,14 @@ export interface MatchResult {
   auraToUserSummaryB: string;
 }
 
+export interface AuraMatchResult {
+  compatibilityScore: number;
+  matchLabel: "Low" | "Medium" | "High";
+  summary: string;
+  whyItWorks: string[];
+  watchOut: string[];
+  vibeDescription: string;
+  suggestedFirstMessage: string;
+}
+
 export type ScreenName = 'ONBOARDING' | 'NEURAL_LINK' | 'MATCH_TEST';
