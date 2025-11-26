@@ -13,24 +13,36 @@ Aura Twin is an AI-powered digital companion app for introverts, featuring a per
 
 ## Recent Changes (November 26, 2025)
 
-### VisionOS-Style Refactoring
-- Refactored App.tsx with left/right split layout:
-  - Left (40%): Large Aura avatar with floating animation
-  - Right (60%): Tabbed glass panel with 3 tabs
-- Implemented three main tabs:
-  - **Neural Link**: Chat with your Aura AI
-  - **Match Test**: Twin-to-twin compatibility matching
-  - **Neural Profile**: Edit your profile settings
-- Created NeuralProfilePanel component for inline profile editing
-- Updated all components with dark/calm VisionOS-style aesthetic:
-  - Glass panels with backdrop blur
-  - Soft violet/blue accents (no neon)
-  - Rounded corners (2xl/3xl)
-  - Floating animations for the Aura orb
+### VisionOS/iOS 18 Glass Aesthetic Complete
+- Modernized App.tsx layout:
+  - Added top navigation bar with gradient "Aura Twin" title, status indicator, and Profile button
+  - Reorganized to 60% left (avatar) + 40% right (tabs/chat) on desktop
+  - Responsive stacking on mobile
+- Created comprehensive CSS glass design system in index.css:
+  - `.glass-panel`: 24px blur, rgba(15,23,42,0.78) background, 1px subtle border
+  - `.glass-panel-light`: Lighter variant for contrast
+  - `.glass-panel-dark`: Darker variant for depth
+  - Animation classes: fade-in, float, glow, pulse-soft
+  - Utility classes: pill-button, label-tiny, scrollbar-hide
+- Polished ChatWindow.tsx:
+  - User messages: Right-aligned with violet glass gradient
+  - Aura messages: Left-aligned with neutral glass styling
+  - Soft animations instead of neon bounces
+  - Clean input form with glass styling
+
+### Gemini Quota Fix with Fallback System
+- Swapped heavy models to lightweight alternatives:
+  - Profile building: `gemini-3-pro-preview` → `gemini-2.5-flash`
+  - Chat: Already using `gemini-2.5-flash-lite`
+  - Matching: `gemini-3-pro-preview` → `gemini-2.5-flash`
+- Added quota error detection and fallback profiles
+- Service now returns `{ profile, isUsingFallback, message }` structure
+- User-friendly messages when API quota exhausted
 
 ### Replit Environment Setup
 - Configured Vite to run on port 5000 (required for Replit)
-- Set HMR clientPort to 443 for Replit's HTTPS proxy compatibility
+- Set allowedHosts: true for cross-origin Replit proxy
+- Proper env injection: GEMINI_API_KEY → window.__GEMINI_API_KEY
 - Configured preview server for deployment on port 5000
 
 ## Project Structure
