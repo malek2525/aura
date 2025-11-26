@@ -19,7 +19,13 @@ const NeuralProfilePanel: React.FC<NeuralProfilePanelProps> = ({ profile, onChan
     handleChange(field, updated);
   };
 
-  const goalOptions = ['Make Friends', 'Dating Practice', 'Social Skills', 'Just Venting', 'Deep Connections'];
+  const goalOptions = [
+    { label: 'Make Friends', value: 'find friends' },
+    { label: 'Dating Practice', value: 'dating practice' },
+    { label: 'Social Skills', value: 'social skills' },
+    { label: 'Just Venting', value: 'venting' },
+    { label: 'Deep Connections', value: 'deep connections' }
+  ];
   const vibeOptions = ['Calm', 'Playful', 'Deep', 'Sarcastic', 'Warm', 'Reserved', 'Curious', 'Creative'];
   const topicOptions = ['Music', 'Gaming', 'Movies', 'Books', 'Art', 'Tech', 'Nature', 'Fitness', 'Food', 'Travel'];
 
@@ -55,18 +61,18 @@ const NeuralProfilePanel: React.FC<NeuralProfilePanelProps> = ({ profile, onChan
         <label className="block text-sm font-medium text-slate-300">Social Goals</label>
         <div className="flex flex-wrap gap-2">
           {goalOptions.map((goal) => {
-            const isSelected = profile.goals?.includes(goal.toLowerCase().replace(' ', '_'));
+            const isSelected = profile.goals?.includes(goal.value);
             return (
               <button
-                key={goal}
-                onClick={() => handleArrayToggle('goals', goal.toLowerCase().replace(' ', '_'))}
+                key={goal.value}
+                onClick={() => handleArrayToggle('goals', goal.value)}
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                   isSelected
                     ? 'bg-violet-600/40 text-violet-200 border border-violet-500/50'
                     : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'
                 }`}
               >
-                {goal}
+                {goal.label}
               </button>
             );
           })}
