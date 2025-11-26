@@ -34,8 +34,12 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onProfileCreated })
   const finishOnboarding = async () => {
     setIsGenerating(true);
     try {
-      const profile = await buildAuraProfile(formData);
-      onProfileCreated(profile);
+      const result = await buildAuraProfile(formData);
+      if (result.isUsingFallback && result.message) {
+        console.warn("[OnboardingScreen] Using fallback profile:", result.message);
+        alert(result.message);
+      }
+      onProfileCreated(result.profile);
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : "Failed to build profile. Please try again.";
       console.error("[OnboardingScreen] Profile build failed:", errorMessage);

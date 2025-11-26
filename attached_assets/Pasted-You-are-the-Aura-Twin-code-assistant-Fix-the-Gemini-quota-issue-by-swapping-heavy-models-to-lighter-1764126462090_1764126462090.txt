@@ -1,0 +1,64 @@
+You are the Aura Twin code assistant.
+Fix the Gemini quota issue by swapping heavy models to lighter ones and adding fallbacks.
+
+Open src/services/auraLLM.ts (or whichever file defines buildAuraProfile, chatWithAura, and matchAuras).
+
+For the profile constructor and any calls currently using "gemini-3-pro-preview" or "gemini-3.5-pro":
+
+Change the model to "gemini-2.5-flash" (or "gemini-2.5-flash-lite" if available in this project).
+
+Add a small helper:
+
+const PROFILE_MODEL = "gemini-2.5-flash";
+const CHAT_MODEL = "gemini-2.5-flash-lite";
+const MATCH_MODEL = "gemini-2.5-flash";
+
+
+Use these constants everywhere instead of hard-coding model names.
+
+Wrap each client.models.generateContent call in try/catch and:
+
+If the error code is 429 or the message contains "RESOURCE_EXHAUSTED" or "quota":
+
+Log a warning.
+
+Return a friendly fallback object instead of throwing. Example for profile:
+
+if (isQuotaError(err)) {
+  return DEFAULT_FAKE_PROFILE; // simple neutral profile so UI still works
+}
+
+
+Create isQuotaError helper:
+
+const isQuotaError = (err: any) =>
+  err?.code === 429 || /quota|RESOURCE_EXHAUSTED/i.test(String(err?.message ?? "")); 
+
+
+Update the UI error handling:
+
+In the screen that calls buildAuraProfile (probably OnboardingScreen.tsx), if the service returns a fallback profile instead of throwing, show:
+
+"Aura couldn't fully analyze you right now due to API limits, so I'm starting with a neutral profile. You can still chat and test the UI."
+
+Only show the blocking popup if it’s a real crash (not quota).
+
+Make sure the app compiles and the onboarding screen no longer crashes when the Gemini quota for gemini-3-pro is exhausted.
+
+3. Longer-term options
+
+You’ve got three paths:
+
+Turn on billing / upgrade Google AI quota
+
+Then you can safely use gemini-3-pro for the “Constructor” and flash for chat.
+
+Stay fully free-tier
+
+Keep everything on flash / flash-lite.
+
+Totally fine for this MVP; the UX matters more than tiny IQ differences.
+
+Offline / mock mode for UI work
+
+Temporarily stub the profile + chat responses (hard-coded neutral Aura) so you can keep polishing the VisionOS UI even when quota is zero.

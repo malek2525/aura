@@ -7,6 +7,55 @@ import {
 } from "../types";
 
 /* ------------------------------------------------------------------ */
+/* MODEL CONSTANTS & HELPERS                                          */
+/* ------------------------------------------------------------------ */
+
+const PROFILE_MODEL = "gemini-2.5-flash";
+const CHAT_MODEL = "gemini-2.5-flash-lite";
+const MATCH_MODEL = "gemini-2.5-flash";
+
+const isQuotaError = (err: any) =>
+  err?.status === 429 ||
+  /quota|RESOURCE_EXHAUSTED/i.test(String(err?.message ?? ""));
+
+// Default fallback profile when quota is exhausted
+const DEFAULT_FAKE_PROFILE = (answers: OnboardingAnswers): AuraProfile => ({
+  id: `user_${Date.now()}`,
+  displayName: answers.displayName || "User",
+  ageRange: answers.ageRange ?? null,
+  country: answers.country ?? null,
+  introversionLevel: answers.introversionLevel,
+  goals: ["Connect with others", "Grow socially"],
+  vibeWords: ["calm", "thoughtful", "genuine"],
+  topicsLike: answers.topicsLike ? answers.topicsLike.split(",").map(s => s.trim()) : ["conversations", "art", "nature"],
+  topicsAvoid: answers.topicsAvoid ? answers.topicsAvoid.split(",").map(s => s.trim()) : [],
+  socialSpeed: answers.socialSpeed,
+  hardBoundaries: answers.hardBoundaries ? answers.hardBoundaries.split(",").map(s => s.trim()) : [],
+  greenFlags: answers.greenFlags ? answers.greenFlags.split(",").map(s => s.trim()) : ["kindness", "authenticity"],
+  redFlags: answers.redFlags ? answers.redFlags.split(",").map(s => s.trim()) : ["dishonesty"],
+  summary: answers.whatShouldPeopleKnow || "A curious introvert looking to connect meaningfully.",
+});
+
+const DEFAULT_CHAT_RESPONSE = (): { replyText: string; auraState: AuraState } => ({
+  replyText: "I'm feeling a bit fuzzy right now, but I'm here with you. Can you say that again in a slightly different way?",
+  auraState: { mood: "calm", moodIntensity: 0.5 },
+});
+
+const DEFAULT_MATCH_RESULT = (): MatchResult => ({
+  compatibilityScore: 50,
+  compatibilityLabel: "medium",
+  matchReasons: [
+    "Both seem genuinely interested in connecting",
+    "Good balance of personality types",
+  ],
+  riskFlags: [],
+  suggestedOpeningForUserA: "Hey, I think we might have some things in common. Want to chat?",
+  suggestedOpeningForUserB: "Hey, I think we might have some things in common. Want to chat?",
+  auraToUserSummaryA: "I got a neutral vibe from their profile, but that's okay—sometimes the best connections start quiet.",
+  auraToUserSummaryB: "I got a neutral vibe from their profile, but that's okay—sometimes the best connections start quiet.",
+});
+
+/* ------------------------------------------------------------------ */
 /* HELPER: PERSONA BUILDER                                            */
 /* ------------------------------------------------------------------ */
 
@@ -88,8 +137,8 @@ export interface OnboardingAnswers {
   displayName: string;
   ageRange?: string;
   country?: string;
-  introversionLevel: number; // 1-10
-  goals: string;             // free text, we'll let the model turn into list
+  introversionLevel: number;
+  goals: string;
   topicsLike: string;
   topicsAvoid: string;
   vibeWords: string;
@@ -101,10 +150,15 @@ export interface OnboardingAnswers {
   whatFeelsSafe: string;
 }
 
+export interface ProfileBuildResult {
+  profile: AuraProfile;
+  isUsingFallback: boolean;
+  message?: string;
+}
+
 export async function buildAuraProfile(
   answers: OnboardingAnswers
-): Promise<AuraProfile> {
-  // Get the API key from window object (injected by Vite)
+): Promise<ProfileBuildResult> {
   const apiKey = (window as any).__GEMINI_API_KEY || "";
   
   if (!apiKey) {
@@ -142,78 +196,68 @@ What makes them feel safe with someone new: ${answers.whatFeelsSafe}
 
     console.log("[buildAuraProfile] Starting profile construction for:", answers.displayName);
 
-    // Use Gemini 3 Pro for complex profile construction
-    const res = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
-      config: {
-        systemInstruction: PROFILE_SYSTEM_PROMPT,
-        responseMimeType: "application/json",
-      },
-      contents: [{ role: "user", parts: [{ text: userText }] }],
-    });
-
-    // Fixed: Access .text directly
-    const raw = res.text || "{}";
-    console.log("[buildAuraProfile] Received response from Gemini");
-
     try {
-      const json = JSON.parse(raw);
+      const res = await ai.models.generateContent({
+        model: PROFILE_MODEL,
+        config: {
+          systemInstruction: PROFILE_SYSTEM_PROMPT,
+          responseMimeType: "application/json",
+        },
+        contents: [{ role: "user", parts: [{ text: userText }] }],
+      });
 
-      const profile: AuraProfile = {
-        id: json.id || `user_${Date.now()}`,
-        displayName: json.displayName || answers.displayName || "User",
-        ageRange: json.ageRange ?? null,
-        country: json.country ?? null,
-        introversionLevel: json.introversionLevel ?? answers.introversionLevel,
-        goals: json.goals || [],
-        vibeWords: json.vibeWords || [],
-        topicsLike: json.topicsLike || [],
-        topicsAvoid: json.topicsAvoid || [],
-        socialSpeed: json.socialSpeed || answers.socialSpeed,
-        hardBoundaries: json.hardBoundaries || [],
-        greenFlags: json.greenFlags || [],
-        redFlags: json.redFlags || [],
-        summary: json.summary || "Aura twin for this user.",
-      };
+      const raw = res.text || "{}";
+      console.log("[buildAuraProfile] Received response from Gemini");
 
-      console.log("[buildAuraProfile] Profile created successfully:", profile.displayName);
-      return profile;
-    } catch (parseError) {
-      console.error("[buildAuraProfile] Failed to parse Gemini response as JSON:", parseError, "Raw:", raw);
-      // Safe fallback
-      return {
-        id: `user_${Date.now()}`,
-        displayName: answers.displayName || "User",
-        ageRange: answers.ageRange ?? null,
-        country: answers.country ?? null,
-        introversionLevel: answers.introversionLevel,
-        goals: [],
-        vibeWords: answers.vibeWords
-          ? answers.vibeWords.split(",").map((s) => s.trim())
-          : [],
-        topicsLike: answers.topicsLike
-          ? answers.topicsLike.split(",").map((s) => s.trim())
-          : [],
-        topicsAvoid: answers.topicsAvoid
-          ? answers.topicsAvoid.split(",").map((s) => s.trim())
-          : [],
-        socialSpeed: answers.socialSpeed,
-        hardBoundaries: answers.hardBoundaries
-          ? answers.hardBoundaries.split(",").map((s) => s.trim())
-          : [],
-        greenFlags: answers.greenFlags
-          ? answers.greenFlags.split(",").map((s) => s.trim())
-          : [],
-        redFlags: answers.redFlags
-          ? answers.redFlags.split(",").map((s) => s.trim())
-          : [],
-        summary: answers.whatShouldPeopleKnow || "Aura twin for this user.",
-      };
+      try {
+        const json = JSON.parse(raw);
+
+        const profile: AuraProfile = {
+          id: json.id || `user_${Date.now()}`,
+          displayName: json.displayName || answers.displayName || "User",
+          ageRange: json.ageRange ?? null,
+          country: json.country ?? null,
+          introversionLevel: json.introversionLevel ?? answers.introversionLevel,
+          goals: json.goals || [],
+          vibeWords: json.vibeWords || [],
+          topicsLike: json.topicsLike || [],
+          topicsAvoid: json.topicsAvoid || [],
+          socialSpeed: json.socialSpeed || answers.socialSpeed,
+          hardBoundaries: json.hardBoundaries || [],
+          greenFlags: json.greenFlags || [],
+          redFlags: json.redFlags || [],
+          summary: json.summary || "Aura twin for this user.",
+        };
+
+        console.log("[buildAuraProfile] Profile created successfully:", profile.displayName);
+        return { profile, isUsingFallback: false };
+      } catch (parseError) {
+        console.error("[buildAuraProfile] Failed to parse Gemini response as JSON:", parseError, "Raw:", raw);
+        const fallbackProfile = DEFAULT_FAKE_PROFILE(answers);
+        return {
+          profile: fallbackProfile,
+          isUsingFallback: true,
+          message: "Couldn't fully analyze your responses, but here's a neutral starting profile.",
+        };
+      }
+    } catch (apiError) {
+      if (isQuotaError(apiError)) {
+        console.warn("[buildAuraProfile] Quota exhausted, using fallback profile");
+        const fallbackProfile = DEFAULT_FAKE_PROFILE(answers);
+        return {
+          profile: fallbackProfile,
+          isUsingFallback: true,
+          message: "Aura couldn't fully analyze you right now due to API limits, so I'm starting with a neutral profile. You can still chat and test the UI.",
+        };
+      }
+      
+      const errorMsg = apiError instanceof Error ? apiError.message : "Unknown error from Gemini API";
+      console.error("[buildAuraProfile] Gemini API error:", errorMsg);
+      throw new Error(`Failed to build profile: ${errorMsg}`);
     }
-  } catch (apiError) {
-    const errorMsg = apiError instanceof Error ? apiError.message : "Unknown error from Gemini API";
-    console.error("[buildAuraProfile] Gemini API error:", errorMsg);
-    throw new Error(`Failed to build profile: ${errorMsg}`);
+  } catch (error) {
+    console.error("[buildAuraProfile] Fatal error:", error);
+    throw error;
   }
 }
 
@@ -275,7 +319,7 @@ export async function chatWithAura(
   
   if (!apiKey) {
     console.error("Missing Gemini API key for chat");
-    throw new Error("Missing Gemini API key");
+    return DEFAULT_CHAT_RESPONSE();
   }
 
   try {
@@ -304,44 +348,48 @@ USER_MESSAGE:
 
     console.log("[chatWithAura] Sending message to Aura for user:", profile.displayName);
 
-    // Use Flash Lite for fast chat responses
-    const res = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
-      config: {
-        systemInstruction: CHAT_SYSTEM_PROMPT,
-        responseMimeType: "application/json",
-      },
-      contents: [{ role: "user", parts: [{ text: userText }] }],
-    });
-
-    // Fixed: Access .text directly
-    const raw = res.text || "{}";
-
     try {
-      const json = JSON.parse(raw);
-      const replyText: string = json.replyText || "I'm here with you.";
-      const mood: string = json.mood || "neutral";
-      const moodIntensity: number =
-        typeof json.moodIntensity === "number" ? json.moodIntensity : 0.5;
+      const res = await ai.models.generateContent({
+        model: CHAT_MODEL,
+        config: {
+          systemInstruction: CHAT_SYSTEM_PROMPT,
+          responseMimeType: "application/json",
+        },
+        contents: [{ role: "user", parts: [{ text: userText }] }],
+      });
 
-      const auraState: AuraState = {
-        mood,
-        moodIntensity: Math.min(1, Math.max(0, moodIntensity)),
-      };
+      const raw = res.text || "{}";
 
-      console.log("[chatWithAura] Chat response received, mood:", mood);
-      return { replyText, auraState };
-    } catch (parseError) {
-      console.error("[chatWithAura] Failed to parse chat response:", parseError);
-      return {
-        replyText:
-          "I'm feeling a bit fuzzy, but I'm here. Can you say that again in a slightly different way?",
-        auraState: { mood: "anxious", moodIntensity: 0.4 },
-      };
+      try {
+        const json = JSON.parse(raw);
+        const replyText: string = json.replyText || "I'm here with you.";
+        const mood: string = json.mood || "neutral";
+        const moodIntensity: number =
+          typeof json.moodIntensity === "number" ? json.moodIntensity : 0.5;
+
+        const auraState: AuraState = {
+          mood,
+          moodIntensity: Math.min(1, Math.max(0, moodIntensity)),
+        };
+
+        console.log("[chatWithAura] Chat response received, mood:", mood);
+        return { replyText, auraState };
+      } catch (parseError) {
+        console.error("[chatWithAura] Failed to parse chat response:", parseError);
+        return DEFAULT_CHAT_RESPONSE();
+      }
+    } catch (apiError) {
+      if (isQuotaError(apiError)) {
+        console.warn("[chatWithAura] Quota exhausted, using fallback response");
+        return DEFAULT_CHAT_RESPONSE();
+      }
+      
+      console.error("[chatWithAura] Chat API error:", apiError);
+      return DEFAULT_CHAT_RESPONSE();
     }
-  } catch (apiError) {
-    console.error("[chatWithAura] Chat API error:", apiError);
-    throw apiError;
+  } catch (error) {
+    console.error("[chatWithAura] Fatal error:", error);
+    return DEFAULT_CHAT_RESPONSE();
   }
 }
 
@@ -396,7 +444,7 @@ export async function matchAuras(
   
   if (!apiKey) {
     console.error("Missing Gemini API key for match");
-    throw new Error("Missing Gemini API key");
+    return DEFAULT_MATCH_RESULT();
   }
 
   try {
@@ -412,65 +460,57 @@ ${JSON.stringify(profileB, null, 2)}
 
     console.log("[matchAuras] Analyzing compatibility between:", profileA.displayName, "and", profileB.displayName);
 
-    // Use Gemini 3 Pro with Thinking for deep match analysis
-    const res = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
-      config: {
-        systemInstruction: MATCH_SYSTEM_PROMPT,
-        responseMimeType: "application/json",
-        thinkingConfig: { thinkingBudget: 32768 }, // Deep reasoning for matchmaking
-      },
-      contents: [{ role: "user", parts: [{ text: userText }] }],
-    });
-
-    // Fixed: Access .text directly
-    const raw = res.text || "{}";
-
     try {
-      const json = JSON.parse(raw);
+      const res = await ai.models.generateContent({
+        model: MATCH_MODEL,
+        config: {
+          systemInstruction: MATCH_SYSTEM_PROMPT,
+          responseMimeType: "application/json",
+        },
+        contents: [{ role: "user", parts: [{ text: userText }] }],
+      });
 
-      const result: MatchResult = {
-        compatibilityScore: json.compatibilityScore ?? 50,
-        compatibilityLabel: json.compatibilityLabel || "medium",
-        matchReasons: json.matchReasons || [],
-        riskFlags: json.riskFlags || [],
-        suggestedOpeningForUserA:
-          json.suggestedOpeningForUserA ||
-          "Hey, our Auras think we might vibe. Want to talk?",
-        suggestedOpeningForUserB:
-          json.suggestedOpeningForUserB ||
-          "Hey, our Auras think we might vibe. Want to talk?",
-        auraToUserSummaryA:
-          json.auraToUserSummaryA ||
-          "I talked to their Aura and I think you might get along.",
-        auraToUserSummaryB:
-          json.auraToUserSummaryB ||
-          "I talked to their Aura and I think you might get along.",
-      };
+      const raw = res.text || "{}";
 
-      console.log("[matchAuras] Match analysis complete, score:", result.compatibilityScore);
-      return result;
-    } catch (parseError) {
-      console.error("[matchAuras] Failed to parse match response:", parseError);
-      return {
-        compatibilityScore: 50,
-        compatibilityLabel: "medium",
-        matchReasons: [
-          "The Auras had a good conversation, but details were unclear.",
-        ],
-        riskFlags: [],
-        suggestedOpeningForUserA:
-          "Hey, our Auras chatted and think we might get along. Want to say hi?",
-        suggestedOpeningForUserB:
-          "Hey, our Auras chatted and think we might get along. Want to say hi?",
-        auraToUserSummaryA:
-          "Something went wrong on my side, but I still think this could be interesting.",
-        auraToUserSummaryB:
-          "Something went wrong on my side, but I still think this could be interesting.",
-      };
+      try {
+        const json = JSON.parse(raw);
+
+        const result: MatchResult = {
+          compatibilityScore: json.compatibilityScore ?? 50,
+          compatibilityLabel: json.compatibilityLabel || "medium",
+          matchReasons: json.matchReasons || [],
+          riskFlags: json.riskFlags || [],
+          suggestedOpeningForUserA:
+            json.suggestedOpeningForUserA ||
+            "Hey, our Auras think we might vibe. Want to talk?",
+          suggestedOpeningForUserB:
+            json.suggestedOpeningForUserB ||
+            "Hey, our Auras think we might vibe. Want to talk?",
+          auraToUserSummaryA:
+            json.auraToUserSummaryA ||
+            "I talked to their Aura and I think you might get along.",
+          auraToUserSummaryB:
+            json.auraToUserSummaryB ||
+            "I talked to their Aura and I think you might get along.",
+        };
+
+        console.log("[matchAuras] Match analysis complete, score:", result.compatibilityScore);
+        return result;
+      } catch (parseError) {
+        console.error("[matchAuras] Failed to parse match response:", parseError);
+        return DEFAULT_MATCH_RESULT();
+      }
+    } catch (apiError) {
+      if (isQuotaError(apiError)) {
+        console.warn("[matchAuras] Quota exhausted, using fallback match result");
+        return DEFAULT_MATCH_RESULT();
+      }
+      
+      console.error("[matchAuras] Match API error:", apiError);
+      return DEFAULT_MATCH_RESULT();
     }
-  } catch (apiError) {
-    console.error("[matchAuras] Match API error:", apiError);
-    throw apiError;
+  } catch (error) {
+    console.error("[matchAuras] Fatal error:", error);
+    return DEFAULT_MATCH_RESULT();
   }
 }
