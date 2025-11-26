@@ -1,0 +1,360 @@
+You are the Aura Twin Frontend Architect working on a React + TypeScript + Vite app in src/.
+The codebase already has:
+
+src/screens/NeuralLinkScreen.tsx (main chat with Aura).
+
+src/services/auraLLM.ts with a chatWithAura function (or similar) that sends user text + profile to Gemini and returns a reply.
+
+src/types.ts with AuraProfile, AuraChatMessage, etc.
+
+The new VisionOS-style layout in App.tsx and refactored Onboarding + Match Test.
+
+Goal now:
+Make Neural Link a character-first glassy screen with both text chat and optional voice (mic + speaker) without ever hiding or breaking the chat.
+No neon. VisionOS / Apple Glass style only (deep glass, subtle gradients, rounded corners, calm motion).
+
+1) NeuralLinkScreen.tsx – Character Stage + Chat Column
+
+Open src/screens/NeuralLinkScreen.tsx and refactor it.
+
+Requirements:
+
+Layout
+
+On desktop, use a two-column layout:
+
+Left: “Aura Stage” card (character card + quick stats).
+
+Right: Chat window + voice controls stacked.
+
+On mobile, stack vertically (Stage on top, chat below).
+
+Suggested outer structure:
+
+export function NeuralLinkScreen() {
+  // existing state: profile, messages, loading, sendMessage, etc.
+
+  return (
+    <div className="w-full h-full flex items-start justify-center">
+      <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1.2fr,1.8fr] gap-6">
+        {/* Left: Aura Stage */}
+        <section className="rounded-3xl bg-slate-900/70 border border-white/10 backdrop-blur-2xl shadow-2xl p-6 lg:p-8 flex flex-col gap-6">
+          {/* Aura card */}
+        </section>
+
+        {/* Right: Chat + Voice */}
+        <section className="rounded-3xl bg-slate-900/70 border border-white/10 backdrop-blur-2xl shadow-2xl p-4 lg:p-6 flex flex-col h-[min(80vh,720px)]">
+          {/* Chat window + input + voice controls */}
+        </section>
+      </div>
+    </div>
+  );
+}
+
+Aura Stage (left)
+
+Inside the left <section> render a character card using the current AuraProfile:
+
+Top: title + tiny label:
+
+“Neural Link” label (small, uppercase).
+
+profile.name + “’s Aura” big heading.
+
+Center: avatar orb:
+
+Big circular area with:
+
+If profile.avatarUrl exists, show the image (rounded-full, object-cover).
+
+Else, show a soft gradient orb + emoji (e.g. 🟣).
+
+Behind it, subtle radial gradient and blur.
+
+Bottom: key stats in small glassy pills:
+
+Introversion level
+
+Relationship intent
+
+2–3 vibeWords
+
+Example structure:
+
+<div className="flex flex-col gap-6 h-full">
+  <div className="space-y-2">
+    <div className="text-[11px] tracking-[0.3em] uppercase text-slate-500">Neural Link</div>
+    <h1 className="text-3xl font-semibold text-slate-50">
+      {profile.name}'s Aura
+    </h1>
+    <p className="text-sm text-slate-300 max-w-md">
+      {profile.summary}
+    </p>
+  </div>
+
+  <div className="flex-1 flex items-center justify-center">
+    <div className="relative h-56 w-56 rounded-full bg-gradient-to-br from-slate-600 via-slate-800 to-slate-950 shadow-[0_0_80px_rgba(15,23,42,0.9)]">
+      <div className="absolute -inset-6 rounded-full bg-gradient-to-br from-slate-500/40 via-indigo-500/30 to-sky-500/20 blur-3xl" />
+      <div className="relative h-full w-full rounded-full overflow-hidden border border-white/15 bg-slate-950/60 backdrop-blur-2xl flex items-center justify-center">
+        {profile.avatarUrl ? (
+          <img src={profile.avatarUrl} alt={profile.name} className="h-full w-full object-cover" />
+        ) : (
+          <span className="text-6xl drop-shadow-lg">🟣</span>
+        )}
+      </div>
+    </div>
+  </div>
+
+  <div className="flex flex-wrap gap-2 text-[11px] text-slate-200">
+    {/* small glass pills for introversion, intent, vibes */}
+  </div>
+</div>
+
+
+Pills can use:
+
+<span className="px-3 py-1 rounded-full bg-slate-900/70 border border-white/10 backdrop-blur-lg">
+  Introversion: {profile.introversionLevel}
+</span>
+
+
+No neon colors; stay in slate / soft purple / soft blue.
+
+2) Chat window (right) – keep text chat, add voice below it
+
+Inside the right <section>:
+
+Top: scrollable messages list.
+
+Middle: text input + “Send” button.
+
+Bottom: small voice controls row (mic + status) that never hides or replaces the chat.
+
+Important: Reuse the existing chat state + sendMessage function already used in Neural Link. Do not change the backend logic or Gemini calls here – only UI and the extra voice hook.
+
+For the chat area:
+
+<div className="flex-1 overflow-y-auto space-y-3 pr-1">
+  {messages.length === 0 && (
+    <div className="text-xs text-slate-500 text-center mt-10">
+      Start the link with a message. Aura will respond in your vibe.
+    </div>
+  )}
+  {messages.map(m => (
+    <div
+      key={m.id}
+      className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm leading-relaxed ${
+        m.role === "user"
+          ? "ml-auto bg-slate-100 text-slate-900"
+          : "mr-auto bg-slate-900/80 border border-white/10 text-slate-100"
+      }`}
+    >
+      {m.content}
+    </div>
+  ))}
+  {isLoading && (
+    <div className="text-[11px] text-slate-500 font-mono animate-pulse">
+      Aura is thinking…
+    </div>
+  )}
+</div>
+
+
+Input row:
+
+<div className="mt-4 flex items-center gap-3">
+  <input
+    value={input}
+    onChange={e => setInput(e.target.value)}
+    onKeyDown={e => e.key === "Enter" && handleSend()}
+    placeholder="Type something for your Aura twin…"
+    className="flex-1 rounded-full bg-slate-950/70 border border-white/15 px-4 py-2 text-sm text-slate-100 focus:outline-none focus:border-slate-100/40"
+  />
+  <button
+    onClick={handleSend}
+    disabled={!input.trim() || isLoading}
+    className="rounded-full px-5 py-2 text-sm font-medium bg-slate-100 text-slate-900 hover:bg-white disabled:opacity-60 transition-colors"
+  >
+    Send
+  </button>
+</div>
+
+
+handleSend should just call the existing sendMessage(input) and clear input if it succeeds.
+
+3) Add a simple voice hook (hooks/useVoice.ts) – STT + TTS
+
+If a voice hook already exists from previous iterations, either reuse or replace it with a clean, minimal version that never touches the layout.
+
+Create/update src/hooks/useVoice.ts:
+
+import { useCallback, useEffect, useState } from "react";
+
+interface VoiceState {
+  hasSpeechSupport: boolean;
+  hasTTSSupport: boolean;
+  isListening: boolean;
+  isSpeaking: boolean;
+  lastTranscript: string;
+  error: string | null;
+  startListening: () => void;
+  stopListening: () => void;
+  speak: (text: string) => void;
+  clearTranscript: () => void;
+}
+
+export function useVoice(): VoiceState {
+  const [hasSpeechSupport, setHasSpeechSupport] = useState(false);
+  const [hasTTSSupport, setHasTTSSupport] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [lastTranscript, setLastTranscript] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+
+  useEffect(() => {
+    const SpeechRecognitionCtor: any =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognitionCtor) {
+      const rec: SpeechRecognition = new SpeechRecognitionCtor();
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.lang = "en-US";
+      rec.onresult = event => {
+        const text = event.results[0][0].transcript;
+        setLastTranscript(text);
+      };
+      rec.onerror = ev => {
+        setError(`Mic error: ${ev.error}`);
+        setIsListening(false);
+      };
+      rec.onend = () => setIsListening(false);
+      setRecognition(rec);
+      setHasSpeechSupport(true);
+    }
+    if ("speechSynthesis" in window) {
+      setHasTTSSupport(true);
+    }
+  }, []);
+
+  const startListening = useCallback(() => {
+    if (!recognition) {
+      setError("Voice input not supported in this browser.");
+      return;
+    }
+    setError(null);
+    setLastTranscript("");
+    try {
+      recognition.start();
+      setIsListening(true);
+    } catch {
+      // ignore if already started
+    }
+  }, [recognition]);
+
+  const stopListening = useCallback(() => {
+    if (recognition && isListening) {
+      recognition.stop();
+    }
+  }, [recognition, isListening]);
+
+  const speak = useCallback(
+    (text: string) => {
+      if (!hasTTSSupport || !text) return;
+      const synth = window.speechSynthesis;
+      synth.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1;
+      utterance.pitch = 1.05;
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      synth.speak(utterance);
+    },
+    [hasTTSSupport]
+  );
+
+  return {
+    hasSpeechSupport,
+    hasTTSSupport,
+    isListening,
+    isSpeaking,
+    lastTranscript,
+    error,
+    startListening,
+    stopListening,
+    speak,
+    clearTranscript: () => setLastTranscript("")
+  };
+}
+
+
+Use standard SpeechRecognition and speechSynthesis browser APIs. Typescript complaints about SpeechRecognition can be fixed by declaring it as any at the top if needed.
+
+4) Voice controls row under the chat
+
+In NeuralLinkScreen.tsx, import the hook:
+
+import { useVoice } from "../hooks/useVoice";
+
+
+Inside the component:
+
+const voice = useVoice();
+
+
+After the text input row, add a small status row:
+
+<div className="mt-3 flex items-center justify-between text-[11px] text-slate-500">
+  <div className="flex items-center gap-2">
+    <button
+      type="button"
+      onClick={voice.isListening ? voice.stopListening : voice.startListening}
+      disabled={!voice.hasSpeechSupport}
+      className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-slate-100 bg-slate-950/60 hover:bg-slate-900/80 disabled:opacity-40"
+    >
+      {voice.hasSpeechSupport
+        ? voice.isListening
+          ? "Listening… tap to stop"
+          : "Tap to speak"
+        : "Voice not supported"}
+    </button>
+    {voice.error && <span className="text-red-300">{voice.error}</span>}
+  </div>
+  <div>
+    {voice.isListening
+      ? "● Mic live"
+      : voice.isSpeaking
+      ? "🔊 Aura speaking"
+      : "Voice ready"}
+  </div>
+</div>
+
+
+Important behaviors:
+
+When speech finishes:
+Use useEffect in NeuralLinkScreen to watch voice.lastTranscript.
+When it becomes non-empty and !voice.isListening, call sendMessage(voice.lastTranscript) and then voice.clearTranscript().
+This way, spoken input is treated exactly like typed input, and the chat remains visible.
+
+When Aura replies:
+After you get the response from chatWithAura and push it into messages, call voice.speak(replyText) only if voice.hasTTSSupport is true.
+Do this in the existing sendMessage logic (after the API call), not in the JSX.
+Make sure you only speak Aura messages, not the user’s.
+
+5) Don’t break anything else
+
+Do not modify the Gemini API key handling or auth logic.
+
+Do not change the existing Onboarding or Match Test behaviour.
+
+Keep all colors in the same slate / soft blue / soft purple palette. No neon, no harsh shadows.
+
+When you’re done, the Neural Link screen should show:
+
+Left: a big, glassy Aura stage card with avatar orb and profile summary.
+
+Right: a conversation window where I can type and send messages.
+
+A small voice row that lets me tap to speak, then Aura replies in both text and voice, while the chat stays on screen.
