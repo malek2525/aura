@@ -104,9 +104,19 @@ export interface OnboardingAnswers {
 export async function buildAuraProfile(
   answers: OnboardingAnswers
 ): Promise<AuraProfile> {
-  const ai = new GoogleGenAI({ apiKey: (process.env.API_KEY as string) || "" });
+  // Get the API key from window object (injected by Vite)
+  const apiKey = (window as any).__GEMINI_API_KEY || "";
+  
+  if (!apiKey) {
+    const errorMsg = "Missing Gemini API key. Please check your Replit secrets configuration.";
+    console.error(errorMsg);
+    throw new Error(errorMsg);
+  }
 
-  const userText = `
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+
+    const userText = `
 ONBOARDING ANSWERS (raw):
 
 Display name: ${answers.displayName}
@@ -130,71 +140,80 @@ What they wish people understood: ${answers.whatShouldPeopleKnow}
 What makes them feel safe with someone new: ${answers.whatFeelsSafe}
 `.trim();
 
-  // Use Gemini 3 Pro for complex profile construction
-  const res = await ai.models.generateContent({
-    model: "gemini-3-pro-preview",
-    config: {
-      systemInstruction: PROFILE_SYSTEM_PROMPT,
-      responseMimeType: "application/json",
-    },
-    contents: [{ role: "user", parts: [{ text: userText }] }],
-  });
+    console.log("[buildAuraProfile] Starting profile construction for:", answers.displayName);
 
-  // Fixed: Access .text directly
-  const raw = res.text || "{}";
+    // Use Gemini 3 Pro for complex profile construction
+    const res = await ai.models.generateContent({
+      model: "gemini-3-pro-preview",
+      config: {
+        systemInstruction: PROFILE_SYSTEM_PROMPT,
+        responseMimeType: "application/json",
+      },
+      contents: [{ role: "user", parts: [{ text: userText }] }],
+    });
 
-  try {
-    const json = JSON.parse(raw);
+    // Fixed: Access .text directly
+    const raw = res.text || "{}";
+    console.log("[buildAuraProfile] Received response from Gemini");
 
-    const profile: AuraProfile = {
-      id: json.id || `user_${Date.now()}`,
-      displayName: json.displayName || answers.displayName || "User",
-      ageRange: json.ageRange ?? null,
-      country: json.country ?? null,
-      introversionLevel: json.introversionLevel ?? answers.introversionLevel,
-      goals: json.goals || [],
-      vibeWords: json.vibeWords || [],
-      topicsLike: json.topicsLike || [],
-      topicsAvoid: json.topicsAvoid || [],
-      socialSpeed: json.socialSpeed || answers.socialSpeed,
-      hardBoundaries: json.hardBoundaries || [],
-      greenFlags: json.greenFlags || [],
-      redFlags: json.redFlags || [],
-      summary: json.summary || "Aura twin for this user.",
-    };
+    try {
+      const json = JSON.parse(raw);
 
-    return profile;
-  } catch (e) {
-    console.warn("Failed to parse AuraProfile JSON, fallback:", raw, e);
-    // Safe fallback
-    return {
-      id: `user_${Date.now()}`,
-      displayName: answers.displayName || "User",
-      ageRange: answers.ageRange ?? null,
-      country: answers.country ?? null,
-      introversionLevel: answers.introversionLevel,
-      goals: [],
-      vibeWords: answers.vibeWords
-        ? answers.vibeWords.split(",").map((s) => s.trim())
-        : [],
-      topicsLike: answers.topicsLike
-        ? answers.topicsLike.split(",").map((s) => s.trim())
-        : [],
-      topicsAvoid: answers.topicsAvoid
-        ? answers.topicsAvoid.split(",").map((s) => s.trim())
-        : [],
-      socialSpeed: answers.socialSpeed,
-      hardBoundaries: answers.hardBoundaries
-        ? answers.hardBoundaries.split(",").map((s) => s.trim())
-        : [],
-      greenFlags: answers.greenFlags
-        ? answers.greenFlags.split(",").map((s) => s.trim())
-        : [],
-      redFlags: answers.redFlags
-        ? answers.redFlags.split(",").map((s) => s.trim())
-        : [],
-      summary: answers.whatShouldPeopleKnow || "Aura twin for this user.",
-    };
+      const profile: AuraProfile = {
+        id: json.id || `user_${Date.now()}`,
+        displayName: json.displayName || answers.displayName || "User",
+        ageRange: json.ageRange ?? null,
+        country: json.country ?? null,
+        introversionLevel: json.introversionLevel ?? answers.introversionLevel,
+        goals: json.goals || [],
+        vibeWords: json.vibeWords || [],
+        topicsLike: json.topicsLike || [],
+        topicsAvoid: json.topicsAvoid || [],
+        socialSpeed: json.socialSpeed || answers.socialSpeed,
+        hardBoundaries: json.hardBoundaries || [],
+        greenFlags: json.greenFlags || [],
+        redFlags: json.redFlags || [],
+        summary: json.summary || "Aura twin for this user.",
+      };
+
+      console.log("[buildAuraProfile] Profile created successfully:", profile.displayName);
+      return profile;
+    } catch (parseError) {
+      console.error("[buildAuraProfile] Failed to parse Gemini response as JSON:", parseError, "Raw:", raw);
+      // Safe fallback
+      return {
+        id: `user_${Date.now()}`,
+        displayName: answers.displayName || "User",
+        ageRange: answers.ageRange ?? null,
+        country: answers.country ?? null,
+        introversionLevel: answers.introversionLevel,
+        goals: [],
+        vibeWords: answers.vibeWords
+          ? answers.vibeWords.split(",").map((s) => s.trim())
+          : [],
+        topicsLike: answers.topicsLike
+          ? answers.topicsLike.split(",").map((s) => s.trim())
+          : [],
+        topicsAvoid: answers.topicsAvoid
+          ? answers.topicsAvoid.split(",").map((s) => s.trim())
+          : [],
+        socialSpeed: answers.socialSpeed,
+        hardBoundaries: answers.hardBoundaries
+          ? answers.hardBoundaries.split(",").map((s) => s.trim())
+          : [],
+        greenFlags: answers.greenFlags
+          ? answers.greenFlags.split(",").map((s) => s.trim())
+          : [],
+        redFlags: answers.redFlags
+          ? answers.redFlags.split(",").map((s) => s.trim())
+          : [],
+        summary: answers.whatShouldPeopleKnow || "Aura twin for this user.",
+      };
+    }
+  } catch (apiError) {
+    const errorMsg = apiError instanceof Error ? apiError.message : "Unknown error from Gemini API";
+    console.error("[buildAuraProfile] Gemini API error:", errorMsg);
+    throw new Error(`Failed to build profile: ${errorMsg}`);
   }
 }
 
@@ -252,16 +271,24 @@ export async function chatWithAura(
   history: AuraChatMessage[],
   userMessage: string
 ): Promise<ChatResult> {
-  const ai = new GoogleGenAI({ apiKey: (process.env.API_KEY as string) || "" });
+  const apiKey = (window as any).__GEMINI_API_KEY || "";
+  
+  if (!apiKey) {
+    console.error("Missing Gemini API key for chat");
+    throw new Error("Missing Gemini API key");
+  }
 
-  const historyText = history
-    .slice(-10)
-    .map((m) => `${m.from.toUpperCase()}: ${m.text}`)
-    .join("\n");
+  try {
+    const ai = new GoogleGenAI({ apiKey });
 
-  const persona = buildAuraPersonaDescription(profile);
+    const historyText = history
+      .slice(-10)
+      .map((m) => `${m.from.toUpperCase()}: ${m.text}`)
+      .join("\n");
 
-  const userText = `
+    const persona = buildAuraPersonaDescription(profile);
+
+    const userText = `
 AURA_PROFILE:
 ${JSON.stringify(profile, null, 2)}
 
@@ -275,39 +302,46 @@ USER_MESSAGE:
 "${userMessage}"
 `.trim();
 
-  // Use Flash Lite for fast chat responses
-  const res = await ai.models.generateContent({
-    model: "gemini-2.5-flash-lite",
-    config: {
-      systemInstruction: CHAT_SYSTEM_PROMPT,
-      responseMimeType: "application/json",
-    },
-    contents: [{ role: "user", parts: [{ text: userText }] }],
-  });
+    console.log("[chatWithAura] Sending message to Aura for user:", profile.displayName);
 
-  // Fixed: Access .text directly
-  const raw = res.text || "{}";
+    // Use Flash Lite for fast chat responses
+    const res = await ai.models.generateContent({
+      model: "gemini-2.5-flash-lite",
+      config: {
+        systemInstruction: CHAT_SYSTEM_PROMPT,
+        responseMimeType: "application/json",
+      },
+      contents: [{ role: "user", parts: [{ text: userText }] }],
+    });
 
-  try {
-    const json = JSON.parse(raw);
-    const replyText: string = json.replyText || "I'm here with you.";
-    const mood: string = json.mood || "neutral";
-    const moodIntensity: number =
-      typeof json.moodIntensity === "number" ? json.moodIntensity : 0.5;
+    // Fixed: Access .text directly
+    const raw = res.text || "{}";
 
-    const auraState: AuraState = {
-      mood,
-      moodIntensity: Math.min(1, Math.max(0, moodIntensity)),
-    };
+    try {
+      const json = JSON.parse(raw);
+      const replyText: string = json.replyText || "I'm here with you.";
+      const mood: string = json.mood || "neutral";
+      const moodIntensity: number =
+        typeof json.moodIntensity === "number" ? json.moodIntensity : 0.5;
 
-    return { replyText, auraState };
-  } catch (e) {
-    console.warn("Failed to parse Aura chat JSON, fallback:", raw, e);
-    return {
-      replyText:
-        "I'm feeling a bit fuzzy, but I'm here. Can you say that again in a slightly different way?",
-      auraState: { mood: "anxious", moodIntensity: 0.4 },
-    };
+      const auraState: AuraState = {
+        mood,
+        moodIntensity: Math.min(1, Math.max(0, moodIntensity)),
+      };
+
+      console.log("[chatWithAura] Chat response received, mood:", mood);
+      return { replyText, auraState };
+    } catch (parseError) {
+      console.error("[chatWithAura] Failed to parse chat response:", parseError);
+      return {
+        replyText:
+          "I'm feeling a bit fuzzy, but I'm here. Can you say that again in a slightly different way?",
+        auraState: { mood: "anxious", moodIntensity: 0.4 },
+      };
+    }
+  } catch (apiError) {
+    console.error("[chatWithAura] Chat API error:", apiError);
+    throw apiError;
   }
 }
 
@@ -358,9 +392,17 @@ export async function matchAuras(
   profileA: AuraProfile,
   profileB: AuraProfile
 ): Promise<MatchResult> {
-  const ai = new GoogleGenAI({ apiKey: (process.env.API_KEY as string) || "" });
+  const apiKey = (window as any).__GEMINI_API_KEY || "";
+  
+  if (!apiKey) {
+    console.error("Missing Gemini API key for match");
+    throw new Error("Missing Gemini API key");
+  }
 
-  const userText = `
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+
+    const userText = `
 PROFILE_A:
 ${JSON.stringify(profileA, null, 2)}
 
@@ -368,60 +410,67 @@ PROFILE_B:
 ${JSON.stringify(profileB, null, 2)}
 `.trim();
 
-  // Use Gemini 3 Pro with Thinking for deep match analysis
-  const res = await ai.models.generateContent({
-    model: "gemini-3-pro-preview",
-    config: {
-      systemInstruction: MATCH_SYSTEM_PROMPT,
-      responseMimeType: "application/json",
-      thinkingConfig: { thinkingBudget: 32768 }, // Deep reasoning for matchmaking
-    },
-    contents: [{ role: "user", parts: [{ text: userText }] }],
-  });
+    console.log("[matchAuras] Analyzing compatibility between:", profileA.displayName, "and", profileB.displayName);
 
-  // Fixed: Access .text directly
-  const raw = res.text || "{}";
+    // Use Gemini 3 Pro with Thinking for deep match analysis
+    const res = await ai.models.generateContent({
+      model: "gemini-3-pro-preview",
+      config: {
+        systemInstruction: MATCH_SYSTEM_PROMPT,
+        responseMimeType: "application/json",
+        thinkingConfig: { thinkingBudget: 32768 }, // Deep reasoning for matchmaking
+      },
+      contents: [{ role: "user", parts: [{ text: userText }] }],
+    });
 
-  try {
-    const json = JSON.parse(raw);
+    // Fixed: Access .text directly
+    const raw = res.text || "{}";
 
-    const result: MatchResult = {
-      compatibilityScore: json.compatibilityScore ?? 50,
-      compatibilityLabel: json.compatibilityLabel || "medium",
-      matchReasons: json.matchReasons || [],
-      riskFlags: json.riskFlags || [],
-      suggestedOpeningForUserA:
-        json.suggestedOpeningForUserA ||
-        "Hey, our Auras think we might vibe. Want to talk?",
-      suggestedOpeningForUserB:
-        json.suggestedOpeningForUserB ||
-        "Hey, our Auras think we might vibe. Want to talk?",
-      auraToUserSummaryA:
-        json.auraToUserSummaryA ||
-        "I talked to their Aura and I think you might get along.",
-      auraToUserSummaryB:
-        json.auraToUserSummaryB ||
-        "I talked to their Aura and I think you might get along.",
-    };
+    try {
+      const json = JSON.parse(raw);
 
-    return result;
-  } catch (e) {
-    console.warn("Failed to parse match JSON, fallback:", raw, e);
-    return {
-      compatibilityScore: 50,
-      compatibilityLabel: "medium",
-      matchReasons: [
-        "The Auras had a good conversation, but details were unclear.",
-      ],
-      riskFlags: [],
-      suggestedOpeningForUserA:
-        "Hey, our Auras chatted and think we might get along. Want to say hi?",
-      suggestedOpeningForUserB:
-        "Hey, our Auras chatted and think we might get along. Want to say hi?",
-      auraToUserSummaryA:
-        "Something went wrong on my side, but I still think this could be interesting.",
-      auraToUserSummaryB:
-        "Something went wrong on my side, but I still think this could be interesting.",
-    };
+      const result: MatchResult = {
+        compatibilityScore: json.compatibilityScore ?? 50,
+        compatibilityLabel: json.compatibilityLabel || "medium",
+        matchReasons: json.matchReasons || [],
+        riskFlags: json.riskFlags || [],
+        suggestedOpeningForUserA:
+          json.suggestedOpeningForUserA ||
+          "Hey, our Auras think we might vibe. Want to talk?",
+        suggestedOpeningForUserB:
+          json.suggestedOpeningForUserB ||
+          "Hey, our Auras think we might vibe. Want to talk?",
+        auraToUserSummaryA:
+          json.auraToUserSummaryA ||
+          "I talked to their Aura and I think you might get along.",
+        auraToUserSummaryB:
+          json.auraToUserSummaryB ||
+          "I talked to their Aura and I think you might get along.",
+      };
+
+      console.log("[matchAuras] Match analysis complete, score:", result.compatibilityScore);
+      return result;
+    } catch (parseError) {
+      console.error("[matchAuras] Failed to parse match response:", parseError);
+      return {
+        compatibilityScore: 50,
+        compatibilityLabel: "medium",
+        matchReasons: [
+          "The Auras had a good conversation, but details were unclear.",
+        ],
+        riskFlags: [],
+        suggestedOpeningForUserA:
+          "Hey, our Auras chatted and think we might get along. Want to say hi?",
+        suggestedOpeningForUserB:
+          "Hey, our Auras chatted and think we might get along. Want to say hi?",
+        auraToUserSummaryA:
+          "Something went wrong on my side, but I still think this could be interesting.",
+        auraToUserSummaryB:
+          "Something went wrong on my side, but I still think this could be interesting.",
+      };
+    }
+  } catch (apiError) {
+    console.error("[matchAuras] Match API error:", apiError);
+    throw apiError;
   }
 }

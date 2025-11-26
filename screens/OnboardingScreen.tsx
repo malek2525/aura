@@ -37,8 +37,9 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onProfileCreated })
       const profile = await buildAuraProfile(formData);
       onProfileCreated(profile);
     } catch (e) {
-      console.error(e);
-      alert("Failed to build profile. Please try again.");
+      const errorMessage = e instanceof Error ? e.message : "Failed to build profile. Please try again.";
+      console.error("[OnboardingScreen] Profile build failed:", errorMessage);
+      alert(errorMessage);
       setIsGenerating(false);
     }
   };
