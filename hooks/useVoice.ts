@@ -27,19 +27,14 @@ interface SpeechRecognitionAlternative {
   confidence: number;
 }
 
-declare global {
-  interface Window {
-    SpeechRecognition?: typeof SpeechRecognition;
-    webkitSpeechRecognition?: typeof SpeechRecognition;
-  }
-}
-
 const useVoice = () => {
   const [hasSpeechSupport] = useState(() => {
-    return !!(window.SpeechRecognition || (window as any).webkitSpeechRecognition);
+    if (typeof window === 'undefined') return false;
+    return !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
   });
 
   const [hasTTSSupport] = useState(() => {
+    if (typeof window === 'undefined') return false;
     return !!window.speechSynthesis;
   });
 
@@ -49,8 +44,8 @@ const useVoice = () => {
   const [error, setError] = useState<string | null>(null);
 
   const recognitionRef = useCallback(() => {
-    if (!hasSpeechSupport) return null;
-    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (typeof window === 'undefined' || !hasSpeechSupport) return null;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     return new SpeechRecognition();
   }, [hasSpeechSupport]);
 
@@ -112,7 +107,7 @@ const useVoice = () => {
   }, [recognitionRef]);
 
   const speak = useCallback((text: string) => {
-    if (!hasTTSSupport || !text.trim()) return;
+    if (typeof window === 'undefined' || !hasTTSSupport || !text.trim()) return;
 
     window.speechSynthesis.cancel();
 
@@ -157,6 +152,7 @@ const useVoice = () => {
   }, [hasTTSSupport]);
 
   const stopSpeaking = useCallback(() => {
+    if (typeof window === 'undefined') return;
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
   }, []);
