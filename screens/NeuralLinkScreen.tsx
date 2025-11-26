@@ -95,12 +95,12 @@ const NeuralLinkScreen: React.FC<NeuralLinkScreenProps> = ({
         <section className="rounded-3xl bg-slate-900/70 border border-white/10 backdrop-blur-2xl shadow-2xl p-6 lg:p-8 flex flex-col gap-6 h-[min(70vh,600px)] lg:h-full">
           {/* Header */}
           <div className="space-y-2">
-            <div className="text-[11px] tracking-[0.3em] uppercase text-slate-500">Neural Link</div>
+            <div className="text-[11px] tracking-[0.3em] uppercase text-slate-500">Neural link online</div>
             <h1 className="text-3xl font-semibold text-slate-50">
-              {profile.displayName}'s Aura
+              Talk to Aura
             </h1>
             <p className="text-sm text-slate-300 max-w-md">
-              {profile.summary}
+              Aura mirrors your vibe, remembers what matters, and keeps the energy gentle.
             </p>
           </div>
 
@@ -140,8 +140,9 @@ const NeuralLinkScreen: React.FC<NeuralLinkScreenProps> = ({
           {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto space-y-3 pr-2">
             {history.length === 0 && (
-              <div className="text-xs text-slate-500 text-center mt-10">
-                Start the link with a message. Aura will respond in your vibe.
+              <div className="text-xs text-slate-500 text-center mt-10 space-y-2">
+                <p>Start the link with a message or a voice note.</p>
+                <p className="text-[11px]">You can vent, rehearse a conversation, or just think out loud.</p>
               </div>
             )}
             {history.map(m => (
@@ -158,7 +159,7 @@ const NeuralLinkScreen: React.FC<NeuralLinkScreenProps> = ({
             ))}
             {isLoading && (
               <div className="text-[11px] text-slate-500 font-mono animate-pulse">
-                Aura is thinking…
+                Aura is thinking in your voice…
               </div>
             )}
           </div>
@@ -175,7 +176,7 @@ const NeuralLinkScreen: React.FC<NeuralLinkScreenProps> = ({
                   handleSend();
                 }
               }}
-              placeholder="Type something for your Aura twin…"
+              placeholder="Tell Aura what's on your mind…"
               disabled={isLoading}
               className="flex-1 rounded-full bg-slate-950/70 border border-white/15 px-4 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-slate-100/40 focus:ring-1 focus:ring-slate-100/20 transition-all disabled:opacity-50"
             />

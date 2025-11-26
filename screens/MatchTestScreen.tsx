@@ -81,8 +81,9 @@ const MatchTestScreen: React.FC<MatchTestScreenProps> = ({ userProfile }) => {
   return (
     <div className="space-y-6">
       <div className="text-center mb-6">
-        <h2 className="text-xl font-semibold text-slate-100">Neural Twin Match Simulation</h2>
-        <p className="text-slate-400 text-sm mt-1">Let your Auras talk and discover compatibility</p>
+        <div className="text-[11px] tracking-[0.3em] uppercase text-slate-500 mb-2">Match Score Lab</div>
+        <h2 className="text-2xl font-semibold text-slate-100">See how two Auras fit</h2>
+        <p className="text-slate-400 text-sm mt-2">This is a sandbox. Aura compares two profiles and imagines how their energy might blend. It's a demo of the matching brain, not a final dating score.</p>
       </div>
       
       <div className="flex flex-col md:flex-row gap-4 items-stretch">
@@ -96,8 +97,13 @@ const MatchTestScreen: React.FC<MatchTestScreenProps> = ({ userProfile }) => {
               onClick={handleRunMatch}
               className="bg-violet-600/30 hover:bg-violet-600/50 border border-violet-500/30 text-violet-200 font-medium py-4 px-8 rounded-2xl shadow-lg shadow-violet-900/20 transform transition-all hover:scale-105"
             >
-              Let Auras Talk
+              Run Match Analysis
             </button>
+          )}
+          {!matchResult && !isLoading && (
+            <p className="mt-3 text-[11px] text-slate-500">
+              Pick two profiles and let Aura guess how they'd feel together.
+            </p>
           )}
           {isLoading && (
             <div className="text-violet-400 animate-pulse font-medium text-sm">
@@ -114,16 +120,16 @@ const MatchTestScreen: React.FC<MatchTestScreenProps> = ({ userProfile }) => {
       {matchResult && (
         <div className="glass-panel-light rounded-2xl p-6 space-y-6 animate-fade-in">
           <div className="text-center">
-            <span className="text-xs text-slate-500 uppercase tracking-widest">Compatibility</span>
+            <span className="text-xs text-slate-500 uppercase tracking-widest">Compatibility score</span>
             <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400 mt-2">
               {matchResult.compatibilityScore}%
             </div>
-            <div className="text-lg text-slate-300 capitalize mt-1">{matchResult.compatibilityLabel} Match</div>
+            <div className="text-sm text-slate-400 capitalize mt-1">Rough intuition only. The real magic is in the twin-to-twin intros.</div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
             <div className="bg-white/5 border border-white/5 p-5 rounded-xl">
-              <h4 className="text-violet-300 font-medium mb-3 uppercase text-xs tracking-wide">Why it works</h4>
+              <h4 className="text-slate-200 font-medium mb-3 uppercase text-xs tracking-wide">Why it might work</h4>
               <ul className="space-y-2">
                 {matchResult.matchReasons.map((reason, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
@@ -134,7 +140,7 @@ const MatchTestScreen: React.FC<MatchTestScreenProps> = ({ userProfile }) => {
             </div>
 
             <div className="bg-white/5 border border-white/5 p-5 rounded-xl">
-              <h4 className="text-rose-300 font-medium mb-3 uppercase text-xs tracking-wide">Things to Watch</h4>
+              <h4 className="text-slate-200 font-medium mb-3 uppercase text-xs tracking-wide">Possible friction points</h4>
               <ul className="space-y-2">
                 {matchResult.riskFlags.map((risk, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-slate-300">

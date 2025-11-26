@@ -10,6 +10,16 @@ Aura Twin is an AI-powered digital companion app for introverts, featuring a per
 - **Port**: 5000 (frontend)
 - **Styling**: Tailwind CSS (CDN) + custom glassmorphism CSS
 
+## Recent Changes (November 26, 2025) - COMPLETE MVP WITH STYLING PASS
+
+### Product Styling & Copy Refinement
+- **Navigation**: "Onboarding" → "Calibrate Aura", "Neural Link" → "Talk to Aura", "Match Test" → "Match Score"
+- **Header**: "Aura Twin · Private Neural Link" + "● Connected · For your eyes only" status
+- **Onboarding**: Renamed steps to "Core Identity", "Social Energy", "Boundaries & Goals"; refined all field labels and helper text to feel intimate and non-clinical
+- **Neural Link**: Changed stage label to "Neural link online", simplified description about mirroring vibe and emotional safety, improved empty state messaging
+- **Match Score**: Clarified purpose as "sandbox" demo with compatibility score caveat, softened result labels ("possible friction points" instead of risks)
+- **Twin Intro**: Updated result headings to "What your twins noticed", maintained supportive tone throughout
+
 ## Recent Changes (November 26, 2025) - FINAL BUILD
 
 ### Complete VisionOS Frontend Architecture

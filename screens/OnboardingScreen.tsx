@@ -52,15 +52,15 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onProfileCreated })
   const steps = [
     {
       id: 'basics',
-      title: 'Identity',
-      description: 'Let\'s start with the basics.',
+      title: 'Core Identity',
+      description: 'Answer a few questions and Aura will learn how to speak, protect, and represent you.',
       content: (
         <div className="space-y-5">
           <div>
-            <label className="block text-sm text-slate-400 mb-2">What should we call you?</label>
+            <label className="block text-sm text-slate-400 mb-2">What should Aura call you?</label>
             <input 
               className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
-              placeholder="Name or Nickname"
+              placeholder="Your name or nickname"
               value={formData.displayName}
               onChange={(e) => handleInputChange('displayName', e.target.value)}
             />
@@ -84,28 +84,28 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onProfileCreated })
             />
           </div>
           <div>
-            <label className="block text-sm text-slate-400 mb-2">Avatar Image URL (optional)</label>
+            <label className="block text-sm text-slate-400 mb-2">Profile photo URL (optional)</label>
             <input 
               className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
-              placeholder="https://example.com/avatar.jpg"
+              placeholder="https://…"
               value={formData.avatarUrl || ''}
               onChange={(e) => handleInputChange('avatarUrl', e.target.value)}
             />
-            <p className="text-xs text-slate-500 mt-2">Paste a link to a square image for your Aura's avatar</p>
+            <p className="text-xs text-slate-500 mt-2">Aura will use this photo on the main stage when you connect</p>
           </div>
         </div>
       )
     },
     {
       id: 'social',
-      title: 'Social Battery',
-      description: 'How do you process social energy?',
+      title: 'Social Energy',
+      description: 'How social do you feel most days? Aura uses this to protect your energy and pace conversations.',
       content: (
         <div className="space-y-6">
           <div>
             <div className="flex justify-between mb-3">
-              <label className="text-sm text-slate-400">Introversion Level (1-10)</label>
-              <span className="text-violet-400 font-mono font-medium">{formData.introversionLevel}</span>
+              <label className="text-sm text-slate-400">How social do you feel most days?</label>
+              <span className="text-violet-400 font-mono font-medium">{formData.introversionLevel}/10</span>
             </div>
             <input 
               type="range" 
@@ -141,31 +141,33 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onProfileCreated })
           </div>
 
           <div>
-            <label className="block text-sm text-slate-400 mb-2">Vibe Words</label>
+            <label className="block text-sm text-slate-400 mb-2">Three words that describe your vibe</label>
             <input 
               className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
-              placeholder="e.g. calm, playful, sarcastic, deep"
+              placeholder="soft, sarcastic, loyal"
               value={formData.vibeWords}
               onChange={(e) => handleInputChange('vibeWords', e.target.value)}
             />
+            <p className="text-xs text-slate-500 mt-2">These become part of Aura's personality when it speaks for you</p>
           </div>
         </div>
       )
     },
     {
       id: 'interests',
-      title: 'Interests & Goals',
-      description: 'What connects you to others?',
+      title: 'Boundaries & Goals',
+      description: 'What are you open to right now? Friends, practice, dating, safe experiments. Aura respects that.',
       content: (
         <div className="space-y-5">
            <div>
-            <label className="block text-sm text-slate-400 mb-2">Your Social Goals</label>
+            <label className="block text-sm text-slate-400 mb-2">What are you open to right now?</label>
             <textarea 
               className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all h-24 resize-none"
-              placeholder="e.g. Make friends, practice dating, just venting..."
+              placeholder="Friends, practice, dating, safe experiments…"
               value={formData.goals}
               onChange={(e) => handleInputChange('goals', e.target.value)}
             />
+            <p className="text-xs text-slate-500 mt-2">Aura respects what you're looking for</p>
           </div>
           <div>
             <label className="block text-sm text-slate-400 mb-2">Topics You Love</label>
@@ -215,13 +217,14 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onProfileCreated })
             </div>
           </div>
           <div>
-            <label className="block text-sm text-slate-400 mb-2">Hard Boundaries (Never)</label>
+            <label className="block text-sm text-slate-400 mb-2">Hard boundaries</label>
             <input 
               className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
-              placeholder="e.g. No explicit content, No voice calls"
+              placeholder="e.g. no late-night calls, no politics"
               value={formData.hardBoundaries}
               onChange={(e) => handleInputChange('hardBoundaries', e.target.value)}
             />
+            <p className="text-xs text-slate-500 mt-2">Anything Aura should always avoid?</p>
           </div>
           <div>
             <label className="block text-sm text-slate-400 mb-2">What makes you feel safe?</label>
@@ -268,7 +271,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onProfileCreated })
 
   if (isGenerating) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen text-center p-8">
+      <div className="flex flex-col items-center justify-center min-h-screen text-center p-8">
         <div className="relative mb-10">
           <div className="w-32 h-32 bg-gradient-to-br from-violet-500/40 to-blue-500/30 rounded-full blur-2xl animate-pulse" />
           <div className="absolute inset-0 flex items-center justify-center">

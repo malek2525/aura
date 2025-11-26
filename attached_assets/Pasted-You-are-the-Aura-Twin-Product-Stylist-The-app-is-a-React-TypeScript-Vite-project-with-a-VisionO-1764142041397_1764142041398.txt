@@ -1,0 +1,280 @@
+You are the Aura Twin Product Stylist.
+The app is a React + TypeScript + Vite project with a VisionOS / Apple Glass aesthetic:
+
+Deep slate gradients
+
+Glass cards
+
+Calm motion, no neon
+
+You must not change any business logic or API calls.
+Only adjust text, labels, helper lines, empty states, and tiny visual details so the product:
+
+Feels like an intimate, premium AI twin for introverts
+
+Is easy to demo to investors (clear what each screen does)
+
+Never feels like a generic chatbot UI
+
+Focus on these files (update them in place):
+
+src/App.tsx
+
+src/screens/OnboardingScreen.tsx
+
+src/screens/NeuralLinkScreen.tsx
+
+src/screens/MatchTestScreen.tsx
+
+src/screens/TwinIntroScreen.tsx
+
+1) App.tsx – navigation & header text
+
+In App.tsx:
+
+Keep the existing layout and nav, but refine labels:
+
+“Onboarding” → Calibrate Aura
+
+“Neural Link” → Talk to Aura
+
+“Match Test” → Match Score
+
+“Twin Intro” → Twin Intro
+
+Update the small header text to feel like a calm OS:
+
+Replace any current header text with something like:
+
+Left small label: AURA TWIN · PRIVATE NEURAL LINK
+
+Right side (if present): Channel encrypted · For your eyes only
+
+Ensure the nav pills have short, clean labels and still look glassy.
+
+Do not change routing or state, only the visible text and maybe tiny classNames if needed for spacing.
+
+2) OnboardingScreen.tsx – make it a “Neural Calibration Ritual”
+
+In src/screens/OnboardingScreen.tsx:
+
+Do not change the multi-step logic, only the copy + small layout details.
+
+Top section:
+
+Title: something like
+"Calibrate your Aura twin"
+
+Subtitle: a gentle, reassuring line, e.g.:
+"Answer a few questions and Aura will learn how to speak, protect, and represent you."
+
+Step labels:
+
+If you have step indicators (“Step 1 / 2 / 3”), change them to:
+
+Step 1 → Core identity
+
+Step 2 → Social energy
+
+Step 3 → Boundaries & goals
+
+Field labels (examples, update to similar tone):
+
+Name → "What should Aura call you?"
+Helper: "This is how Aura will address you in chat."
+
+Introversion level (slider or select) →
+Label: "How social do you feel most days?"
+Helper: "Aura uses this to protect your energy and pace conversations."
+
+Vibe words →
+Label: "Three words that describe your vibe"
+Placeholder example: "soft, sarcastic, loyal"
+Helper: "These become part of Aura’s personality when it speaks for you."
+
+Relationship / intention field →
+Label: "What are you open to right now?"
+Helper: "Friends, practice, dating, safe experiments… Aura respects that."
+
+Boundaries / “hard no” field →
+Label: "Hard boundaries"
+Helper: "Anything Aura should always avoid? (e.g. no late-night calls, no politics)."
+
+Avatar URL (you already added) →
+Label: "Profile photo URL (optional)"
+Helper: "Aura will use this on the main stage when you connect."
+
+Primary action button at final step:
+
+Text: "Link with Aura" instead of generic “Save” or “Continue”.
+
+If there’s a loading state while building the profile, use something like:
+"Teaching Aura who you are…"
+
+Don’t change field names in code, only label/placeholder/helper text.
+
+3) NeuralLinkScreen.tsx – chat micro-copy & empty states
+
+In src/screens/NeuralLinkScreen.tsx:
+
+Keep the two-column layout (Aura Stage + chat + voice).
+
+Make the stage text more “twin + companion”:
+
+Top label above the avatar: "Neural link online"
+
+Heading: "Talk to Aura" or "{name}'s Aura twin" (use profile.name if available).
+
+Short description:
+"Aura mirrors your vibe, remembers what matters, and keeps the energy gentle. Use this space to think out loud and rehearse life."
+
+In the chat area:
+
+When there are no messages yet, show a soft prompt:
+
+{messages.length === 0 && (
+  <div className="text-xs text-slate-500 text-center mt-10 space-y-2">
+    <p>Start the link with a message or a voice note.</p>
+    <p className="text-[11px]">
+      You can vent about your day, paste screenshots in your head, or ask Aura to rehearse a conversation with you.
+    </p>
+  </div>
+)}
+
+
+For the “Aura is thinking…” state, use:
+"Aura is thinking in your voice…"
+
+If messages distinguish roles user vs assistant, consider:
+
+For the assistant (Aura), slightly softer body text like: text-slate-100 and maybe tiny label above:
+"Aura" in 11px when rendering the bubble.
+
+Input placeholder:
+"Tell Aura what’s on your mind…"
+
+Voice status text:
+
+When idle & supported: "● Voice ready"
+
+When listening: "● Mic live – talk to Aura"
+
+When speaking: "🔊 Aura is speaking"
+
+Keep layout intact, only adjust text and maybe tiny Tailwind classes for spacing.
+
+4) MatchTestScreen.tsx – clarify what this screen proves
+
+In src/screens/MatchTestScreen.tsx:
+
+Header:
+
+Small label: "Match Score Lab"
+
+Title: "See how two Auras fit"
+
+Subtitle:
+"This is a sandbox. Aura compares two profiles and imagines how their energy might blend. It’s a demo of the matching brain, not a final dating score."
+
+Where you show compatibility, be explicit:
+
+Label: "Compatibility score"
+
+If you show e.g. 78%, add a small caption under it:
+"Rough intuition only. The real magic is in the twin-to-twin intros."
+
+For any section listing risks / friction, use a softer label:
+
+"Possible friction points" instead of “Risks”.
+
+For any “no data” state (no match selected, no result yet), show:
+
+<p className="text-[11px] text-slate-500">
+  Pick two profiles and let Aura guess how they’d feel together.
+</p>
+
+
+Don’t alter the matching logic or scoring, just text.
+
+5) TwinIntroScreen.tsx – make it clearly the “Fundable Wedge”
+
+In src/screens/TwinIntroScreen.tsx:
+
+Header:
+
+Small label: "Twin Intro Lab"
+
+Title: "Let your Auras break the ice"
+
+Subtitle (short, clear):
+"Aura reads both profiles, lets the twins talk first, and then hands you gentle first messages to start a real conversation."
+
+The dropdown label "Potential match" is good; keep it or refine to "Pick someone for Aura to meet".
+
+For the button that runs the LLM, use:
+
+Idle: "Let the Auras introduce you"
+
+Loading: "Asking your twins to talk…"
+
+In the result:
+
+Section headings:
+
+Overview block label: "What your twins noticed"
+
+Aura script block label: "How your Auras would talk"
+
+Openers: "Gentle first messages you can send"
+
+Safety notes: "Things to keep in mind"
+
+Make sure suggestedOpeners render as clear, tappable-looking pills:
+
+<li
+  key={idx}
+  className="rounded-2xl bg-slate-950/70 border border-white/10 px-3 py-2 text-sm text-slate-100"
+>
+  {msg}
+</li>
+
+
+If result is null, show a small hint under the button:
+
+{!result && (
+  <p className="mt-3 text-[11px] text-slate-500">
+    Pick a match and let Aura draft the first move for you.
+  </p>
+)}
+
+6) General style consistency (small tweaks only)
+
+Across these files:
+
+Use:
+
+text-slate-100 or text-slate-200 for main text.
+
+text-slate-400/500 for labels & helpers.
+
+Make sure main card wrappers follow:
+
+rounded-3xl bg-slate-900/70 border border-white/10 backdrop-blur-2xl shadow-2xl
+
+Avoid harsh or neon colors. Prefer:
+
+sky-400, indigo-400, violet-400 with /40–/60 opacity if used in gradients.
+
+Do not:
+
+Change any function signatures or LLM prompts.
+
+Add/remove props from components.
+
+Move business logic into UI code.
+
+Your goal is purely:
+
+Make the product feel like a calm, intelligent, introvert-friendly twin.
+
+Make each screen’s purpose crystal clear in one glance for a demo.

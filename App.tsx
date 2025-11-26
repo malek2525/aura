@@ -30,9 +30,9 @@ const App: React.FC = () => {
   };
 
   const navItems: { id: ViewScreen; label: string }[] = [
-    { id: 'onboarding', label: 'Onboarding' },
-    { id: 'neural', label: 'Neural Link' },
-    { id: 'match', label: 'Match Test' },
+    { id: 'onboarding', label: 'Calibrate Aura' },
+    { id: 'neural', label: 'Talk to Aura' },
+    { id: 'match', label: 'Match Score' },
     { id: 'intro', label: 'Twin Intro' }
   ];
 
@@ -47,7 +47,7 @@ const App: React.FC = () => {
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
               <div className="text-[11px] font-mono tracking-[0.3em] uppercase text-slate-400">
-                Aura Twin
+                Aura Twin · Private Neural Link
               </div>
             </div>
 
@@ -70,7 +70,7 @@ const App: React.FC = () => {
 
             {/* Status indicator */}
             <div className="text-[11px] text-slate-500">
-              {profile ? `Connected as ${profile.displayName}` : 'Create Profile'}
+              {profile ? `● Connected · For your eyes only` : 'Channel encrypted'}
             </div>
           </div>
         </div>

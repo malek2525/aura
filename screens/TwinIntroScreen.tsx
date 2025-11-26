@@ -102,7 +102,7 @@ const TwinIntroScreen: React.FC = () => {
           <div className="mt-6 space-y-4">
             <div>
               <div className="text-[11px] uppercase tracking-[0.25em] text-slate-500">
-                Overview
+                What your twins noticed
               </div>
               <h2 className="text-xl font-semibold text-slate-50 mt-1">
                 {result.title}
@@ -129,6 +129,11 @@ const TwinIntroScreen: React.FC = () => {
               <div className="text-[11px] uppercase tracking-[0.25em] text-slate-500">
                 Gentle first messages you can send
               </div>
+              {!result && (
+                <p className="mt-3 text-[11px] text-slate-500">
+                  Pick a match and let Aura draft the first move for you.
+                </p>
+              )}
               <ul className="space-y-2 text-sm text-slate-100">
                 {result.suggestedOpeners.map((msg, idx) => (
                   <li
