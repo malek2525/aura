@@ -1,0 +1,118 @@
+You are the Aura Twin Frontend Architect.
+We now want every Aura to have a visual identity (avatar image) while keeping the VisionOS / Apple-glass aesthetic (deep slate, glass, no neon).
+
+Goal of this change
+
+Add an optional avatarImageUrl field to the Aura profile.
+
+Let the user set or edit this field in the onboarding / profile UI.
+
+Render a large circular glassy avatar in:
+
+NeuralLinkScreen (main chat header)
+
+MatchTestScreen (for both “Your Aura” and “Potential Match”)
+
+Use a soft, glassy style: deep slate background, subtle blur, white borders, no neon colors.
+
+1. Extend the data model
+
+Open the shared types file (for example src/types.ts or wherever AuraProfile is defined) and:
+
+Add an optional avatar field:
+
+export interface AuraProfile {
+  // existing fields ...
+  avatarImageUrl?: string; // optional URL for the user’s Aura portrait
+}
+
+
+Make sure any initial/default profile object includes avatarImageUrl: "" or leaves it undefined.
+
+Wherever the profile is saved/loaded (e.g., profileStorage.ts, Firebase, local storage), include this field so it is persisted.
+
+2. Onboarding / profile input for avatar
+
+In the onboarding or profile editing screen (src/screens/OnboardingScreen.tsx and/or NeuralProfileScreen.tsx if it exists):
+
+Add a small glassy input field to let the user paste an image URL:
+
+Label: “Aura avatar image URL (optional)”
+
+Helper text: “Paste a link to a square image. Later we’ll support uploads.”
+
+Styling: use the same glass-input style as other fields:
+
+container: bg-slate-900/60 border border-white/10 rounded-2xl backdrop-blur-xl px-4 py-3
+
+label: text-[11px] uppercase tracking-widest text-slate-500 mb-1
+
+input: w-full bg-transparent text-slate-100 outline-none placeholder:text-slate-500
+
+Wire it to the profile state:
+
+When the input changes, update profile.avatarImageUrl.
+
+When the screen loads with an existing profile, populate the input with the saved value.
+
+3. Glassy avatar in Neural Link header
+
+In src/screens/NeuralLinkScreen.tsx:
+
+At the top of the main card (where “malek’s Aura” / description is shown), add a header section that looks like a VisionOS glass card:
+
+Wrapper:
+
+<div className="mb-6 rounded-3xl bg-slate-900/70 border border-white/10 backdrop-blur-xl px-6 py-5 flex items-center gap-4 shadow-[0_0_60px_rgba(0,0,0,0.7)]">
+
+
+Left: avatar circle
+
+const avatarUrl = profile.avatarImageUrl?.trim();
+<div className="relative h-16 w-16 rounded-full bg-slate-950/80 border border-white/15 overflow-hidden flex items-center justify-center shadow-lg">
+  {avatarUrl ? (
+    <img src={avatarUrl} alt="Aura avatar" className="h-full w-full object-cover" />
+  ) : (
+    // fallback glowing orb
+    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-slate-300 via-slate-100 to-slate-300 shadow-inner" />
+  )}
+</div>
+
+
+Right: text block
+
+Name: "{userName}'s Aura" in text-xl font-semibold text-slate-50
+
+Small one-line description using existing profile summary in text-xs text-slate-300.
+
+Make sure colors are soft: use slate/white, no neon, no super-saturated accents.
+
+4. Avatar in Match Test screen
+
+In src/screens/MatchTestScreen.tsx:
+
+For the “Your Aura” and “Potential Match” panels, add the same avatar circle at the top of each card.
+
+For “Your Aura”, use profile.avatarImageUrl.
+
+For the simulated match, if the match profile has an avatarImageUrl, use it; otherwise use a different fallback orb color (e.g., warm orange gradient).
+
+Ensure each match card is a glass card:
+
+rounded-3xl bg-slate-900/70 border border-white/10 backdrop-blur-xl px-6 py-5 shadow-xl
+
+5. Consistency & safety
+
+Guard against broken URLs: if the <img> fails to load, fall back to the orb (use onError to set a local state like imageError).
+
+Do not introduce any file-upload logic yet; this step is URL-only.
+
+Keep the palette: bg-slate-950, bg-slate-900/70, text-slate-200, border-white/10, subtle shadows. No neon.
+
+After you implement this, the app should:
+
+Let me paste an avatar image URL during onboarding/profile edit.
+
+Save and load that URL with the profile.
+
+Show a large, glassy circular avatar in the Neural Link header and in the Match Test cards, with a soft VisionOS feel.

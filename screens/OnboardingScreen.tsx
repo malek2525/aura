@@ -24,7 +24,8 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onProfileCreated })
     greenFlags: '',
     redFlags: '',
     whatShouldPeopleKnow: '',
-    whatFeelsSafe: ''
+    whatFeelsSafe: '',
+    avatarUrl: ''
   });
 
   const handleInputChange = (field: keyof OnboardingAnswers, value: string | number) => {
@@ -81,6 +82,16 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onProfileCreated })
               value={formData.country || ''}
               onChange={(e) => handleInputChange('country', e.target.value)}
             />
+          </div>
+          <div>
+            <label className="block text-sm text-slate-400 mb-2">Avatar Image URL (optional)</label>
+            <input 
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
+              placeholder="https://example.com/avatar.jpg"
+              value={formData.avatarUrl || ''}
+              onChange={(e) => handleInputChange('avatarUrl', e.target.value)}
+            />
+            <p className="text-xs text-slate-500 mt-2">Paste a link to a square image for your Aura's avatar</p>
           </div>
         </div>
       )

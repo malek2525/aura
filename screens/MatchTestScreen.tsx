@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import AuraAvatarCard from '../components/AuraAvatarCard';
+import AvatarCircle from '../components/AvatarCircle';
 import { AuraProfile, MatchResult } from '../types';
 import { matchAuras } from '../services/auraLLM';
 
@@ -25,46 +26,26 @@ const LINA_PROFILE: AuraProfile = {
   summary: "Lina is a bubbly photographer who loves dragging introverts out of their shells, but gently. She talks a lot but listens well."
 };
 
-const ProfileCard: React.FC<{ profile: AuraProfile; label: string }> = ({ profile, label }) => {
-  const getInitials = (name: string): string => {
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
+const ProfileCard: React.FC<{ profile: AuraProfile; label: string; isMatch?: boolean }> = ({ profile, label, isMatch }) => {
   return (
-    <div className="glass-panel-light rounded-2xl p-4 space-y-3">
+    <div className="rounded-3xl bg-slate-900/70 border border-white/10 backdrop-blur-xl px-6 py-5 space-y-4 shadow-lg">
       <p className="text-center text-slate-500 text-xs uppercase tracking-wider">{label}</p>
       
-      {/* Avatar or Initials */}
+      {/* Avatar Circle */}
       <div className="flex justify-center">
-        {profile.avatarUrl ? (
-          <img
-            src={profile.avatarUrl}
-            alt={profile.displayName}
-            className="w-16 h-16 rounded-full object-cover border border-violet-500/30"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
-          />
-        ) : (
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-600/40 to-blue-600/40 border border-violet-500/30 flex items-center justify-center">
-            <span className="text-2xl font-bold text-violet-200">
-              {getInitials(profile.displayName)}
-            </span>
-          </div>
-        )}
+        <AvatarCircle 
+          imageUrl={profile.avatarUrl} 
+          size="lg"
+          fallbackColor={isMatch ? 'warm' : 'slate'}
+        />
       </div>
 
       {/* Name */}
-      <p className="text-center font-medium text-slate-100">{profile.displayName}</p>
+      <p className="text-center font-semibold text-slate-100">{profile.displayName}</p>
 
       {/* Bio */}
       {profile.bio && (
-        <p className="text-center text-xs text-slate-400 line-clamp-2">{profile.bio}</p>
+        <p className="text-center text-xs text-slate-300 line-clamp-2">{profile.bio}</p>
       )}
 
       {/* Vibe Tags */}
@@ -126,7 +107,7 @@ const MatchTestScreen: React.FC<MatchTestScreenProps> = ({ userProfile }) => {
         </div>
 
         <div className="flex-1">
-          <ProfileCard profile={LINA_PROFILE} label="Potential Match" />
+          <ProfileCard profile={LINA_PROFILE} label="Potential Match" isMatch />
         </div>
       </div>
 
