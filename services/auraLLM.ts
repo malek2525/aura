@@ -22,6 +22,9 @@ const isQuotaError = (err: any) =>
 const DEFAULT_FAKE_PROFILE = (answers: OnboardingAnswers): AuraProfile => ({
   id: `user_${Date.now()}`,
   displayName: answers.displayName || "User",
+  bio: "",
+  avatarUrl: "",
+  vibeTags: ["thoughtful", "genuine"],
   ageRange: answers.ageRange ?? null,
   country: answers.country ?? null,
   introversionLevel: answers.introversionLevel,
@@ -215,6 +218,9 @@ What makes them feel safe with someone new: ${answers.whatFeelsSafe}
         const profile: AuraProfile = {
           id: json.id || `user_${Date.now()}`,
           displayName: json.displayName || answers.displayName || "User",
+          bio: "",
+          avatarUrl: "",
+          vibeTags: [],
           ageRange: json.ageRange ?? null,
           country: json.country ?? null,
           introversionLevel: json.introversionLevel ?? answers.introversionLevel,

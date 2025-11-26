@@ -3,6 +3,9 @@ export type SocialSpeed = "slow" | "normal" | "fast";
 export interface AuraProfile {
   id: string;
   displayName: string;
+  bio?: string;
+  avatarUrl?: string;
+  vibeTags?: string[];
   ageRange?: string | null;
   country?: string | null;
 

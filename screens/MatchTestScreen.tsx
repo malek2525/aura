@@ -10,6 +10,9 @@ interface MatchTestScreenProps {
 const LINA_PROFILE: AuraProfile = {
   id: "lina_01",
   displayName: "Lina",
+  bio: "Bubbly photographer who loves dragging introverts out of their shells... gently 📸",
+  avatarUrl: "",
+  vibeTags: ["sunny", "energetic", "spontaneous"],
   introversionLevel: 3,
   goals: ["find friends", "explore city"],
   vibeWords: ["sunny", "energetic", "random"],
@@ -20,6 +23,62 @@ const LINA_PROFILE: AuraProfile = {
   greenFlags: ["humor", "spontaneity"],
   redFlags: ["judgmental people"],
   summary: "Lina is a bubbly photographer who loves dragging introverts out of their shells, but gently. She talks a lot but listens well."
+};
+
+const ProfileCard: React.FC<{ profile: AuraProfile; label: string }> = ({ profile, label }) => {
+  const getInitials = (name: string): string => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  return (
+    <div className="glass-panel-light rounded-2xl p-4 space-y-3">
+      <p className="text-center text-slate-500 text-xs uppercase tracking-wider">{label}</p>
+      
+      {/* Avatar or Initials */}
+      <div className="flex justify-center">
+        {profile.avatarUrl ? (
+          <img
+            src={profile.avatarUrl}
+            alt={profile.displayName}
+            className="w-16 h-16 rounded-full object-cover border border-violet-500/30"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        ) : (
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-600/40 to-blue-600/40 border border-violet-500/30 flex items-center justify-center">
+            <span className="text-2xl font-bold text-violet-200">
+              {getInitials(profile.displayName)}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Name */}
+      <p className="text-center font-medium text-slate-100">{profile.displayName}</p>
+
+      {/* Bio */}
+      {profile.bio && (
+        <p className="text-center text-xs text-slate-400 line-clamp-2">{profile.bio}</p>
+      )}
+
+      {/* Vibe Tags */}
+      {(profile.vibeTags && profile.vibeTags.length > 0) || (profile.vibeWords && profile.vibeWords.length > 0) ? (
+        <div className="flex flex-wrap gap-1.5 justify-center">
+          {(profile.vibeTags || profile.vibeWords)?.slice(0, 3).map((tag, i) => (
+            <span key={i} className="text-xs bg-blue-600/20 text-blue-300 px-2 py-0.5 rounded-full border border-blue-500/20">
+              {tag}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
 };
 
 const MatchTestScreen: React.FC<MatchTestScreenProps> = ({ userProfile }) => {
@@ -46,13 +105,8 @@ const MatchTestScreen: React.FC<MatchTestScreenProps> = ({ userProfile }) => {
       </div>
       
       <div className="flex flex-col md:flex-row gap-4 items-stretch">
-        <div className="flex-1 glass-panel-light rounded-2xl p-4">
-          <p className="text-center text-slate-500 text-xs uppercase tracking-wider mb-3">Your Aura</p>
-          <AuraAvatarCard 
-            profile={userProfile} 
-            auraState={{ mood: 'curious', moodIntensity: 0.5 }} 
-            compact 
-          />
+        <div className="flex-1">
+          <ProfileCard profile={userProfile} label="Your Aura" />
         </div>
 
         <div className="flex items-center justify-center py-4 md:py-0 md:px-4">
@@ -71,13 +125,8 @@ const MatchTestScreen: React.FC<MatchTestScreenProps> = ({ userProfile }) => {
           )}
         </div>
 
-        <div className="flex-1 glass-panel-light rounded-2xl p-4">
-          <p className="text-center text-slate-500 text-xs uppercase tracking-wider mb-3">Potential Match</p>
-          <AuraAvatarCard 
-            profile={LINA_PROFILE} 
-            auraState={{ mood: 'excited', moodIntensity: 0.7 }} 
-            compact 
-          />
+        <div className="flex-1">
+          <ProfileCard profile={LINA_PROFILE} label="Potential Match" />
         </div>
       </div>
 

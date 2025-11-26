@@ -19,6 +19,20 @@ const NeuralProfilePanel: React.FC<NeuralProfilePanelProps> = ({ profile, onChan
     handleChange(field, updated);
   };
 
+  const handleVibeTags = (text: string) => {
+    const tags = text.split(',').map(t => t.trim()).filter(Boolean);
+    handleChange('vibeTags', tags);
+  };
+
+  const getInitials = (name: string): string => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   const goalOptions = [
     { label: 'Make Friends', value: 'find friends' },
     { label: 'Dating Practice', value: 'dating practice' },
@@ -31,6 +45,42 @@ const NeuralProfilePanel: React.FC<NeuralProfilePanelProps> = ({ profile, onChan
 
   return (
     <div className="space-y-6">
+      {/* Avatar Preview Card */}
+      <div className="glass-panel rounded-2xl p-6 flex flex-col items-center gap-4">
+        <p className="text-xs text-slate-500 uppercase tracking-wider">Your Profile Preview</p>
+        <div className="flex flex-col items-center gap-4">
+          {profile.avatarUrl ? (
+            <img
+              src={profile.avatarUrl}
+              alt={profile.displayName}
+              className="w-20 h-20 rounded-full object-cover border border-violet-500/30"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-600/40 to-blue-600/40 border border-violet-500/30 flex items-center justify-center">
+              <span className="text-3xl font-bold text-violet-200">
+                {getInitials(profile.displayName || '?')}
+              </span>
+            </div>
+          )}
+          <div className="text-center">
+            <p className="font-medium text-slate-100">{profile.displayName || 'Your Name'}</p>
+            {profile.bio && <p className="text-xs text-slate-400 mt-1 line-clamp-2">{profile.bio}</p>}
+            {(profile.vibeTags && profile.vibeTags.length > 0) && (
+              <div className="flex flex-wrap gap-1 justify-center mt-2">
+                {profile.vibeTags.slice(0, 3).map((tag, i) => (
+                  <span key={i} className="text-xs bg-blue-600/20 text-blue-300 px-2 py-0.5 rounded-full">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="space-y-4">
         <label className="block text-sm font-medium text-slate-300">Display Name</label>
         <input
@@ -40,6 +90,39 @@ const NeuralProfilePanel: React.FC<NeuralProfilePanelProps> = ({ profile, onChan
           className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
           placeholder="Your name or nickname"
         />
+      </div>
+
+      <div className="space-y-4">
+        <label className="block text-sm font-medium text-slate-300">Short Bio</label>
+        <textarea
+          value={profile.bio || ''}
+          onChange={(e) => handleChange('bio', e.target.value)}
+          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all resize-none h-16"
+          placeholder="Tell people a bit about yourself..."
+        />
+      </div>
+
+      <div className="space-y-4">
+        <label className="block text-sm font-medium text-slate-300">Avatar URL</label>
+        <input
+          type="text"
+          value={profile.avatarUrl || ''}
+          onChange={(e) => handleChange('avatarUrl', e.target.value)}
+          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
+          placeholder="https://example.com/photo.jpg"
+        />
+      </div>
+
+      <div className="space-y-4">
+        <label className="block text-sm font-medium text-slate-300">Vibe Tags</label>
+        <input
+          type="text"
+          value={profile.vibeTags?.join(', ') || ''}
+          onChange={(e) => handleVibeTags(e.target.value)}
+          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
+          placeholder="e.g. thoughtful, creative, spontaneous"
+        />
+        <p className="text-xs text-slate-500">Comma-separated tags that describe your vibe</p>
       </div>
 
       <div className="space-y-4">
