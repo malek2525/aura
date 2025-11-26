@@ -1,123 +1,163 @@
 import React, { useState } from 'react';
-import { AuraProfile, AuraChatMessage, AuraState, ScreenName } from './types';
-import OnboardingScreen from './screens/OnboardingScreen';
-import NeuralLinkScreen from './screens/NeuralLinkScreen';
-import MatchTestScreen from './screens/MatchTestScreen';
+import { AuraProfile, TwinIntroResult } from '../types';
+import { demoProfiles } from '../services/demoProfiles';
+import { generateTwinIntro } from '../services/auraLLM';
 
-type ViewScreen = 'onboarding' | 'neural' | 'match';
+function MiniAuraCard({ profile, label }: { profile: AuraProfile; label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-2 rounded-3xl bg-slate-900/80 border border-white/10 px-4 py-4">
+      <div className="relative h-16 w-16 rounded-full overflow-hidden bg-slate-800 flex items-center justify-center">
+        {profile.avatarUrl ? (
+          <img src={profile.avatarUrl} alt={profile.displayName} className="h-full w-full object-cover" />
+        ) : (
+          <span className="text-2xl">🟣</span>
+        )}
+      </div>
+      <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">{label}</div>
+      <div className="text-sm font-semibold text-slate-100">{profile.displayName}</div>
+      <p className="text-[11px] text-slate-300 text-center line-clamp-3">
+        {profile.summary}
+      </p>
+    </div>
+  );
+}
 
-const App: React.FC = () => {
-  const [currentScreen, setCurrentScreen] = useState<ViewScreen>('onboarding');
-  
-  const [profile, setProfile] = useState<AuraProfile | null>(null);
-  const [chatHistory, setChatHistory] = useState<AuraChatMessage[]>([]);
-  const [auraState, setAuraState] = useState<AuraState>({
-    mood: 'neutral',
-    moodIntensity: 0.2
-  });
+const TwinIntroScreen: React.FC = () => {
+  const [yourAura] = useState<AuraProfile>(demoProfiles[0]);
+  const [selectedId, setSelectedId] = useState<string>(
+    demoProfiles[1]?.id ?? ""
+  );
+  const [result, setResult] = useState<TwinIntroResult | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleProfileCreated = (newProfile: AuraProfile) => {
-    setProfile(newProfile);
-    setCurrentScreen('neural');
-    setChatHistory([{
-      id: 'init',
-      from: 'aura',
-      text: `Hello ${newProfile.displayName}. I am your Aura. I've analyzed your profile, and I feel... ${newProfile.vibeWords[0] || 'connected'}. I'm here for you.`,
-      timestamp: Date.now()
-    }]);
-    setAuraState({ mood: 'calm', moodIntensity: 0.5 });
+  const potentialMatch = demoProfiles.find(p => p.id === selectedId) || null;
+
+  const handleRunIntro = async () => {
+    if (!potentialMatch) return;
+    setIsLoading(true);
+    try {
+      const res = await generateTwinIntro(yourAura, potentialMatch);
+      setResult(res);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const navItems: { id: ViewScreen; label: string }[] = [
-    { id: 'onboarding', label: 'Onboarding' },
-    { id: 'neural', label: 'Neural Link' },
-    { id: 'match', label: 'Match Test' }
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-slate-100 font-sans">
-      
-      {/* Top Navigation */}
-      <header className="border-b border-white/5 backdrop-blur-md bg-slate-950/40 sticky top-0 z-50">
-        <div className="mx-auto max-w-7xl px-4 py-4 lg:px-6">
-          <div className="flex items-center justify-between gap-4">
-            {/* Logo */}
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
-              <div className="text-[11px] font-mono tracking-[0.3em] uppercase text-slate-400">
-                Aura Twin
+    <div className="w-full h-full flex items-start justify-center">
+      <div className="w-full max-w-5xl rounded-3xl bg-slate-900/70 border border-white/10 backdrop-blur-2xl shadow-2xl p-6 lg:p-8 space-y-6">
+        
+        {/* Header */}
+        <header className="flex flex-col gap-2">
+          <div className="text-[11px] tracking-[0.3em] uppercase text-slate-500">
+            Twin Intro Lab
+          </div>
+          <h1 className="text-2xl lg:text-3xl font-semibold text-slate-50">
+            Let your Auras break the ice
+          </h1>
+          <p className="text-sm text-slate-300 max-w-xl">
+            Aura reads both profiles, imagines how your twins would talk, and hands you gentle, non-cringe first messages to start a real conversation.
+          </p>
+        </header>
+
+        {/* Selector */}
+        <div className="flex items-center gap-3 pt-2">
+          <span className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+            Potential match
+          </span>
+          <select
+            className="rounded-full bg-slate-950/70 border border-white/10 px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-slate-100/40"
+            value={selectedId}
+            onChange={e => setSelectedId(e.target.value)}
+          >
+            {demoProfiles
+              .filter(p => p.id !== yourAura.id)
+              .map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.displayName}
+                </option>
+              ))}
+          </select>
+        </div>
+
+        {/* Mini cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-4">
+          <MiniAuraCard profile={yourAura} label="Your Aura" />
+          {potentialMatch && <MiniAuraCard profile={potentialMatch} label="Their Aura" />}
+        </div>
+
+        {/* Button */}
+        <div className="pt-4">
+          <button
+            onClick={handleRunIntro}
+            disabled={!potentialMatch || isLoading}
+            className="rounded-full px-6 py-2 text-sm font-medium bg-slate-100 text-slate-900 hover:bg-white disabled:opacity-60 transition-colors"
+          >
+            {isLoading ? "Asking your twins…" : "Let the Auras introduce you"}
+          </button>
+        </div>
+
+        {/* Result */}
+        {result && (
+          <div className="mt-6 space-y-4">
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.25em] text-slate-500">
+                Overview
+              </div>
+              <h2 className="text-xl font-semibold text-slate-50 mt-1">
+                {result.title}
+              </h2>
+              <p className="mt-2 text-sm text-slate-200 max-w-2xl">
+                {result.introSummary}
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-slate-900/80 border border-white/10 p-4 space-y-2">
+              <div className="text-[11px] uppercase tracking-[0.25em] text-slate-500 mb-1">
+                How your Auras would talk
+              </div>
+              <div className="space-y-1 text-sm text-slate-100">
+                {result.auraToAuraScript.map((line, idx) => (
+                  <p key={idx} className="opacity-90">
+                    {line}
+                  </p>
+                ))}
               </div>
             </div>
 
-            {/* Navigation Pills */}
-            <nav className="flex gap-1.5 rounded-full bg-slate-900/70 border border-white/10 backdrop-blur-xl px-1.5 py-1.5">
-              {navItems.map(item => (
-                <button
-                  key={item.id}
-                  onClick={() => setCurrentScreen(item.id)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
-                    currentScreen === item.id
-                      ? 'bg-slate-100 text-slate-900 shadow-lg'
-                      : 'text-slate-300 hover:bg-slate-800/50'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-
-            {/* Status indicator */}
-            <div className="text-[11px] text-slate-500">
-              {profile ? `Connected as ${profile.displayName}` : 'Create Profile'}
+            <div className="rounded-2xl bg-slate-900/80 border border-white/10 p-4 space-y-3">
+              <div className="text-[11px] uppercase tracking-[0.25em] text-slate-500">
+                Gentle first messages you can send
+              </div>
+              <ul className="space-y-2 text-sm text-slate-100">
+                {result.suggestedOpeners.map((msg, idx) => (
+                  <li
+                    key={idx}
+                    className="rounded-2xl bg-slate-950/70 border border-white/5 px-3 py-2"
+                  >
+                    {msg}
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 py-6 lg:py-10 lg:px-6">
-        {/* Onboarding Screen */}
-        {currentScreen === 'onboarding' && (
-          <div className="rounded-3xl bg-slate-900/70 border border-white/10 backdrop-blur-2xl shadow-2xl p-4 lg:p-8 max-w-2xl mx-auto">
-            <OnboardingScreen onProfileCreated={handleProfileCreated} />
+            {result.safetyNotes && result.safetyNotes.length > 0 && (
+              <div className="rounded-2xl bg-slate-950/80 border border-white/10 p-4">
+                <div className="text-[11px] uppercase tracking-[0.25em] text-slate-500 mb-1">
+                  Things to keep in mind
+                </div>
+                <ul className="list-disc list-inside text-[12px] text-slate-300 space-y-1">
+                  {result.safetyNotes.map((note, idx) => (
+                    <li key={idx}>{note}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
-
-        {/* Neural Link Screen */}
-        {currentScreen === 'neural' && profile && (
-          <div className="h-[min(85vh,800px)]">
-            <NeuralLinkScreen
-              profile={profile}
-              history={chatHistory}
-              setHistory={setChatHistory}
-              auraState={auraState}
-              setAuraState={setAuraState}
-            />
-          </div>
-        )}
-
-        {/* Match Test Screen */}
-        {currentScreen === 'match' && profile && (
-          <div className="rounded-3xl bg-slate-900/70 border border-white/10 backdrop-blur-2xl shadow-2xl p-4 lg:p-8">
-            <MatchTestScreen userProfile={profile} />
-          </div>
-        )}
-
-        {/* Placeholder if no profile for neural/match */}
-        {(currentScreen === 'neural' || currentScreen === 'match') && !profile && (
-          <div className="rounded-3xl bg-slate-900/70 border border-white/10 backdrop-blur-2xl shadow-2xl p-8 text-center">
-            <p className="text-slate-400">Please complete onboarding first.</p>
-            <button
-              onClick={() => setCurrentScreen('onboarding')}
-              className="mt-4 rounded-full px-6 py-2 bg-slate-100 text-slate-900 text-sm font-medium hover:bg-white transition-colors"
-            >
-              Go to Onboarding
-            </button>
-          </div>
-        )}
-      </main>
+      </div>
     </div>
   );
 };
 
-export default App;
+export default TwinIntroScreen;

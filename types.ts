@@ -57,4 +57,12 @@ export interface AuraMatchResult {
   suggestedFirstMessage: string;
 }
 
+export interface TwinIntroResult {
+  title: string;
+  auraToAuraScript: string[];
+  introSummary: string;
+  suggestedOpeners: string[];
+  safetyNotes?: string[];
+}
+
 export type ScreenName = 'ONBOARDING' | 'NEURAL_LINK' | 'MATCH_TEST';

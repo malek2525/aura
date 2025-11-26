@@ -5,6 +5,7 @@ import {
   AuraState,
   MatchResult,
   AuraMatchResult,
+  TwinIntroResult,
 } from "../types";
 
 /* ------------------------------------------------------------------ */
@@ -57,6 +58,23 @@ const DEFAULT_MATCH_RESULT = (): MatchResult => ({
   suggestedOpeningForUserB: "Hey, I think we might have some things in common. Want to chat?",
   auraToUserSummaryA: "I got a neutral vibe from their profile, but that's okay—sometimes the best connections start quiet.",
   auraToUserSummaryB: "I got a neutral vibe from their profile, but that's okay—sometimes the best connections start quiet.",
+});
+
+const DEFAULT_TWIN_INTRO_RESULT = (): TwinIntroResult => ({
+  title: "Soft, cautious connection",
+  auraToAuraScript: [
+    `"I think they'd feel safer talking to you first," says your Aura.`,
+    `"And I think you'd actually get their weird jokes," replies the other Aura.`
+  ],
+  introSummary: "Your Auras sense there is a gentle fit here. If you both move slowly and stay honest, this could turn into a safe, deep connection.",
+  suggestedOpeners: [
+    "Hey, our twins think we'd vibe. Want to trade one thing we're secretly nerdy about?",
+    "Hi, I'm a bit shy but curious—what's something small that makes your day better?"
+  ],
+  safetyNotes: [
+    "Move at a slow pace.",
+    "Respect each other's boundaries around over-sharing."
+  ]
 });
 
 /* ------------------------------------------------------------------ */
@@ -131,10 +149,10 @@ Return ONLY a single JSON object with this exact shape:
 }
 
 Rules:
-- Use concise strings, no long paragraphs except in "summary".
-- Never invent extreme or dangerous traits.
-- If something is unclear, make a gentle, neutral assumption.
-- Do NOT include any extra keys or explanations outside the JSON.
+- The avatar URL is preserved if provided.
+- Green flags, red flags, boundaries should be meaningful and specific.
+- No neon, no generic vibe tags. Real words only.
+- Keep the summary to 1–2 sentences, real and human.
 `.trim();
 
 export interface OnboardingAnswers {
@@ -157,7 +175,7 @@ export interface OnboardingAnswers {
 
 export interface ProfileBuildResult {
   profile: AuraProfile;
-  isUsingFallback: boolean;
+  isUsingFallback?: boolean;
   message?: string;
 }
 
@@ -165,38 +183,18 @@ export async function buildAuraProfile(
   answers: OnboardingAnswers
 ): Promise<ProfileBuildResult> {
   const apiKey = (window as any).__GEMINI_API_KEY || "";
-  
+
   if (!apiKey) {
-    const errorMsg = "Missing Gemini API key. Please check your Replit secrets configuration.";
-    console.error(errorMsg);
-    throw new Error(errorMsg);
+    console.error("Missing Gemini API key");
+    return { profile: DEFAULT_FAKE_PROFILE(answers), isUsingFallback: true, message: "API key not configured. Using default profile." };
   }
 
   try {
     const ai = new GoogleGenAI({ apiKey });
 
     const userText = `
-ONBOARDING ANSWERS (raw):
-
-Display name: ${answers.displayName}
-Age range: ${answers.ageRange || "unknown"}
-Country: ${answers.country || "unknown"}
-
-Introversion level (1-10): ${answers.introversionLevel}
-Goals (in their own words): ${answers.goals}
-
-Topics they LIKE: ${answers.topicsLike}
-Topics they AVOID: ${answers.topicsAvoid}
-
-Vibe words (their own): ${answers.vibeWords}
-Preferred social speed: ${answers.socialSpeed}
-
-Hard boundaries (never): ${answers.hardBoundaries}
-Green flags: ${answers.greenFlags}
-Red flags: ${answers.redFlags}
-
-What they wish people understood: ${answers.whatShouldPeopleKnow}
-What makes them feel safe with someone new: ${answers.whatFeelsSafe}
+ONBOARDING_ANSWERS:
+${JSON.stringify(answers, null, 2)}
 `.trim();
 
     console.log("[buildAuraProfile] Starting profile construction for:", answers.displayName);
@@ -212,19 +210,18 @@ What makes them feel safe with someone new: ${answers.whatFeelsSafe}
       });
 
       const raw = res.text || "{}";
-      console.log("[buildAuraProfile] Received response from Gemini");
 
       try {
         const json = JSON.parse(raw);
 
         const profile: AuraProfile = {
           id: json.id || `user_${Date.now()}`,
-          displayName: json.displayName || answers.displayName || "User",
-          bio: "",
-          avatarUrl: "",
-          vibeTags: [],
-          ageRange: json.ageRange ?? null,
-          country: json.country ?? null,
+          displayName: json.displayName || answers.displayName,
+          bio: json.bio || "",
+          avatarUrl: answers.avatarUrl || json.avatarUrl || "",
+          vibeTags: json.vibeTags || [],
+          ageRange: json.ageRange ?? answers.ageRange ?? null,
+          country: json.country ?? answers.country ?? null,
           introversionLevel: json.introversionLevel ?? answers.introversionLevel,
           goals: json.goals || [],
           vibeWords: json.vibeWords || [],
@@ -234,43 +231,50 @@ What makes them feel safe with someone new: ${answers.whatFeelsSafe}
           hardBoundaries: json.hardBoundaries || [],
           greenFlags: json.greenFlags || [],
           redFlags: json.redFlags || [],
-          summary: json.summary || "Aura twin for this user.",
+          summary: json.summary || answers.whatShouldPeopleKnow || "A thoughtful introvert seeking genuine connection.",
         };
 
+        console.log("[buildAuraProfile] Received response from Gemini");
         console.log("[buildAuraProfile] Profile created successfully:", profile.displayName);
-        return { profile, isUsingFallback: false };
+
+        return { profile };
       } catch (parseError) {
-        console.error("[buildAuraProfile] Failed to parse Gemini response as JSON:", parseError, "Raw:", raw);
-        const fallbackProfile = DEFAULT_FAKE_PROFILE(answers);
+        console.error("[buildAuraProfile] Failed to parse profile response:", parseError);
         return {
-          profile: fallbackProfile,
+          profile: DEFAULT_FAKE_PROFILE(answers),
           isUsingFallback: true,
-          message: "Couldn't fully analyze your responses, but here's a neutral starting profile.",
+          message: "Could not parse profile. Using fallback."
         };
       }
     } catch (apiError) {
       if (isQuotaError(apiError)) {
         console.warn("[buildAuraProfile] Quota exhausted, using fallback profile");
-        const fallbackProfile = DEFAULT_FAKE_PROFILE(answers);
         return {
-          profile: fallbackProfile,
+          profile: DEFAULT_FAKE_PROFILE(answers),
           isUsingFallback: true,
-          message: "Aura couldn't fully analyze you right now due to API limits, so I'm starting with a neutral profile. You can still chat and test the UI.",
+          message: "API quota reached. Using a default profile for now. Try again later."
         };
       }
-      
-      const errorMsg = apiError instanceof Error ? apiError.message : "Unknown error from Gemini API";
-      console.error("[buildAuraProfile] Gemini API error:", errorMsg);
-      throw new Error(`Failed to build profile: ${errorMsg}`);
+
+      console.error("[buildAuraProfile] API error:", apiError);
+      return {
+        profile: DEFAULT_FAKE_PROFILE(answers),
+        isUsingFallback: true,
+        message: "Network error. Using fallback profile."
+      };
     }
   } catch (error) {
     console.error("[buildAuraProfile] Fatal error:", error);
-    throw error;
+    return {
+      profile: DEFAULT_FAKE_PROFILE(answers),
+      isUsingFallback: true,
+      message: "Unexpected error. Using fallback profile."
+    };
   }
 }
 
 /* ------------------------------------------------------------------ */
-/* 2. CHAT WITH AURA                                                  */
+/* 2. CHAT WITH AURA                                                   */
 /* ------------------------------------------------------------------ */
 
 const CHAT_SYSTEM_PROMPT = `
@@ -520,5 +524,117 @@ ${JSON.stringify(profileB, null, 2)}
   } catch (error) {
     console.error("[matchAuras] Fatal error:", error);
     return DEFAULT_MATCH_RESULT();
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 4. GENERATE TWIN INTRO (AURA INTRODUCTION SCRIPT)                   */
+/* ------------------------------------------------------------------ */
+
+const TWIN_INTRO_SYSTEM_PROMPT = `
+You are Aura, a specialist in social chemistry for introverts.
+
+You will be given TWO Aura Twin profiles. Each represents a real human.
+
+Your job:
+1. Imagine a short, gentle conversation between the two Auras (not the humans).
+2. Explain, in simple language, why these two humans might enjoy meeting.
+3. Suggest a few first messages the human 'you' could send to the other person.
+4. Mention any safety notes or boundaries that should be respected.
+
+You must return STRICT JSON only, matching the schema provided. Do not include commentary.
+
+Response schema:
+{
+  "title": "string",
+  "auraToAuraScript": "string[]",
+  "introSummary": "string",
+  "suggestedOpeners": "string[]",
+  "safetyNotes": "string[]"
+}
+
+Rules:
+- title: 1–2 words max, human-friendly
+- auraToAuraScript: 2–4 short lines of dialogue (not too long)
+- introSummary: 2–3 sentences max
+- suggestedOpeners: 2–4 non-cringe first messages the user can send
+- safetyNotes: optional list of boundaries or pace recommendations
+- No explicit sexual content.
+- Keep it warm, non-judgmental, supportive.
+`.trim();
+
+export async function generateTwinIntro(
+  yourAura: AuraProfile,
+  otherAura: AuraProfile
+): Promise<TwinIntroResult> {
+  const apiKey = (window as any).__GEMINI_API_KEY || "";
+
+  if (!apiKey) {
+    console.error("Missing Gemini API key for twin intro");
+    return DEFAULT_TWIN_INTRO_RESULT();
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+
+    const userText = `
+YOUR_AURA:
+${JSON.stringify(yourAura, null, 2)}
+
+OTHER_AURA:
+${JSON.stringify(otherAura, null, 2)}
+`.trim();
+
+    console.log("[generateTwinIntro] Generating intro for:", yourAura.displayName, "and", otherAura.displayName);
+
+    try {
+      const res = await ai.models.generateContent({
+        model: MATCH_MODEL,
+        config: {
+          systemInstruction: TWIN_INTRO_SYSTEM_PROMPT,
+          responseMimeType: "application/json",
+        },
+        contents: [{ role: "user", parts: [{ text: userText }] }],
+      });
+
+      const raw = res.text || "{}";
+
+      try {
+        const json = JSON.parse(raw);
+
+        const result: TwinIntroResult = {
+          title: json.title || "Warm connection",
+          auraToAuraScript: json.auraToAuraScript || [
+            "I think they'd appreciate your honesty.",
+            "And I think you'd get their dry humor."
+          ],
+          introSummary:
+            json.introSummary ||
+            "Your Auras sense genuine potential here. Take it slow, be yourself, and see where it goes.",
+          suggestedOpeners: json.suggestedOpeners || [
+            "Hey, our twins think we'd get along. What's something you're passionate about?",
+            "Hi! I'm a bit shy but I noticed we might have similar interests. Want to chat?"
+          ],
+          safetyNotes: json.safetyNotes || []
+        };
+
+        console.log("[generateTwinIntro] Twin intro generated successfully");
+        return result;
+      } catch (parseError) {
+        console.error("[generateTwinIntro] Failed to parse intro response:", parseError, "Raw:", raw);
+        return DEFAULT_TWIN_INTRO_RESULT();
+      }
+    } catch (apiError) {
+      if (isQuotaError(apiError)) {
+        console.warn("[generateTwinIntro] Quota exhausted, using fallback intro");
+        return DEFAULT_TWIN_INTRO_RESULT();
+      }
+
+      console.error("[generateTwinIntro] API error:", apiError);
+      return DEFAULT_TWIN_INTRO_RESULT();
+    }
+  } catch (error) {
+    console.error("[generateTwinIntro] Fatal error:", error);
+    return DEFAULT_TWIN_INTRO_RESULT();
   }
 }
