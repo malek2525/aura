@@ -28,10 +28,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ messages, onSendMessage, isLoad
 
   return (
     <div className="flex flex-col h-full rounded-2xl overflow-hidden">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto p-5 space-y-4 scrollbar-hide">
         {messages.length === 0 && (
-          <div className="h-full flex items-center justify-center text-slate-500 text-center italic">
-            Say hello to initialize the Neural Link...
+          <div className="h-full flex items-center justify-center text-slate-500 text-center text-sm">
+            <div>
+              <p className="text-base mb-2">👋 Say hello to initialize the Neural Link</p>
+              <p className="text-xs text-slate-600">Your Aura is ready to listen</p>
+            </div>
           </div>
         )}
         
@@ -41,10 +44,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ messages, onSendMessage, isLoad
             className={`flex w-full ${msg.from === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[80%] rounded-2xl p-4 ${
+              className={`max-w-xs rounded-2xl px-4 py-3 ${
                 msg.from === 'user'
-                  ? 'bg-violet-600/30 text-violet-100 border border-violet-500/20 rounded-br-md'
-                  : 'glass-panel-light text-slate-200 rounded-bl-md'
+                  ? 'glass-panel-light bg-gradient-to-br from-violet-600/25 to-violet-600/15 text-violet-50 border border-violet-500/20 rounded-br-none'
+                  : 'glass-panel-light text-slate-200 border border-slate-700/20 rounded-bl-none'
               }`}
             >
               <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
@@ -54,11 +57,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ messages, onSendMessage, isLoad
         
         {isLoading && (
           <div className="flex justify-start w-full">
-            <div className="glass-panel-light rounded-2xl p-4 rounded-bl-md">
-              <div className="flex space-x-2">
-                <div className="w-2 h-2 bg-violet-400/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-2 h-2 bg-violet-400/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-2 h-2 bg-violet-400/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            <div className="glass-panel-light rounded-2xl px-4 py-3 rounded-bl-none">
+              <div className="flex space-x-1.5">
+                <div className="w-2 h-2 bg-slate-400/60 rounded-full animate-pulse-soft" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-slate-400/60 rounded-full animate-pulse-soft" style={{ animationDelay: '200ms' }} />
+                <div className="w-2 h-2 bg-slate-400/60 rounded-full animate-pulse-soft" style={{ animationDelay: '400ms' }} />
               </div>
             </div>
           </div>
@@ -66,19 +69,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ messages, onSendMessage, isLoad
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-4 border-t border-white/5">
-        <form onSubmit={handleSubmit} className="flex gap-3">
+      <div className="p-4 border-t border-white/5 bg-slate-900/30 backdrop-blur-sm flex-shrink-0">
+        <form onSubmit={handleSubmit} className="flex gap-2">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your thought..."
-            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
+            placeholder="Your thought..."
+            className="flex-1 glass-panel-light px-4 py-2.5 text-sm text-white placeholder-slate-500 rounded-xl focus:outline-none focus:border-violet-500/50 transition-all"
           />
           <button
             type="submit"
             disabled={isLoading || !input.trim()}
-            className="bg-violet-600/40 hover:bg-violet-600/60 border border-violet-500/30 disabled:opacity-40 disabled:cursor-not-allowed text-violet-100 px-6 py-3 rounded-xl font-medium transition-all"
+            className="glass-panel hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-xl font-medium text-sm transition-all"
           >
             Send
           </button>

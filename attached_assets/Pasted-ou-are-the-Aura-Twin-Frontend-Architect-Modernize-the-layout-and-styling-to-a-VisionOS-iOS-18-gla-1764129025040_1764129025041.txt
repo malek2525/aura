@@ -1,0 +1,83 @@
+ou are the Aura Twin Frontend Architect. Modernize the layout and styling to a VisionOS / iOS 18 glass aesthetic (NO neon). Do not change any business logic, only layout + CSS.
+
+Global layout
+
+Update src/App.tsx to use:
+
+Full-page gradient background: deep slate → almost black.
+
+Centered content: max-width around 1200–1280px, with padding and vertical breathing space.
+
+A top bar with the app name “Aura Twin” on the left, small ‘status dot’ and ‘Profile’ on the right.
+
+The main area should be a two-column layout on desktop:
+
+Left column (~60% width): the ‘profile + orb’ section (Neural Link header).
+
+Right column (~40% width): a tall glass column with the Neural Link chat, Match Test, and Neural Profile stacked.
+
+On small screens: stack vertically in this order:
+
+Profile / orb stage
+
+Chat
+
+Match Test
+
+Neural Profile.
+
+Glassy design tokens
+
+Create or update a global CSS (for example src/index.css or equivalent) to define:
+
+Body background: linear-gradient(135deg, #020617, #020617, #020617) (very dark slate).
+
+A utility class for glass cards, e.g.:
+
+backdrop-filter: blur(24px);
+
+background: rgba(15,23,42,0.78); (slate-900 with opacity)
+
+border-radius: 24px;
+
+border: 1px solid rgba(255,255,255,0.08);
+
+box-shadow: 0 24px 80px rgba(0,0,0,0.55);
+
+Add classes for:
+
+Small pill buttons (rounded-full, subtle border, hover background: rgba(255,255,255,0.05)).
+
+Tiny label text: 11px, uppercase, tracking, color rgba(148,163,184,0.9).
+
+NeuralLinkScreen facelift
+
+Update src/screens/NeuralLinkScreen.tsx (or whichever file renders the “malek’s Aura” header + Neural Link / Match Test / Neural Profile tabs) to:
+
+Wrap the top orb + name + description in a large glass card using the glass class.
+
+Replace any harsh purple backgrounds with soft gradients, e.g. subtle purple/blue behind the glass, not as a solid bar.
+
+Ensure the tabs row (“Neural Link | Match Test | Neural Profile”) is a single rounded glass bar with pill buttons:
+
+Active tab: soft slate background, bold white text.
+
+Inactive tabs: faint slate, text in slate-200.
+
+Chat window polish
+
+Update the chat area component (ChatWindow, NeuralLinkChat or similar):
+
+The chat panel itself should be a glass card.
+
+User messages: right aligned, slightly brighter glass bubble.
+
+Aura messages: left aligned, darker glass bubble with a thin border.
+
+Remove any neon outlines or saturated purple backgrounds.
+
+No new libraries
+
+Re-use the existing styling approach in this repo (if Tailwind is configured, use Tailwind; otherwise stick to CSS). Do not introduce new dependencies.
+
+Make sure the app still compiles and behavior is unchanged — only visuals should be updated.”**
