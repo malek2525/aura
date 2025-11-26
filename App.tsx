@@ -3,29 +3,22 @@ import { AuraProfile, AuraChatMessage, AuraState, ScreenName } from './types';
 import OnboardingScreen from './screens/OnboardingScreen';
 import NeuralLinkScreen from './screens/NeuralLinkScreen';
 import MatchTestScreen from './screens/MatchTestScreen';
-import AuraAvatarCard from './components/AuraAvatarCard';
-import NeuralProfilePanel from './components/NeuralProfilePanel';
-import ChatWindow from './components/ChatWindow';
-import { chatWithAura } from './services/auraLLM';
 
-type TabName = 'neural' | 'match' | 'profile';
+type ViewScreen = 'onboarding' | 'neural' | 'match';
 
 const App: React.FC = () => {
-  const [screen, setScreen] = useState<ScreenName>('ONBOARDING');
-  const [activeTab, setActiveTab] = useState<TabName>('neural');
+  const [currentScreen, setCurrentScreen] = useState<ViewScreen>('onboarding');
   
   const [profile, setProfile] = useState<AuraProfile | null>(null);
-  
   const [chatHistory, setChatHistory] = useState<AuraChatMessage[]>([]);
   const [auraState, setAuraState] = useState<AuraState>({
     mood: 'neutral',
     moodIntensity: 0.2
   });
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleProfileCreated = (newProfile: AuraProfile) => {
     setProfile(newProfile);
-    setScreen('NEURAL_LINK');
+    setCurrentScreen('neural');
     setChatHistory([{
       id: 'init',
       from: 'aura',
@@ -35,141 +28,94 @@ const App: React.FC = () => {
     setAuraState({ mood: 'calm', moodIntensity: 0.5 });
   };
 
-  const handleSendMessage = async (text: string) => {
-    if (!profile) return;
-    
-    const userMsg: AuraChatMessage = {
-      id: Date.now().toString(),
-      from: 'user',
-      text: text,
-      timestamp: Date.now()
-    };
-    
-    const newHistory = [...chatHistory, userMsg];
-    setChatHistory(newHistory);
-    setIsLoading(true);
-
-    const { replyText, auraState: newAuraState } = await chatWithAura(profile, newHistory, text);
-
-    setAuraState(newAuraState);
-
-    const auraMsg: AuraChatMessage = {
-      id: (Date.now() + 1).toString(),
-      from: 'aura',
-      text: replyText,
-      timestamp: Date.now()
-    };
-
-    setChatHistory(prev => [...prev, auraMsg]);
-    setIsLoading(false);
-  };
-
-  const handleProfileChange = (updatedProfile: AuraProfile) => {
-    setProfile(updatedProfile);
-  };
-
-  if (screen === 'ONBOARDING') {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-950 to-black">
-        <OnboardingScreen onProfileCreated={handleProfileCreated} />
-      </div>
-    );
-  }
-
-  const tabs: { id: TabName; label: string }[] = [
+  const navItems: { id: ViewScreen; label: string }[] = [
+    { id: 'onboarding', label: 'Onboarding' },
     { id: 'neural', label: 'Neural Link' },
-    { id: 'match', label: 'Match Test' },
-    { id: 'profile', label: 'Neural Profile' }
+    { id: 'match', label: 'Match Test' }
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-slate-100 font-sans">
-      {/* Top bar */}
-      <div className="h-16 border-b border-white/5 backdrop-blur-md bg-slate-950/40 flex items-center justify-between px-6 lg:px-8">
-        <h1 className="text-xl font-semibold bg-gradient-to-r from-violet-300 to-blue-300 bg-clip-text text-transparent">
-          Aura Twin
-        </h1>
-        <div className="flex items-center gap-4">
-          <div className="w-3 h-3 rounded-full bg-emerald-500/70 shadow-lg shadow-emerald-500/30" />
-          <button className="text-sm text-slate-400 hover:text-slate-200 pill-button px-4 py-2">
-            Profile
-          </button>
-        </div>
-      </div>
+      
+      {/* Top Navigation */}
+      <header className="border-b border-white/5 backdrop-blur-md bg-slate-950/40 sticky top-0 z-50">
+        <div className="mx-auto max-w-7xl px-4 py-4 lg:px-6">
+          <div className="flex items-center justify-between gap-4">
+            {/* Logo */}
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
+              <div className="text-[11px] font-mono tracking-[0.3em] uppercase text-slate-400">
+                Aura Twin
+              </div>
+            </div>
 
-      {/* Main content */}
-      <div className="flex-1 h-[calc(100vh-4rem)] flex flex-col lg:flex-row max-w-7xl mx-auto p-6 lg:p-8 gap-6">
-        
-        {/* Left column: Avatar (60% on desktop) */}
-        <div className="w-full lg:w-[60%] h-[40vh] lg:h-full flex flex-col gap-6">
-          <div className="flex-1 glass-panel rounded-3xl p-8 flex flex-col items-center justify-center relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-900/5 via-transparent to-blue-900/5" />
-            
-            <div className="relative z-10 w-full h-full flex flex-col items-center justify-center">
-              {profile && (
-                <>
-                  <AuraAvatarCard 
-                    profile={profile} 
-                    auraState={auraState}
-                  />
-                  <div className="mt-6 text-center">
-                    <p className="text-sm text-slate-300 font-medium">{profile.displayName}</p>
-                    <p className="text-xs text-slate-500 mt-1">{profile.summary}</p>
-                  </div>
-                </>
-              )}
+            {/* Navigation Pills */}
+            <nav className="flex gap-1.5 rounded-full bg-slate-900/70 border border-white/10 backdrop-blur-xl px-1.5 py-1.5">
+              {navItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => setCurrentScreen(item.id)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                    currentScreen === item.id
+                      ? 'bg-slate-100 text-slate-900 shadow-lg'
+                      : 'text-slate-300 hover:bg-slate-800/50'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+
+            {/* Status indicator */}
+            <div className="text-[11px] text-slate-500">
+              {profile ? `Connected as ${profile.displayName}` : 'Create Profile'}
             </div>
           </div>
         </div>
+      </header>
 
-        {/* Right column: Tabs & Content (40% on desktop) */}
-        <div className="w-full lg:w-[40%] h-[55vh] lg:h-full flex flex-col gap-3">
-          {/* Tab bar */}
-          <div className="glass-panel rounded-2xl p-1 flex gap-1 flex-shrink-0">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-medium transition-all duration-300 ${
-                  activeTab === tab.id
-                    ? 'bg-white/10 text-slate-100 shadow-md'
-                    : 'text-slate-400 hover:text-slate-300 hover:bg-white/5'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+      {/* Main Content */}
+      <main className="mx-auto max-w-7xl px-4 py-6 lg:py-10 lg:px-6">
+        {/* Onboarding Screen */}
+        {currentScreen === 'onboarding' && (
+          <div className="rounded-3xl bg-slate-900/70 border border-white/10 backdrop-blur-2xl shadow-2xl p-4 lg:p-8 max-w-2xl mx-auto">
+            <OnboardingScreen onProfileCreated={handleProfileCreated} />
           </div>
+        )}
 
-          {/* Content panel */}
-          <div className="flex-1 glass-panel rounded-3xl overflow-hidden flex flex-col">
-            {activeTab === 'neural' && profile && (
-              <div className="h-full flex flex-col p-4 lg:p-6">
-                <ChatWindow
-                  messages={chatHistory}
-                  onSendMessage={handleSendMessage}
-                  isLoading={isLoading}
-                />
-              </div>
-            )}
-
-            {activeTab === 'match' && profile && (
-              <div className="h-full overflow-y-auto p-4 lg:p-6 scrollbar-hide">
-                <MatchTestScreen userProfile={profile} />
-              </div>
-            )}
-
-            {activeTab === 'profile' && profile && (
-              <div className="h-full overflow-y-auto p-4 lg:p-6 scrollbar-hide">
-                <NeuralProfilePanel 
-                  profile={profile} 
-                  onChange={handleProfileChange}
-                />
-              </div>
-            )}
+        {/* Neural Link Screen */}
+        {currentScreen === 'neural' && profile && (
+          <div className="h-[min(85vh,800px)]">
+            <NeuralLinkScreen
+              profile={profile}
+              history={chatHistory}
+              setHistory={setChatHistory}
+              auraState={auraState}
+              setAuraState={setAuraState}
+            />
           </div>
-        </div>
-      </div>
+        )}
+
+        {/* Match Test Screen */}
+        {currentScreen === 'match' && profile && (
+          <div className="rounded-3xl bg-slate-900/70 border border-white/10 backdrop-blur-2xl shadow-2xl p-4 lg:p-8">
+            <MatchTestScreen userProfile={profile} />
+          </div>
+        )}
+
+        {/* Placeholder if no profile for neural/match */}
+        {(currentScreen === 'neural' || currentScreen === 'match') && !profile && (
+          <div className="rounded-3xl bg-slate-900/70 border border-white/10 backdrop-blur-2xl shadow-2xl p-8 text-center">
+            <p className="text-slate-400">Please complete onboarding first.</p>
+            <button
+              onClick={() => setCurrentScreen('onboarding')}
+              className="mt-4 rounded-full px-6 py-2 bg-slate-100 text-slate-900 text-sm font-medium hover:bg-white transition-colors"
+            >
+              Go to Onboarding
+            </button>
+          </div>
+        )}
+      </main>
     </div>
   );
 };
