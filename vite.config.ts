@@ -10,8 +10,13 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
         strictPort: true,
         hmr: {
-          clientPort: 5000,
+          clientPort: 443,
         }
+      },
+      preview: {
+        port: 5000,
+        host: '0.0.0.0',
+        strictPort: true,
       },
       plugins: [react()],
       define: {
