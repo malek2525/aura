@@ -12,25 +12,33 @@ Aura Twin is an AI-powered digital companion app for introverts, featuring a per
 
 ## Recent Changes (November 28, 2025)
 
-### 2D Living Character Avatar (Visual Upgrade)
-- **Upgraded AuraAvatar.tsx**: Transformed gradient orb into personified 2D character
-  - Bust/shoulders portrait silhouette inside the circular glass frame
-  - Soft, elegant design inspired by xAI's Annie - not anime, not childish
-  - Gender-neutral human figure with subtle hair wisps
-- **Blinking Eyes**: Natural eye blink animation every ~8 seconds
-  - Mood-reactive eye color that changes with emotional state
-  - Subtle pupil highlights and depth
-- **Mood-Reactive Skin Tones**: Character appearance shifts with mood
-  - happy → soft rose/pink tones
-  - calm → blue/violet tones
-  - anxious → amber/orange tones
-  - sad → blue/indigo tones
-  - neutral → slate/blue tones
+### Aura v2 - Holographic Twin Avatar (Visual Upgrade)
+- **Upgraded AuraAvatar.tsx**: Premium holographic character inside glass shell
+  - Multi-layered design with depth: hair, face, neck, shoulders
+  - Soft jawline, subtle nose + lips, calm small eyes
+  - Clean hair silhouette (not detailed strands)
+  - Gender-soft, elegant aesthetic inspired by Annie from xAI
+- **Glass Shell Effects**:
+  - Circular glass frame with specular highlight
+  - Light sweep animation across the shell (8s cycle)
+  - Inner rim glow that responds to mood
+  - Top highlight and bottom shadow for depth
+- **Blinking Eyes**: Natural blink every ~7 seconds
+  - Eyelids close briefly (animate-aura-blink)
+  - Small, calm eyes - not cartoon-style
+- **Mood-Reactive Styling**: Character appearance shifts with mood
+  - happy → warm rose/peach gradient, brighter cheeks
+  - calm → cool blue/violet gradient, relaxed glow
+  - anxious → muted amber/violet, dimmer overall
+  - sad → deep blue/indigo, softer lighting
+  - neutral → balanced slate/blue gradient
+- **moodIntensity Support**: Higher intensity = slightly stronger glow/brightness
 - **Animations in index.css**:
-  - `animate-aura-blink`: Eyelid blink animation (8s cycle)
-  - Existing breathe/float animations preserved
-- **Props Preserved**: All existing props (profile, auraState, size, showName, showVibes, showMood) work unchanged
-- **Avatar URL Fallback**: If user provides avatarUrl, shows their image; otherwise shows the character
+  - `@keyframes lightSweep`: Glass shell light sweep effect
+  - `animate-aura-blink`: Eyelid blink animation (7s cycle)
+  - `.animate-aura-living`: Combined float + breathe
+- **Props Preserved**: All existing props work unchanged
+- **Avatar URL Fallback**: If user provides avatarUrl, shows their image; otherwise shows holographic character
 
 ### Reply Lab Feature (New)
 - **New Screen**: `screens/ReplyLabScreen.tsx` - Draft replies in three styles

@@ -218,19 +218,41 @@ body {
 
 /* Eye blinking animation - subtle, natural blink every 7-9s */
 @keyframes aura-blink {
-  0%, 94%, 100% {
+  0%, 93%, 100% {
     opacity: 0;
     transform: scaleY(0);
   }
-  95%, 99% {
+  94%, 98% {
     opacity: 1;
     transform: scaleY(1);
   }
 }
 
 .animate-aura-blink {
-  animation: aura-blink 8s ease-in-out infinite;
+  animation: aura-blink 7s ease-in-out infinite;
   transform-origin: center;
+}
+
+/* Light sweep effect across glass shell */
+@keyframes lightSweep {
+  0%, 100% {
+    transform: translateX(-100%) rotate(15deg);
+    opacity: 0;
+  }
+  45%, 55% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(100%) rotate(15deg);
+    opacity: 1;
+  }
+  51% {
+    opacity: 0;
+  }
+}
+
+.animate-light-sweep {
+  animation: lightSweep 8s ease-in-out infinite;
 }
 
 /* Mood-specific glow pulses */

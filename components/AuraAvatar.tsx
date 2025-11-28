@@ -12,162 +12,239 @@ interface AuraAvatarProps {
   showMood?: boolean;
 }
 
-const getMoodGradient = (mood: string): { gradient: string; glow: string; shadow: string; skinTone: string; eyeColor: string } => {
+const getMoodStyle = (mood: string, intensity: number): {
+  gradient: string;
+  glow: string;
+  shadow: string;
+  skinBase: string;
+  skinHighlight: string;
+  hairColor: string;
+  lipColor: string;
+  cheekColor: string;
+  ambientColor: string;
+  glowOpacity: number;
+} => {
+  const baseOpacity = 0.6 + (intensity * 0.25);
+  const glowOpacity = 0.15 + (intensity * 0.15);
+
   switch (mood.toLowerCase()) {
     case 'happy':
     case 'flirty':
     case 'excited':
       return {
-        gradient: 'from-pink-400/70 via-rose-300/60 to-amber-300/50',
-        glow: 'from-pink-500/40 via-rose-400/30 to-amber-400/20',
-        shadow: '0 0 80px 30px rgba(244, 114, 182, 0.25), 0 0 120px 60px rgba(251, 146, 60, 0.15)',
-        skinTone: 'from-rose-200/90 via-pink-100/80 to-amber-100/70',
-        eyeColor: '#ec4899'
+        gradient: 'from-rose-400/60 via-pink-300/50 to-amber-200/40',
+        glow: 'from-rose-400/30 via-pink-300/20 to-amber-200/15',
+        shadow: `0 0 60px 20px rgba(244, 114, 182, ${glowOpacity})`,
+        skinBase: `rgba(255, 241, 235, ${baseOpacity})`,
+        skinHighlight: 'rgba(255, 250, 248, 0.9)',
+        hairColor: 'rgba(71, 85, 105, 0.85)',
+        lipColor: 'rgba(244, 114, 182, 0.5)',
+        cheekColor: 'rgba(251, 207, 232, 0.35)',
+        ambientColor: 'rgba(244, 114, 182, 0.15)',
+        glowOpacity
       };
     case 'calm':
     case 'peaceful':
       return {
-        gradient: 'from-blue-400/70 via-purple-400/60 to-indigo-400/50',
-        glow: 'from-blue-500/40 via-purple-400/30 to-indigo-400/20',
-        shadow: '0 0 80px 30px rgba(96, 165, 250, 0.25), 0 0 120px 60px rgba(167, 139, 250, 0.15)',
-        skinTone: 'from-blue-100/90 via-indigo-100/80 to-purple-100/70',
-        eyeColor: '#8b5cf6'
+        gradient: 'from-blue-400/60 via-violet-400/50 to-indigo-300/40',
+        glow: 'from-blue-400/25 via-violet-400/20 to-indigo-300/15',
+        shadow: `0 0 60px 20px rgba(139, 92, 246, ${glowOpacity})`,
+        skinBase: `rgba(241, 245, 255, ${baseOpacity})`,
+        skinHighlight: 'rgba(250, 251, 255, 0.9)',
+        hairColor: 'rgba(71, 85, 105, 0.8)',
+        lipColor: 'rgba(167, 139, 250, 0.4)',
+        cheekColor: 'rgba(196, 181, 253, 0.25)',
+        ambientColor: 'rgba(139, 92, 246, 0.12)',
+        glowOpacity
       };
     case 'anxious':
     case 'nervous':
       return {
-        gradient: 'from-amber-400/70 via-orange-400/60 to-rose-400/50',
-        glow: 'from-amber-500/35 via-orange-400/25 to-rose-400/20',
-        shadow: '0 0 80px 30px rgba(251, 191, 36, 0.2), 0 0 120px 60px rgba(251, 146, 60, 0.12)',
-        skinTone: 'from-amber-100/90 via-orange-100/80 to-rose-100/70',
-        eyeColor: '#f59e0b'
+        gradient: 'from-amber-400/50 via-orange-300/40 to-violet-300/35',
+        glow: 'from-amber-400/20 via-orange-300/15 to-violet-300/12',
+        shadow: `0 0 50px 15px rgba(251, 191, 36, ${glowOpacity * 0.7})`,
+        skinBase: `rgba(255, 251, 235, ${baseOpacity * 0.85})`,
+        skinHighlight: 'rgba(255, 253, 248, 0.8)',
+        hairColor: 'rgba(100, 116, 139, 0.75)',
+        lipColor: 'rgba(251, 146, 60, 0.35)',
+        cheekColor: 'rgba(254, 215, 170, 0.2)',
+        ambientColor: 'rgba(251, 191, 36, 0.1)',
+        glowOpacity: glowOpacity * 0.7
       };
     case 'sad':
     case 'melancholy':
       return {
-        gradient: 'from-blue-500/70 via-indigo-500/60 to-slate-500/50',
-        glow: 'from-blue-600/40 via-indigo-500/30 to-slate-500/20',
-        shadow: '0 0 80px 30px rgba(99, 102, 241, 0.25), 0 0 120px 60px rgba(100, 116, 139, 0.15)',
-        skinTone: 'from-slate-200/90 via-blue-100/80 to-indigo-100/70',
-        eyeColor: '#6366f1'
+        gradient: 'from-blue-500/55 via-indigo-500/45 to-slate-400/35',
+        glow: 'from-blue-500/20 via-indigo-500/15 to-slate-400/10',
+        shadow: `0 0 50px 15px rgba(99, 102, 241, ${glowOpacity * 0.6})`,
+        skinBase: `rgba(235, 240, 255, ${baseOpacity * 0.75})`,
+        skinHighlight: 'rgba(245, 248, 255, 0.75)',
+        hairColor: 'rgba(71, 85, 105, 0.7)',
+        lipColor: 'rgba(129, 140, 248, 0.3)',
+        cheekColor: 'rgba(165, 180, 252, 0.15)',
+        ambientColor: 'rgba(99, 102, 241, 0.08)',
+        glowOpacity: glowOpacity * 0.6
       };
     case 'focused':
     case 'thinking':
       return {
-        gradient: 'from-cyan-400/70 via-sky-400/60 to-blue-400/50',
-        glow: 'from-cyan-500/40 via-sky-400/30 to-blue-400/20',
-        shadow: '0 0 80px 30px rgba(34, 211, 238, 0.25), 0 0 120px 60px rgba(56, 189, 248, 0.15)',
-        skinTone: 'from-cyan-100/90 via-sky-100/80 to-blue-100/70',
-        eyeColor: '#0ea5e9'
+        gradient: 'from-cyan-400/55 via-sky-400/45 to-blue-400/40',
+        glow: 'from-cyan-400/25 via-sky-400/20 to-blue-400/15',
+        shadow: `0 0 60px 20px rgba(34, 211, 238, ${glowOpacity})`,
+        skinBase: `rgba(240, 253, 255, ${baseOpacity})`,
+        skinHighlight: 'rgba(250, 254, 255, 0.9)',
+        hairColor: 'rgba(71, 85, 105, 0.8)',
+        lipColor: 'rgba(56, 189, 248, 0.4)',
+        cheekColor: 'rgba(186, 230, 253, 0.25)',
+        ambientColor: 'rgba(34, 211, 238, 0.12)',
+        glowOpacity
       };
     case 'curious':
       return {
-        gradient: 'from-fuchsia-400/70 via-pink-400/60 to-violet-400/50',
-        glow: 'from-fuchsia-500/40 via-pink-400/30 to-violet-400/20',
-        shadow: '0 0 80px 30px rgba(217, 70, 239, 0.25), 0 0 120px 60px rgba(167, 139, 250, 0.15)',
-        skinTone: 'from-fuchsia-100/90 via-pink-100/80 to-violet-100/70',
-        eyeColor: '#d946ef'
+        gradient: 'from-fuchsia-400/55 via-pink-400/45 to-violet-400/40',
+        glow: 'from-fuchsia-400/25 via-pink-400/20 to-violet-400/15',
+        shadow: `0 0 60px 20px rgba(217, 70, 239, ${glowOpacity})`,
+        skinBase: `rgba(253, 244, 255, ${baseOpacity})`,
+        skinHighlight: 'rgba(254, 250, 255, 0.9)',
+        hairColor: 'rgba(71, 85, 105, 0.8)',
+        lipColor: 'rgba(232, 121, 249, 0.45)',
+        cheekColor: 'rgba(245, 208, 254, 0.28)',
+        ambientColor: 'rgba(217, 70, 239, 0.12)',
+        glowOpacity
       };
     case 'neutral':
     default:
       return {
-        gradient: 'from-slate-400/70 via-blue-400/60 to-indigo-400/50',
-        glow: 'from-slate-500/35 via-blue-400/25 to-indigo-400/20',
-        shadow: '0 0 80px 30px rgba(148, 163, 184, 0.2), 0 0 120px 60px rgba(99, 102, 241, 0.1)',
-        skinTone: 'from-slate-100/90 via-blue-50/80 to-indigo-50/70',
-        eyeColor: '#64748b'
+        gradient: 'from-slate-400/55 via-blue-400/45 to-indigo-400/40',
+        glow: 'from-slate-400/20 via-blue-400/15 to-indigo-400/12',
+        shadow: `0 0 50px 15px rgba(148, 163, 184, ${glowOpacity * 0.8})`,
+        skinBase: `rgba(248, 250, 255, ${baseOpacity})`,
+        skinHighlight: 'rgba(252, 253, 255, 0.85)',
+        hairColor: 'rgba(71, 85, 105, 0.75)',
+        lipColor: 'rgba(148, 163, 184, 0.35)',
+        cheekColor: 'rgba(203, 213, 225, 0.2)',
+        ambientColor: 'rgba(148, 163, 184, 0.1)',
+        glowOpacity: glowOpacity * 0.8
       };
   }
 };
 
-const sizeConfig: Record<AvatarSize, { 
-  container: string; 
-  orb: string; 
-  glow: string; 
-  inner: string;
-  face: string;
-  eye: string;
-  eyeGap: string;
-  shoulder: string;
+const sizeConfig: Record<AvatarSize, {
+  container: number;
+  shell: string;
+  glowInset: string;
+  face: number;
+  eyeWidth: number;
+  eyeHeight: number;
+  eyeGap: number;
+  noseWidth: number;
+  lipWidth: number;
+  shoulderWidth: number;
 }> = {
-  sm: { 
-    container: 'h-24 w-24',
-    orb: 'h-20 w-20', 
-    glow: '-inset-6', 
-    inner: 'text-3xl',
-    face: 'h-12 w-12',
-    eye: 'w-1.5 h-2',
-    eyeGap: 'gap-3',
-    shoulder: 'h-6 w-16'
+  sm: {
+    container: 96,
+    shell: 'h-20 w-20',
+    glowInset: '-inset-4',
+    face: 48,
+    eyeWidth: 4,
+    eyeHeight: 2,
+    eyeGap: 12,
+    noseWidth: 3,
+    lipWidth: 10,
+    shoulderWidth: 56
   },
-  md: { 
-    container: 'h-36 w-36',
-    orb: 'h-32 w-32', 
-    glow: '-inset-8', 
-    inner: 'text-4xl',
-    face: 'h-18 w-18',
-    eye: 'w-2 h-3',
-    eyeGap: 'gap-4',
-    shoulder: 'h-8 w-24'
+  md: {
+    container: 144,
+    shell: 'h-32 w-32',
+    glowInset: '-inset-6',
+    face: 72,
+    eyeWidth: 5,
+    eyeHeight: 2.5,
+    eyeGap: 16,
+    noseWidth: 4,
+    lipWidth: 14,
+    shoulderWidth: 84
   },
-  lg: { 
-    container: 'h-52 w-52 lg:h-60 lg:w-60',
-    orb: 'h-48 w-48 lg:h-56 lg:w-56', 
-    glow: '-inset-12', 
-    inner: 'text-6xl',
-    face: 'h-28 w-28 lg:h-32 lg:w-32',
-    eye: 'w-2.5 h-4',
-    eyeGap: 'gap-6',
-    shoulder: 'h-10 w-36 lg:h-12 lg:w-40'
+  lg: {
+    container: 224,
+    shell: 'h-48 w-48 lg:h-56 lg:w-56',
+    glowInset: '-inset-10',
+    face: 110,
+    eyeWidth: 7,
+    eyeHeight: 3.5,
+    eyeGap: 24,
+    noseWidth: 5,
+    lipWidth: 20,
+    shoulderWidth: 130
   },
-  xl: { 
-    container: 'h-60 w-60 lg:h-72 lg:w-72',
-    orb: 'h-56 w-56 lg:h-64 lg:w-64', 
-    glow: '-inset-16', 
-    inner: 'text-7xl',
-    face: 'h-32 w-32 lg:h-40 lg:w-40',
-    eye: 'w-3 h-5',
-    eyeGap: 'gap-8',
-    shoulder: 'h-12 w-44 lg:h-14 lg:w-52'
+  xl: {
+    container: 280,
+    shell: 'h-56 w-56 lg:h-64 lg:w-64',
+    glowInset: '-inset-14',
+    face: 140,
+    eyeWidth: 9,
+    eyeHeight: 4.5,
+    eyeGap: 32,
+    noseWidth: 6,
+    lipWidth: 26,
+    shoulderWidth: 170
   }
 };
 
 const AuraAvatar: React.FC<AuraAvatarProps> = ({
   profile,
   auraState,
-  size = 'lg' as AvatarSize,
+  size = 'lg',
   showName = true,
   showVibes = true,
   showMood = false
 }) => {
-  const { gradient, glow, shadow, skinTone, eyeColor } = getMoodGradient(auraState.mood);
-  const sizeClasses = sizeConfig[size];
-  const intensityScale = 1 + (auraState.moodIntensity * 0.06);
+  const moodStyle = getMoodStyle(auraState.mood, auraState.moodIntensity);
+  const dims = sizeConfig[size];
+  const intensityScale = 1 + (auraState.moodIntensity * 0.04);
 
   return (
     <div className="flex flex-col items-center justify-center gap-6">
-      
-      {/* Floating + Breathing Avatar Container */}
-      <div className="relative animate-aura-float">
-        
+
+      {/* Main Floating Container */}
+      <div className="relative animate-aura-living">
+
         {/* Outer Ambient Glow */}
         <div
-          className={`absolute ${sizeClasses.glow} rounded-full bg-gradient-radial ${glow} blur-3xl animate-aura-breathe pointer-events-none`}
-          style={{ boxShadow: shadow }}
+          className={`absolute ${dims.glowInset} rounded-full bg-gradient-radial ${moodStyle.glow} blur-3xl pointer-events-none`}
+          style={{ boxShadow: moodStyle.shadow }}
         />
-        
-        {/* Main Circular Frame with Character */}
+
+        {/* Glass Shell */}
         <div
-          className={`relative ${sizeClasses.orb} rounded-full bg-gradient-to-br ${gradient} p-[3px] shadow-2xl animate-aura-breathe`}
-          style={{ 
+          className={`relative ${dims.shell} rounded-full p-[2px] shadow-2xl`}
+          style={{
+            background: `linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.1) 100%)`,
             transform: `scale(${intensityScale})`,
-            transition: 'transform 1.5s ease-in-out'
+            transition: 'transform 1.2s ease-in-out'
           }}
         >
           {/* Inner Glass Surface */}
-          <div className="h-full w-full rounded-full bg-slate-900/40 backdrop-blur-xl border border-white/20 flex items-center justify-center overflow-hidden relative">
-            
-            {/* If user has avatar URL, show image; otherwise show character */}
+          <div
+            className="h-full w-full rounded-full overflow-hidden relative"
+            style={{
+              background: `radial-gradient(ellipse at 30% 20%, ${moodStyle.ambientColor}, transparent 60%), 
+                           linear-gradient(180deg, rgba(15,23,42,0.5) 0%, rgba(15,23,42,0.7) 100%)`,
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255,255,255,0.12)'
+            }}
+          >
+
+            {/* Light Sweep Effect */}
+            <div
+              className="absolute inset-0 rounded-full pointer-events-none overflow-hidden"
+              style={{
+                background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.08) 45%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.08) 55%, transparent 60%)',
+                animation: 'lightSweep 8s ease-in-out infinite'
+              }}
+            />
+
+            {/* Avatar Image Fallback */}
             {profile.avatarUrl ? (
               <img
                 src={profile.avatarUrl}
@@ -175,109 +252,292 @@ const AuraAvatar: React.FC<AuraAvatarProps> = ({
                 className="h-full w-full object-cover rounded-full"
               />
             ) : (
-              /* 2D Character Silhouette */
-              <div className="relative flex flex-col items-center justify-end h-full w-full pt-4 pb-0 overflow-hidden">
-                
-                {/* Ambient Background Gradient */}
-                <div className={`absolute inset-0 bg-gradient-to-b ${skinTone} opacity-30 rounded-full`} />
-                
-                {/* Character Body Container */}
-                <div className="relative flex flex-col items-center z-10">
-                  
-                  {/* Head */}
-                  <div className={`${sizeClasses.face} rounded-full bg-gradient-to-br from-slate-200/95 via-slate-100/90 to-slate-50/85 relative shadow-lg`}>
-                    
-                    {/* Face inner shadow for depth */}
-                    <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/30 via-transparent to-slate-300/20" />
-                    
-                    {/* Subtle cheek blush */}
-                    <div className="absolute inset-x-0 top-1/2 flex justify-between px-[12%]">
-                      <div className="w-[18%] h-[18%] rounded-full bg-rose-300/25 blur-[2px]" />
-                      <div className="w-[18%] h-[18%] rounded-full bg-rose-300/25 blur-[2px]" />
-                    </div>
-                    
+              /* Holographic Character */
+              <div className="absolute inset-0 flex flex-col items-center justify-end overflow-hidden">
+
+                {/* Ambient Glow Behind Head */}
+                <div
+                  className="absolute rounded-full blur-2xl animate-aura-breathe"
+                  style={{
+                    width: dims.face * 1.3,
+                    height: dims.face * 1.3,
+                    top: '8%',
+                    background: `radial-gradient(circle, ${moodStyle.ambientColor} 0%, transparent 70%)`
+                  }}
+                />
+
+                {/* Character Layers */}
+                <div className="relative z-10 flex flex-col items-center" style={{ marginBottom: '-5%' }}>
+
+                  {/* Hair Back Layer */}
+                  <div
+                    className="absolute rounded-[50%_50%_45%_45%]"
+                    style={{
+                      width: dims.face * 1.15,
+                      height: dims.face * 0.65,
+                      top: dims.face * -0.12,
+                      background: `linear-gradient(180deg, ${moodStyle.hairColor} 0%, rgba(51,65,85,0.6) 100%)`,
+                      filter: 'blur(0.5px)'
+                    }}
+                  />
+
+                  {/* Face */}
+                  <div
+                    className="relative rounded-[48%_48%_44%_44%] overflow-visible"
+                    style={{
+                      width: dims.face,
+                      height: dims.face * 1.1,
+                      background: `linear-gradient(180deg, ${moodStyle.skinHighlight} 0%, ${moodStyle.skinBase} 60%, rgba(200,210,230,0.5) 100%)`,
+                      boxShadow: `inset 0 ${dims.face * 0.02}px ${dims.face * 0.08}px rgba(255,255,255,0.3), 
+                                  inset 0 -${dims.face * 0.05}px ${dims.face * 0.1}px rgba(0,0,0,0.1)`
+                    }}
+                  >
+
+                    {/* Forehead Highlight */}
+                    <div
+                      className="absolute rounded-full"
+                      style={{
+                        width: '50%',
+                        height: '20%',
+                        top: '8%',
+                        left: '25%',
+                        background: 'linear-gradient(180deg, rgba(255,255,255,0.4) 0%, transparent 100%)',
+                        filter: 'blur(2px)'
+                      }}
+                    />
+
+                    {/* Hair Fringe */}
+                    <div
+                      className="absolute"
+                      style={{
+                        width: '110%',
+                        height: '28%',
+                        top: '-8%',
+                        left: '-5%',
+                        background: `linear-gradient(180deg, ${moodStyle.hairColor} 0%, ${moodStyle.hairColor} 60%, transparent 100%)`,
+                        borderRadius: '50% 50% 40% 40%',
+                        clipPath: 'ellipse(55% 100% at 50% 0%)'
+                      }}
+                    />
+
+                    {/* Side Hair Left */}
+                    <div
+                      className="absolute"
+                      style={{
+                        width: '25%',
+                        height: '55%',
+                        top: '5%',
+                        left: '-8%',
+                        background: `linear-gradient(90deg, transparent 0%, ${moodStyle.hairColor} 40%, ${moodStyle.hairColor} 100%)`,
+                        borderRadius: '40% 20% 30% 50%',
+                        filter: 'blur(0.3px)'
+                      }}
+                    />
+
+                    {/* Side Hair Right */}
+                    <div
+                      className="absolute"
+                      style={{
+                        width: '25%',
+                        height: '55%',
+                        top: '5%',
+                        right: '-8%',
+                        background: `linear-gradient(-90deg, transparent 0%, ${moodStyle.hairColor} 40%, ${moodStyle.hairColor} 100%)`,
+                        borderRadius: '20% 40% 50% 30%',
+                        filter: 'blur(0.3px)'
+                      }}
+                    />
+
                     {/* Eyes Container */}
-                    <div className={`absolute inset-x-0 top-[38%] flex items-center justify-center ${sizeClasses.eyeGap}`}>
+                    <div
+                      className="absolute flex items-center justify-center"
+                      style={{
+                        top: '38%',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        gap: dims.eyeGap
+                      }}
+                    >
                       {/* Left Eye */}
-                      <div className="relative">
-                        <div 
-                          className={`${sizeClasses.eye} rounded-full shadow-inner`}
-                          style={{ backgroundColor: eyeColor }}
-                        >
-                          {/* Pupil */}
-                          <div className="absolute inset-[15%] rounded-full bg-slate-900" />
-                          {/* Eye highlight */}
-                          <div className="absolute top-[15%] left-[20%] w-[30%] h-[30%] rounded-full bg-white/80" />
-                        </div>
-                        {/* Eyelid for blinking */}
-                        <div 
-                          className={`absolute inset-0 ${sizeClasses.eye} rounded-full bg-gradient-to-b from-slate-200/98 via-slate-100/95 to-slate-200/98 animate-aura-blink`}
+                      <div className="relative" style={{ width: dims.eyeWidth, height: dims.eyeHeight }}>
+                        <div
+                          className="absolute inset-0 rounded-full"
+                          style={{
+                            background: 'linear-gradient(180deg, rgba(51,65,85,0.9) 0%, rgba(30,41,59,0.95) 100%)',
+                            boxShadow: 'inset 0 0.5px 1px rgba(255,255,255,0.3)'
+                          }}
+                        />
+                        {/* Eyelid */}
+                        <div
+                          className="absolute inset-0 rounded-full animate-aura-blink"
+                          style={{
+                            background: `linear-gradient(180deg, ${moodStyle.skinHighlight} 0%, ${moodStyle.skinBase} 100%)`
+                          }}
                         />
                       </div>
-                      
+
                       {/* Right Eye */}
-                      <div className="relative">
-                        <div 
-                          className={`${sizeClasses.eye} rounded-full shadow-inner`}
-                          style={{ backgroundColor: eyeColor }}
-                        >
-                          {/* Pupil */}
-                          <div className="absolute inset-[15%] rounded-full bg-slate-900" />
-                          {/* Eye highlight */}
-                          <div className="absolute top-[15%] left-[20%] w-[30%] h-[30%] rounded-full bg-white/80" />
-                        </div>
-                        {/* Eyelid for blinking */}
-                        <div 
-                          className={`absolute inset-0 ${sizeClasses.eye} rounded-full bg-gradient-to-b from-slate-200/98 via-slate-100/95 to-slate-200/98 animate-aura-blink`}
+                      <div className="relative" style={{ width: dims.eyeWidth, height: dims.eyeHeight }}>
+                        <div
+                          className="absolute inset-0 rounded-full"
+                          style={{
+                            background: 'linear-gradient(180deg, rgba(51,65,85,0.9) 0%, rgba(30,41,59,0.95) 100%)',
+                            boxShadow: 'inset 0 0.5px 1px rgba(255,255,255,0.3)'
+                          }}
+                        />
+                        {/* Eyelid */}
+                        <div
+                          className="absolute inset-0 rounded-full animate-aura-blink"
+                          style={{
+                            background: `linear-gradient(180deg, ${moodStyle.skinHighlight} 0%, ${moodStyle.skinBase} 100%)`
+                          }}
                         />
                       </div>
                     </div>
-                    
-                    {/* Subtle Nose (just a tiny shadow hint) */}
-                    <div className="absolute top-[52%] left-1/2 -translate-x-1/2 w-[4%] h-[8%] bg-gradient-to-b from-transparent via-slate-400/10 to-slate-400/15 rounded-full" />
-                    
-                    {/* Mouth - subtle and calm */}
-                    <div className="absolute top-[68%] left-1/2 -translate-x-1/2 w-[22%] h-[3%] bg-gradient-to-r from-transparent via-rose-400/40 to-transparent rounded-full" />
-                    
-                    {/* Hair suggestion - soft wisps at top */}
-                    <div className="absolute -top-[5%] inset-x-[10%] h-[25%] bg-gradient-to-b from-slate-500/50 via-slate-400/30 to-transparent rounded-t-full blur-[1px]" />
-                    
-                    {/* Side hair wisps */}
-                    <div className="absolute top-[5%] -left-[3%] w-[20%] h-[35%] bg-gradient-to-br from-slate-500/40 to-transparent rounded-full blur-[1px]" />
-                    <div className="absolute top-[5%] -right-[3%] w-[20%] h-[35%] bg-gradient-to-bl from-slate-500/40 to-transparent rounded-full blur-[1px]" />
+
+                    {/* Nose */}
+                    <div
+                      className="absolute"
+                      style={{
+                        width: dims.noseWidth,
+                        height: dims.face * 0.12,
+                        top: '52%',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        background: 'linear-gradient(180deg, transparent 0%, rgba(180,190,210,0.15) 60%, rgba(180,190,210,0.25) 100%)',
+                        borderRadius: '40%'
+                      }}
+                    />
+
+                    {/* Lips */}
+                    <div
+                      className="absolute"
+                      style={{
+                        width: dims.lipWidth,
+                        height: dims.face * 0.04,
+                        top: '70%',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        background: `linear-gradient(90deg, transparent 0%, ${moodStyle.lipColor} 30%, ${moodStyle.lipColor} 70%, transparent 100%)`,
+                        borderRadius: '50%'
+                      }}
+                    />
+
+                    {/* Cheek Blush Left */}
+                    <div
+                      className="absolute rounded-full"
+                      style={{
+                        width: dims.face * 0.18,
+                        height: dims.face * 0.1,
+                        top: '55%',
+                        left: '12%',
+                        background: moodStyle.cheekColor,
+                        filter: 'blur(3px)'
+                      }}
+                    />
+
+                    {/* Cheek Blush Right */}
+                    <div
+                      className="absolute rounded-full"
+                      style={{
+                        width: dims.face * 0.18,
+                        height: dims.face * 0.1,
+                        top: '55%',
+                        right: '12%',
+                        background: moodStyle.cheekColor,
+                        filter: 'blur(3px)'
+                      }}
+                    />
+
+                    {/* Jawline Shadow */}
+                    <div
+                      className="absolute"
+                      style={{
+                        width: '100%',
+                        height: '25%',
+                        bottom: 0,
+                        background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.08) 100%)',
+                        borderRadius: '0 0 44% 44%'
+                      }}
+                    />
                   </div>
-                  
+
                   {/* Neck */}
-                  <div className="w-[35%] h-[12%] bg-gradient-to-b from-slate-100/90 to-slate-200/80 -mt-1" style={{ aspectRatio: '1/0.4' }} />
-                  
+                  <div
+                    style={{
+                      width: dims.face * 0.28,
+                      height: dims.face * 0.15,
+                      marginTop: -2,
+                      background: `linear-gradient(180deg, ${moodStyle.skinBase} 0%, rgba(200,210,230,0.4) 100%)`,
+                      borderRadius: '0 0 40% 40%'
+                    }}
+                  />
+
                   {/* Shoulders */}
-                  <div className={`${sizeClasses.shoulder} bg-gradient-to-b from-slate-300/80 via-slate-400/70 to-slate-500/60 rounded-t-[100%] -mt-1`}>
-                    {/* Collar hint */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[40%] h-[30%] bg-gradient-to-b from-slate-200/50 to-transparent rounded-b-full" />
+                  <div
+                    style={{
+                      width: dims.shoulderWidth,
+                      height: dims.face * 0.35,
+                      marginTop: -4,
+                      background: `linear-gradient(180deg, rgba(100,116,139,0.6) 0%, rgba(71,85,105,0.5) 50%, rgba(51,65,85,0.3) 100%)`,
+                      borderRadius: '50% 50% 0 0',
+                      boxShadow: 'inset 0 5px 15px rgba(255,255,255,0.1)'
+                    }}
+                  >
+                    {/* Collar Detail */}
+                    <div
+                      className="absolute"
+                      style={{
+                        width: '35%',
+                        height: '40%',
+                        top: 0,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        background: 'linear-gradient(180deg, rgba(200,210,230,0.3) 0%, transparent 100%)',
+                        borderRadius: '0 0 50% 50%'
+                      }}
+                    />
                   </div>
                 </div>
               </div>
             )}
-            
-            {/* Top Glass Reflection */}
-            <div className="absolute top-0 left-0 w-full h-1/3 bg-gradient-to-b from-white/15 to-transparent rounded-t-full pointer-events-none" />
-            
-            {/* Bottom Shadow */}
-            <div className="absolute bottom-0 left-0 w-full h-1/4 bg-gradient-to-t from-black/30 to-transparent rounded-b-full pointer-events-none" />
-            
-            {/* Mood-reactive inner rim glow */}
-            <div 
-              className="absolute inset-0 rounded-full pointer-events-none animate-mood-pulse"
+
+            {/* Glass Specular Highlight */}
+            <div
+              className="absolute top-0 left-0 w-full h-1/3 rounded-t-full pointer-events-none"
               style={{
-                boxShadow: `inset 0 0 30px 5px ${eyeColor}20`
+                background: 'linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.05) 50%, transparent 100%)'
+              }}
+            />
+
+            {/* Bottom Glass Shadow */}
+            <div
+              className="absolute bottom-0 left-0 w-full h-1/4 rounded-b-full pointer-events-none"
+              style={{
+                background: 'linear-gradient(0deg, rgba(0,0,0,0.25) 0%, transparent 100%)'
+              }}
+            />
+
+            {/* Inner Rim Glow */}
+            <div
+              className="absolute inset-0 rounded-full pointer-events-none"
+              style={{
+                boxShadow: `inset 0 0 20px 3px ${moodStyle.ambientColor}`
               }}
             />
           </div>
         </div>
       </div>
 
-      {/* Shadow on "Floor" */}
-      <div className="w-24 h-4 bg-black/30 rounded-full blur-xl -mt-2" />
+      {/* Floor Shadow */}
+      <div
+        className="rounded-full blur-xl -mt-2"
+        style={{
+          width: dims.container * 0.35,
+          height: dims.container * 0.06,
+          background: 'rgba(0,0,0,0.35)'
+        }}
+      />
 
       {/* Name */}
       {showName && (
@@ -303,7 +563,7 @@ const AuraAvatar: React.FC<AuraAvatarProps> = ({
       {/* Current Mood Badge */}
       {showMood && (
         <div className="flex items-center gap-2 text-[11px] text-slate-400">
-          <div className={`w-2 h-2 rounded-full bg-gradient-to-br ${gradient} animate-pulse`} />
+          <div className={`w-2 h-2 rounded-full bg-gradient-to-br ${moodStyle.gradient} animate-pulse`} />
           <span className="uppercase tracking-[0.2em]">
             {auraState.mood} · {Math.round(auraState.moodIntensity * 100)}%
           </span>
