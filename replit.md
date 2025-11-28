@@ -12,33 +12,33 @@ Aura Twin is an AI-powered digital companion app for introverts, featuring a per
 
 ## Recent Changes (November 28, 2025)
 
-### Aura v2 - Holographic Twin Avatar (Visual Upgrade)
-- **Upgraded AuraAvatar.tsx**: Premium holographic character inside glass shell
-  - Multi-layered design with depth: hair, face, neck, shoulders
-  - Soft jawline, subtle nose + lips, calm small eyes
-  - Clean hair silhouette (not detailed strands)
-  - Gender-soft, elegant aesthetic inspired by Annie from xAI
-- **Glass Shell Effects**:
-  - Circular glass frame with specular highlight
-  - Light sweep animation across the shell (8s cycle)
-  - Inner rim glow that responds to mood
-  - Top highlight and bottom shadow for depth
-- **Blinking Eyes**: Natural blink every ~7 seconds
-  - Eyelids close briefly (animate-aura-blink)
-  - Small, calm eyes - not cartoon-style
-- **Mood-Reactive Styling**: Character appearance shifts with mood
-  - happy → warm rose/peach gradient, brighter cheeks
-  - calm → cool blue/violet gradient, relaxed glow
-  - anxious → muted amber/violet, dimmer overall
-  - sad → deep blue/indigo, softer lighting
-  - neutral → balanced slate/blue gradient
-- **moodIntensity Support**: Higher intensity = slightly stronger glow/brightness
-- **Animations in index.css**:
-  - `@keyframes lightSweep`: Glass shell light sweep effect
-  - `animate-aura-blink`: Eyelid blink animation (7s cycle)
-  - `.animate-aura-living`: Combined float + breathe
-- **Props Preserved**: All existing props work unchanged
-- **Avatar URL Fallback**: If user provides avatarUrl, shows their image; otherwise shows holographic character
+### Aura v3 - Full-Body Hologram with Veo Videos
+- **Video-Based Avatar**: Uses uploaded Veo videos and PNG images
+  - Assets located in `src/assets/`
+  - Videos: aura-neutral.mp4, aura-happy.mp4
+  - Images: aura-neutral.png, aura-happy.png, aura-playful.png
+- **Mood → Asset Mapping**:
+  - happy/joy/excited → aura-happy.mp4 (fallback: aura-happy.png)
+  - playful/flirty/romantic → aura-playful.png
+  - default/neutral → aura-neutral.mp4 (fallback: aura-neutral.png)
+- **Hologram Effects (VisionOS Style)**:
+  - Floating animation (animate-aura-float)
+  - Breathing animation (animate-aura-breathe)
+  - Large radial glow behind avatar (mood-reactive)
+  - Soft light overlays (top/bottom glass reflections)
+  - Subtle scanlines overlay for hologram effect
+  - Glassy border with inner shadow
+  - Holographic shimmer/light sweep
+- **Video Priority**:
+  - If video exists for mood → uses `<video>` tag (autoPlay, muted, loop, playsInline)
+  - If no video → uses `<img>` fallback
+- **isSpeaking Prop**:
+  - When true: Adds glowing outer ring with pulse effect
+  - Increases halo brightness
+- **Props Preserved**: All existing props work unchanged (profile, auraState, size, showName, showVibes, showMood)
+- **Path Aliases Added**:
+  - `@assets/*` → `src/assets/*` (in vite.config.ts and tsconfig.json)
+  - Type declarations for media files in `vite-env.d.ts`
 
 ### Reply Lab Feature (New)
 - **New Screen**: `screens/ReplyLabScreen.tsx` - Draft replies in three styles
