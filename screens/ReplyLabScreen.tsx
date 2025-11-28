@@ -1,26 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuraProfile, ReplyOptions } from '../types';
 import { generateReplyOptions } from '../services/auraLLM';
+import { logEvent } from '../utils/telemetry';
 
 interface ReplyLabScreenProps {
   profile: AuraProfile;
 }
 
-interface ReplyCardProps {
+type ToneType = 'safe' | 'direct' | 'playful';
+type ContextType = 'General' | 'Friend' | 'Dating' | 'Work';
+
+interface ToneConfig {
   label: string;
   sublabel: string;
+  chipBg: string;
+  chipText: string;
+  chipBorder: string;
+}
+
+const TONE_CONFIGS: Record<ToneType, ToneConfig> = {
+  safe: {
+    label: 'Safe / Polite',
+    sublabel: 'Cautious, no risk',
+    chipBg: 'bg-sky-500/20',
+    chipText: 'text-sky-300',
+    chipBorder: 'border-sky-500/30',
+  },
+  direct: {
+    label: 'Direct / Honest',
+    sublabel: 'Clear and to the point',
+    chipBg: 'bg-amber-500/20',
+    chipText: 'text-amber-300',
+    chipBorder: 'border-amber-500/30',
+  },
+  playful: {
+    label: 'Playful / Warm',
+    sublabel: 'Fun side showing',
+    chipBg: 'bg-pink-500/20',
+    chipText: 'text-pink-300',
+    chipBorder: 'border-pink-500/30',
+  },
+};
+
+const CONTEXT_OPTIONS: ContextType[] = ['General', 'Friend', 'Dating', 'Work'];
+
+interface ReplyCardProps {
+  tone: ToneType;
   text: string;
   onCopy: () => void;
   copied: boolean;
 }
 
-const ReplyCard: React.FC<ReplyCardProps> = ({ label, sublabel, text, onCopy, copied }) => {
+const ReplyCard: React.FC<ReplyCardProps> = ({ tone, text, onCopy, copied }) => {
+  const config = TONE_CONFIGS[tone];
+  
   return (
-    <div className="rounded-2xl bg-slate-900/80 border border-white/10 backdrop-blur-xl p-4 flex flex-col gap-3 transition-all hover:border-white/20">
+    <div className="rounded-2xl bg-slate-900/80 border border-white/10 backdrop-blur-xl p-4 flex flex-col gap-3 transition-all duration-200 hover:scale-[1.02] hover:border-white/25">
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-slate-100">{label}</p>
-          <p className="text-[10px] uppercase tracking-wide text-slate-500">{sublabel}</p>
+        <div className="flex items-center gap-3">
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wide border ${config.chipBg} ${config.chipText} ${config.chipBorder}`}>
+            {tone}
+          </span>
+          <div>
+            <p className="text-sm font-medium text-slate-100">{config.label}</p>
+            <p className="text-[10px] uppercase tracking-wide text-slate-500">{config.sublabel}</p>
+          </div>
         </div>
         <button
           onClick={onCopy}
@@ -38,10 +82,15 @@ const ReplyCard: React.FC<ReplyCardProps> = ({ label, sublabel, text, onCopy, co
 
 const ReplyLabScreen: React.FC<ReplyLabScreenProps> = ({ profile }) => {
   const [inputText, setInputText] = useState('');
+  const [context, setContext] = useState<ContextType>('General');
   const [isLoading, setIsLoading] = useState(false);
   const [replies, setReplies] = useState<ReplyOptions | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    logEvent('reply_lab_opened');
+  }, []);
 
   const handleGenerateReplies = async () => {
     if (!inputText.trim()) {
@@ -56,6 +105,11 @@ const ReplyLabScreen: React.FC<ReplyLabScreenProps> = ({ profile }) => {
     try {
       const result = await generateReplyOptions(profile, inputText.trim());
       setReplies(result);
+      
+      logEvent('reply_lab_generated', {
+        length: inputText.trim().length,
+        context: context,
+      });
     } catch (err) {
       console.error("[ReplyLabScreen] Error generating replies:", err);
       setError("Aura is a bit overwhelmed. Try again in a moment.");
@@ -64,10 +118,13 @@ const ReplyLabScreen: React.FC<ReplyLabScreenProps> = ({ profile }) => {
     }
   };
 
-  const handleCopy = async (key: 'safe' | 'direct' | 'playful', text: string) => {
+  const handleCopy = async (tone: ToneType, text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopiedKey(key);
+      setCopiedKey(tone);
+      
+      logEvent('reply_lab_used_option', { tone });
+      
       setTimeout(() => setCopiedKey(null), 2000);
     } catch (err) {
       console.error("Failed to copy:", err);
@@ -88,6 +145,26 @@ const ReplyLabScreen: React.FC<ReplyLabScreenProps> = ({ profile }) => {
 
       {/* Input Area */}
       <div className="space-y-4 mb-6">
+        {/* Context Dropdown */}
+        <div className="flex items-center gap-3">
+          <label htmlFor="context-select" className="text-[11px] uppercase tracking-wide text-slate-500">
+            Context
+          </label>
+          <select
+            id="context-select"
+            value={context}
+            onChange={(e) => setContext(e.target.value as ContextType)}
+            className="rounded-xl bg-slate-950/70 border border-white/15 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-slate-100/40 focus:ring-1 focus:ring-slate-100/20 transition-all appearance-none cursor-pointer backdrop-blur-xl"
+            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1.25rem', paddingRight: '2rem' }}
+          >
+            {CONTEXT_OPTIONS.map((opt) => (
+              <option key={opt} value={opt} className="bg-slate-900 text-slate-100">
+                {opt}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <textarea
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
@@ -128,24 +205,21 @@ const ReplyLabScreen: React.FC<ReplyLabScreenProps> = ({ profile }) => {
           
           <div className="grid grid-cols-1 gap-4">
             <ReplyCard
-              label="Safe / Polite"
-              sublabel="Cautious, no risk"
+              tone="safe"
               text={replies.safe}
               onCopy={() => handleCopy('safe', replies.safe)}
               copied={copiedKey === 'safe'}
             />
             
             <ReplyCard
-              label="Direct / Honest"
-              sublabel="Clear and to the point"
+              tone="direct"
               text={replies.direct}
               onCopy={() => handleCopy('direct', replies.direct)}
               copied={copiedKey === 'direct'}
             />
             
             <ReplyCard
-              label="Playful / Warm"
-              sublabel="Fun side showing"
+              tone="playful"
               text={replies.playful}
               onCopy={() => handleCopy('playful', replies.playful)}
               copied={copiedKey === 'playful'}
