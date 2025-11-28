@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AuraProfile, ReplyOptions } from '../types';
-import { generateReplyOptions } from '../services/auraLLM';
+import { generateReplyOptions, ReplyContext } from '../services/auraLLM';
 import { logEvent } from '../utils/telemetry';
 
 interface ReplyLabScreenProps {
@@ -9,7 +9,6 @@ interface ReplyLabScreenProps {
 }
 
 type ToneType = 'safe' | 'direct' | 'playful';
-type ContextType = 'General' | 'Friend' | 'Dating' | 'Work';
 
 interface ToneConfig {
   label: string;
@@ -43,7 +42,7 @@ const TONE_CONFIGS: Record<ToneType, ToneConfig> = {
   },
 };
 
-const CONTEXT_OPTIONS: ContextType[] = ['General', 'Friend', 'Dating', 'Work'];
+const CONTEXT_OPTIONS: ReplyContext[] = ['General', 'Friend', 'Dating', 'Work'];
 
 interface ReplyCardProps {
   tone: ToneType;
@@ -83,7 +82,7 @@ const ReplyCard: React.FC<ReplyCardProps> = ({ tone, text, onCopy, copied }) => 
 
 const ReplyLabScreen: React.FC<ReplyLabScreenProps> = ({ profile, prefillText }) => {
   const [inputText, setInputText] = useState(prefillText || '');
-  const [context, setContext] = useState<ContextType>('General');
+  const [context, setContext] = useState<ReplyContext>('General');
   const [isLoading, setIsLoading] = useState(false);
   const [replies, setReplies] = useState<ReplyOptions | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -110,7 +109,7 @@ const ReplyLabScreen: React.FC<ReplyLabScreenProps> = ({ profile, prefillText })
     setReplies(null);
 
     try {
-      const result = await generateReplyOptions(profile, inputText.trim());
+      const result = await generateReplyOptions(profile, inputText.trim(), context);
       setReplies(result);
       
       logEvent('reply_lab_generated', {
@@ -160,7 +159,7 @@ const ReplyLabScreen: React.FC<ReplyLabScreenProps> = ({ profile, prefillText })
           <select
             id="context-select"
             value={context}
-            onChange={(e) => setContext(e.target.value as ContextType)}
+            onChange={(e) => setContext(e.target.value as ReplyContext)}
             className="rounded-xl bg-slate-950/70 border border-white/15 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-slate-100/40 focus:ring-1 focus:ring-slate-100/20 transition-all appearance-none cursor-pointer backdrop-blur-xl"
             style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1.25rem', paddingRight: '2rem' }}
           >

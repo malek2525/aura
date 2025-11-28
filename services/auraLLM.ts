@@ -688,9 +688,12 @@ Output ONLY valid JSON with exactly these three fields:
 Do NOT include explanations, commentary, or markdown. Only valid JSON.
 `.trim();
 
+export type ReplyContext = 'General' | 'Friend' | 'Dating' | 'Work';
+
 export async function generateReplyOptions(
   profile: AuraProfile,
-  contextText: string
+  contextText: string,
+  context: ReplyContext = 'General'
 ): Promise<ReplyOptions> {
   const apiKey = (window as any).__GEMINI_API_KEY || "";
 
@@ -709,12 +712,19 @@ export async function generateReplyOptions(
 
     const persona = buildAuraPersonaDescription(profile);
 
+    const contextHint = context === 'General' ? '' : `
+CONTEXT: This is a ${context.toLowerCase()} conversation. Adjust tone appropriately.
+- Friend: Casual, warm, supportive
+- Dating: Flirty but respectful, show personality
+- Work: Professional, clear, polite`;
+
     const userText = `
 AURA_PROFILE:
 ${JSON.stringify(profile, null, 2)}
 
 AURA_PERSONA:
 ${persona}
+${contextHint}
 
 MESSAGE_TO_REPLY_TO:
 "${contextText}"
