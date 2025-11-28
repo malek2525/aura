@@ -12,6 +12,26 @@ Aura Twin is an AI-powered digital companion app for introverts, featuring a per
 
 ## Recent Changes (November 28, 2025)
 
+### 2D Living Character Avatar (Visual Upgrade)
+- **Upgraded AuraAvatar.tsx**: Transformed gradient orb into personified 2D character
+  - Bust/shoulders portrait silhouette inside the circular glass frame
+  - Soft, elegant design inspired by xAI's Annie - not anime, not childish
+  - Gender-neutral human figure with subtle hair wisps
+- **Blinking Eyes**: Natural eye blink animation every ~8 seconds
+  - Mood-reactive eye color that changes with emotional state
+  - Subtle pupil highlights and depth
+- **Mood-Reactive Skin Tones**: Character appearance shifts with mood
+  - happy → soft rose/pink tones
+  - calm → blue/violet tones
+  - anxious → amber/orange tones
+  - sad → blue/indigo tones
+  - neutral → slate/blue tones
+- **Animations in index.css**:
+  - `animate-aura-blink`: Eyelid blink animation (8s cycle)
+  - Existing breathe/float animations preserved
+- **Props Preserved**: All existing props (profile, auraState, size, showName, showVibes, showMood) work unchanged
+- **Avatar URL Fallback**: If user provides avatarUrl, shows their image; otherwise shows the character
+
 ### Reply Lab Feature (New)
 - **New Screen**: `screens/ReplyLabScreen.tsx` - Draft replies in three styles
   - Safe / Polite: Cautious, no risk of offense

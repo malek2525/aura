@@ -216,6 +216,23 @@ body {
   animation: aura-float 6s ease-in-out infinite, aura-breathe 5s ease-in-out infinite;
 }
 
+/* Eye blinking animation - subtle, natural blink every 7-9s */
+@keyframes aura-blink {
+  0%, 94%, 100% {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+  95%, 99% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+.animate-aura-blink {
+  animation: aura-blink 8s ease-in-out infinite;
+  transform-origin: center;
+}
+
 /* Mood-specific glow pulses */
 @keyframes mood-pulse {
   0%, 100% { 
