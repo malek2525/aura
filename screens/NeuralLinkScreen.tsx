@@ -10,6 +10,7 @@ interface NeuralLinkScreenProps {
   setHistory: React.Dispatch<React.SetStateAction<AuraChatMessage[]>>;
   auraState: AuraState;
   setAuraState: React.Dispatch<React.SetStateAction<AuraState>>;
+  onOpenReplyLab?: (prefillText?: string) => void;
 }
 
 const NeuralLinkScreen: React.FC<NeuralLinkScreenProps> = ({ 
@@ -17,7 +18,8 @@ const NeuralLinkScreen: React.FC<NeuralLinkScreenProps> = ({
   history, 
   setHistory, 
   auraState, 
-  setAuraState 
+  setAuraState,
+  onOpenReplyLab
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [input, setInput] = useState('');
@@ -202,18 +204,31 @@ const NeuralLinkScreen: React.FC<NeuralLinkScreenProps> = ({
 
         {/* Voice Controls Row */}
         <div className="flex items-center justify-between text-[10px] text-slate-500 gap-2">
-          <button
-            type="button"
-            onClick={voice.isListening ? voice.stopListening : voice.startListening}
-            disabled={!voice.hasSpeechSupport}
-            className="rounded-full border border-white/15 px-3 py-1 text-[10px] text-slate-300 bg-slate-950/60 hover:bg-slate-900/80 disabled:opacity-40 transition-colors"
-          >
-            {voice.hasSpeechSupport
-              ? voice.isListening
-                ? '⏹ Stop'
-                : '🎙 Speak'
-              : 'No voice'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={voice.isListening ? voice.stopListening : voice.startListening}
+              disabled={!voice.hasSpeechSupport}
+              className="rounded-full border border-white/15 px-3 py-1 text-[10px] text-slate-300 bg-slate-950/60 hover:bg-slate-900/80 disabled:opacity-40 transition-colors"
+            >
+              {voice.hasSpeechSupport
+                ? voice.isListening
+                  ? '⏹ Stop'
+                  : '🎙 Speak'
+                : 'No voice'}
+            </button>
+            
+            {onOpenReplyLab && (
+              <button
+                type="button"
+                onClick={() => onOpenReplyLab(input.trim() || undefined)}
+                className="rounded-full border border-white/15 px-3 py-1 text-[10px] text-slate-300 bg-slate-950/60 hover:bg-slate-900/80 hover:border-violet-400/30 transition-colors"
+              >
+                ✍️ Reply Lab
+              </button>
+            )}
+          </div>
+          
           <div className="flex items-center gap-1">
             {voice.isListening
               ? '● Mic live'

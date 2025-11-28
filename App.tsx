@@ -18,6 +18,12 @@ const App: React.FC = () => {
     mood: 'neutral',
     moodIntensity: 0.2
   });
+  const [replyLabPrefill, setReplyLabPrefill] = useState<string | undefined>(undefined);
+
+  const handleOpenReplyLab = (prefillText?: string) => {
+    setReplyLabPrefill(prefillText);
+    setCurrentScreen('replylab');
+  };
 
   const handleProfileCreated = (newProfile: AuraProfile) => {
     setProfile(newProfile);
@@ -117,6 +123,7 @@ const App: React.FC = () => {
                   setHistory={setChatHistory}
                   auraState={auraState}
                   setAuraState={setAuraState}
+                  onOpenReplyLab={handleOpenReplyLab}
                 />
               </div>
             )}
@@ -135,7 +142,7 @@ const App: React.FC = () => {
 
             {currentScreen === 'replylab' && profile && (
               <div className="h-full">
-                <ReplyLabScreen profile={profile} />
+                <ReplyLabScreen profile={profile} prefillText={replyLabPrefill} />
               </div>
             )}
 

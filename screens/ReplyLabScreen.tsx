@@ -5,6 +5,7 @@ import { logEvent } from '../utils/telemetry';
 
 interface ReplyLabScreenProps {
   profile: AuraProfile;
+  prefillText?: string;
 }
 
 type ToneType = 'safe' | 'direct' | 'playful';
@@ -80,8 +81,8 @@ const ReplyCard: React.FC<ReplyCardProps> = ({ tone, text, onCopy, copied }) => 
   );
 };
 
-const ReplyLabScreen: React.FC<ReplyLabScreenProps> = ({ profile }) => {
-  const [inputText, setInputText] = useState('');
+const ReplyLabScreen: React.FC<ReplyLabScreenProps> = ({ profile, prefillText }) => {
+  const [inputText, setInputText] = useState(prefillText || '');
   const [context, setContext] = useState<ContextType>('General');
   const [isLoading, setIsLoading] = useState(false);
   const [replies, setReplies] = useState<ReplyOptions | null>(null);
@@ -91,6 +92,12 @@ const ReplyLabScreen: React.FC<ReplyLabScreenProps> = ({ profile }) => {
   useEffect(() => {
     logEvent('reply_lab_opened');
   }, []);
+
+  useEffect(() => {
+    if (prefillText) {
+      setInputText(prefillText);
+    }
+  }, [prefillText]);
 
   const handleGenerateReplies = async () => {
     if (!inputText.trim()) {
