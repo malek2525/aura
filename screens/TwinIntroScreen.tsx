@@ -1,26 +1,8 @@
 import React, { useState } from 'react';
-import { AuraProfile, TwinIntroResult } from '../types';
+import { AuraProfile, AuraState, TwinIntroResult } from '../types';
 import { demoProfiles } from '../services/demoProfiles';
 import { generateTwinIntro } from '../services/auraLLM';
-
-function MiniAuraCard({ profile, label }: { profile: AuraProfile; label: string }) {
-  return (
-    <div className="flex flex-col items-center gap-2 rounded-3xl bg-slate-900/80 border border-white/10 px-4 py-4">
-      <div className="relative h-16 w-16 rounded-full overflow-hidden bg-slate-800 flex items-center justify-center">
-        {profile.avatarUrl ? (
-          <img src={profile.avatarUrl} alt={profile.displayName} className="h-full w-full object-cover" />
-        ) : (
-          <span className="text-2xl">🟣</span>
-        )}
-      </div>
-      <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">{label}</div>
-      <div className="text-sm font-semibold text-slate-100">{profile.displayName}</div>
-      <p className="text-[11px] text-slate-300 text-center line-clamp-3">
-        {profile.summary}
-      </p>
-    </div>
-  );
-}
+import AuraAvatar from '../components/AuraAvatar';
 
 const TwinIntroScreen: React.FC = () => {
   const [yourAura] = useState<AuraProfile>(demoProfiles[0]);
@@ -31,6 +13,9 @@ const TwinIntroScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const potentialMatch = demoProfiles.find(p => p.id === selectedId) || null;
+
+  const yourAuraState: AuraState = { mood: 'calm', moodIntensity: 0.5 };
+  const theirAuraState: AuraState = { mood: 'happy', moodIntensity: 0.6 };
 
   const handleRunIntro = async () => {
     if (!potentialMatch) return;
@@ -80,14 +65,50 @@ const TwinIntroScreen: React.FC = () => {
           </select>
         </div>
 
-        {/* Mini cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-4">
-          <MiniAuraCard profile={yourAura} label="Your Aura" />
-          {potentialMatch && <MiniAuraCard profile={potentialMatch} label="Their Aura" />}
+        {/* Two Living Avatars Side by Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
+          
+          {/* Your Aura */}
+          <div className="rounded-3xl bg-slate-900/80 border border-white/10 backdrop-blur-xl p-6 flex flex-col items-center">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500 mb-4">Your Aura</div>
+            
+            <AuraAvatar
+              profile={yourAura}
+              auraState={yourAuraState}
+              size="md"
+              showName={true}
+              showVibes={true}
+              showMood={false}
+            />
+            
+            <p className="text-[11px] text-slate-300 text-center mt-4 line-clamp-3 max-w-xs">
+              {yourAura.summary}
+            </p>
+          </div>
+
+          {/* Their Aura */}
+          {potentialMatch && (
+            <div className="rounded-3xl bg-slate-900/80 border border-white/10 backdrop-blur-xl p-6 flex flex-col items-center">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500 mb-4">Their Aura</div>
+              
+              <AuraAvatar
+                profile={potentialMatch}
+                auraState={theirAuraState}
+                size="md"
+                showName={true}
+                showVibes={true}
+                showMood={false}
+              />
+              
+              <p className="text-[11px] text-slate-300 text-center mt-4 line-clamp-3 max-w-xs">
+                {potentialMatch.summary}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Button */}
-        <div className="pt-4">
+        <div className="pt-4 flex justify-center">
           <button
             onClick={handleRunIntro}
             disabled={!potentialMatch || isLoading}
@@ -99,7 +120,7 @@ const TwinIntroScreen: React.FC = () => {
 
         {/* Result */}
         {result && (
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 space-y-4 animate-fade-in">
             <div>
               <div className="text-[11px] uppercase tracking-[0.25em] text-slate-500">
                 What your twins noticed
@@ -129,11 +150,6 @@ const TwinIntroScreen: React.FC = () => {
               <div className="text-[11px] uppercase tracking-[0.25em] text-slate-500">
                 Gentle first messages you can send
               </div>
-              {!result && (
-                <p className="mt-3 text-[11px] text-slate-500">
-                  Pick a match and let Aura draft the first move for you.
-                </p>
-              )}
               <ul className="space-y-2 text-sm text-slate-100">
                 {result.suggestedOpeners.map((msg, idx) => (
                   <li

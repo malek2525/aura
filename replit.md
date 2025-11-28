@@ -10,7 +10,23 @@ Aura Twin is an AI-powered digital companion app for introverts, featuring a per
 - **Port**: 5000 (frontend)
 - **Styling**: Tailwind CSS (CDN) + custom glassmorphism CSS
 
-## Recent Changes (November 26, 2025) - COMPLETE MVP WITH STYLING PASS
+## Recent Changes (November 28, 2025) - PHASE 1.5 AVATAR INTEGRATION
+
+### Phase 1.5: Avatar Wired into All Screens
+- **NeuralLinkScreen.tsx**: Added prominent hero section at top with living AuraAvatar
+  - Desktop: Glass card with avatar on left, mood/vibe description on right
+  - Mobile: Avatar centered above the chat
+  - Shows current mood state and vibe pills
+- **MatchTestScreen.tsx**: Replaced static AvatarCircle with living AuraAvatar for both profiles
+  - "Your Aura" uses current user profile and auraState
+  - "Potential Match" uses demo profile with happy mood
+  - Both avatars float and breathe with mood-based gradients
+- **TwinIntroScreen.tsx**: Both Auras now use living AuraAvatar components
+  - Side-by-side layout with animated avatars
+  - Your Aura (calm mood) vs Their Aura (happy mood)
+  - Summaries displayed below each avatar
+
+## Previous Changes (November 26, 2025)
 
 ### Phase 1: Visual Soul - Living Avatar
 - **AuraAvatar Component**: New unified avatar component at `components/AuraAvatar.tsx`

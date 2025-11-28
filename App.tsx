@@ -112,7 +112,7 @@ const App: React.FC = () => {
 
             {currentScreen === 'match' && profile && (
               <div className="h-full overflow-y-auto custom-scrollbar p-4 lg:p-6">
-                <MatchTestScreen userProfile={profile} />
+                <MatchTestScreen userProfile={profile} auraState={auraState} />
               </div>
             )}
 

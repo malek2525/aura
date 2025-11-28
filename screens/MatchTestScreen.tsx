@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import AuraAvatarCard from '../components/AuraAvatarCard';
-import AvatarCircle from '../components/AvatarCircle';
-import { AuraProfile, MatchResult } from '../types';
+import AuraAvatar from '../components/AuraAvatar';
+import { AuraProfile, AuraState, MatchResult } from '../types';
 import { matchAuras } from '../services/auraLLM';
 
 interface MatchTestScreenProps {
   userProfile: AuraProfile;
+  auraState: AuraState;
 }
 
 const LINA_PROFILE: AuraProfile = {
   id: "lina_01",
   displayName: "Lina",
-  bio: "Bubbly photographer who loves dragging introverts out of their shells... gently 📸",
+  bio: "Bubbly photographer who loves dragging introverts out of their shells... gently",
   avatarUrl: "",
   vibeTags: ["sunny", "energetic", "spontaneous"],
   introversionLevel: 3,
@@ -26,45 +26,11 @@ const LINA_PROFILE: AuraProfile = {
   summary: "Lina is a bubbly photographer who loves dragging introverts out of their shells, but gently. She talks a lot but listens well."
 };
 
-const ProfileCard: React.FC<{ profile: AuraProfile; label: string; isMatch?: boolean }> = ({ profile, label, isMatch }) => {
-  return (
-    <div className="rounded-3xl bg-slate-900/70 border border-white/10 backdrop-blur-xl px-6 py-5 space-y-4 shadow-lg">
-      <p className="text-center text-slate-500 text-xs uppercase tracking-wider">{label}</p>
-      
-      {/* Avatar Circle */}
-      <div className="flex justify-center">
-        <AvatarCircle 
-          imageUrl={profile.avatarUrl} 
-          size="lg"
-          fallbackColor={isMatch ? 'warm' : 'slate'}
-        />
-      </div>
-
-      {/* Name */}
-      <p className="text-center font-semibold text-slate-100">{profile.displayName}</p>
-
-      {/* Bio */}
-      {profile.bio && (
-        <p className="text-center text-xs text-slate-300 line-clamp-2">{profile.bio}</p>
-      )}
-
-      {/* Vibe Tags */}
-      {(profile.vibeTags && profile.vibeTags.length > 0) || (profile.vibeWords && profile.vibeWords.length > 0) ? (
-        <div className="flex flex-wrap gap-1.5 justify-center">
-          {(profile.vibeTags || profile.vibeWords)?.slice(0, 3).map((tag, i) => (
-            <span key={i} className="text-xs bg-blue-600/20 text-blue-300 px-2 py-0.5 rounded-full border border-blue-500/20">
-              {tag}
-            </span>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-};
-
-const MatchTestScreen: React.FC<MatchTestScreenProps> = ({ userProfile }) => {
+const MatchTestScreen: React.FC<MatchTestScreenProps> = ({ userProfile, auraState }) => {
   const [matchResult, setMatchResult] = useState<MatchResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const matchAuraState: AuraState = { mood: 'happy', moodIntensity: 0.6 };
 
   const handleRunMatch = async () => {
     setIsLoading(true);
@@ -83,48 +49,93 @@ const MatchTestScreen: React.FC<MatchTestScreenProps> = ({ userProfile }) => {
       <div className="text-center mb-6">
         <div className="text-[11px] tracking-[0.3em] uppercase text-slate-500 mb-2">Match Score Lab</div>
         <h2 className="text-2xl font-semibold text-slate-100">See how two Auras fit</h2>
-        <p className="text-slate-400 text-sm mt-2">This is a sandbox. Aura compares two profiles and imagines how their energy might blend. It's a demo of the matching brain, not a final dating score.</p>
+        <p className="text-slate-400 text-sm mt-2 max-w-lg mx-auto">
+          This is a sandbox. Aura compares two profiles and imagines how their energy might blend. It's a demo of the matching brain, not a final dating score.
+        </p>
       </div>
       
-      <div className="flex flex-col md:flex-row gap-4 items-stretch">
-        <div className="flex-1">
-          <ProfileCard profile={userProfile} label="Your Aura" />
+      {/* Two Auras Side by Side */}
+      <div className="flex flex-col lg:flex-row gap-6 items-stretch">
+        
+        {/* Your Aura - Living Avatar */}
+        <div className="flex-1 rounded-3xl bg-slate-900/70 border border-white/10 backdrop-blur-xl p-6 flex flex-col items-center">
+          <p className="text-center text-slate-500 text-xs uppercase tracking-wider mb-4">Your Aura</p>
+          
+          <AuraAvatar
+            profile={userProfile}
+            auraState={auraState}
+            size="md"
+            showName={true}
+            showVibes={true}
+            showMood={false}
+          />
+          
+          {userProfile.bio && (
+            <p className="text-center text-xs text-slate-400 mt-4 line-clamp-2 max-w-xs">
+              {userProfile.bio}
+            </p>
+          )}
         </div>
 
-        <div className="flex items-center justify-center py-4 md:py-0 md:px-4">
+        {/* Center Action */}
+        <div className="flex flex-col items-center justify-center py-4 lg:py-0 lg:px-4 gap-3">
           {!matchResult && !isLoading && (
-            <button 
-              onClick={handleRunMatch}
-              className="bg-violet-600/30 hover:bg-violet-600/50 border border-violet-500/30 text-violet-200 font-medium py-4 px-8 rounded-2xl shadow-lg shadow-violet-900/20 transform transition-all hover:scale-105"
-            >
-              Run Match Analysis
-            </button>
-          )}
-          {!matchResult && !isLoading && (
-            <p className="mt-3 text-[11px] text-slate-500">
-              Pick two profiles and let Aura guess how they'd feel together.
-            </p>
+            <>
+              <button 
+                onClick={handleRunMatch}
+                className="bg-violet-600/30 hover:bg-violet-600/50 border border-violet-500/30 text-violet-200 font-medium py-4 px-8 rounded-2xl shadow-lg shadow-violet-900/20 transform transition-all hover:scale-105"
+              >
+                Run Match Analysis
+              </button>
+              <p className="text-[11px] text-slate-500 text-center max-w-[200px]">
+                Let Aura guess how these two energies would feel together.
+              </p>
+            </>
           )}
           {isLoading && (
             <div className="text-violet-400 animate-pulse font-medium text-sm">
               Synchronizing Neural Waves...
             </div>
           )}
+          {matchResult && (
+            <div className="text-center">
+              <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400">
+                {matchResult.compatibilityScore}%
+              </div>
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider mt-1">Compatibility</p>
+            </div>
+          )}
         </div>
 
-        <div className="flex-1">
-          <ProfileCard profile={LINA_PROFILE} label="Potential Match" isMatch />
+        {/* Potential Match - VisionOS Style Glassy Avatar */}
+        <div className="flex-1 rounded-3xl bg-slate-900/70 border border-white/10 backdrop-blur-xl p-6 flex flex-col items-center">
+          <p className="text-center text-slate-500 text-xs uppercase tracking-wider mb-4">Potential Match</p>
+          
+          <AuraAvatar
+            profile={LINA_PROFILE}
+            auraState={matchAuraState}
+            size="md"
+            showName={true}
+            showVibes={true}
+            showMood={false}
+          />
+          
+          {LINA_PROFILE.bio && (
+            <p className="text-center text-xs text-slate-400 mt-4 line-clamp-2 max-w-xs">
+              {LINA_PROFILE.bio}
+            </p>
+          )}
         </div>
       </div>
 
+      {/* Match Results */}
       {matchResult && (
         <div className="glass-panel-light rounded-2xl p-6 space-y-6 animate-fade-in">
           <div className="text-center">
-            <span className="text-xs text-slate-500 uppercase tracking-widest">Compatibility score</span>
-            <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400 mt-2">
-              {matchResult.compatibilityScore}%
+            <span className="text-xs text-slate-500 uppercase tracking-widest">What Aura sees</span>
+            <div className="text-sm text-slate-400 capitalize mt-2">
+              Rough intuition only. The real magic is in the twin-to-twin intros.
             </div>
-            <div className="text-sm text-slate-400 capitalize mt-1">Rough intuition only. The real magic is in the twin-to-twin intros.</div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">

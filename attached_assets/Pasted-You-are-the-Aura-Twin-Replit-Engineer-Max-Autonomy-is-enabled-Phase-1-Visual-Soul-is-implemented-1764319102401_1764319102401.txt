@@ -1,0 +1,59 @@
+You are the Aura Twin Replit Engineer. Max Autonomy is enabled.
+Phase 1 (Visual Soul) is implemented:
+
+components/AuraAvatar.tsx exists and is the living avatar
+
+components/AuraStage.tsx uses AuraAvatar
+
+index.css has the new animation utilities
+
+Problem: In the running app the UI still looks almost the same. The living avatar is not clearly visible on the main screens.
+Your job for this session is Phase 1.5: Wire the Avatar into the UI so the changes are obvious in the current MVP.
+
+Goals
+
+On the Talk to Aura screen (Neural Link):
+
+In src/screens/NeuralLinkScreen.tsx, add a prominent hero section at the top that uses the new AuraStage or AuraAvatar component.
+
+Layout suggestion:
+
+Desktop: a wide glass card at the top with the living Aura avatar on the left and a short description / mood text on the right.
+
+Mobile: avatar centered above the chat.
+
+The chat window should stay as it is, just move down under this hero section.
+
+On the Match Score screen:
+
+In src/screens/MatchTestScreen.tsx, replace the old static “your aura” circle with the new AuraAvatar component (size "md" or "lg"), using the current user profile and a neutral/calm mood.
+
+Keep the potential match avatar as a simple gradient circle for now, but visually match the VisionOS style (soft, glassy).
+
+On the Twin Intro screen:
+
+In src/screens/TwinConversationScreen.tsx, use AuraAvatar for both Auras (left = current user profile, right = sample profile like Lina).
+
+Show each avatar above its text area or label, so the intro feels like two living presences facing each other.
+
+Make sure everything compiles and runs:
+
+Fix all imports (import { AuraAvatar } from "../components/AuraAvatar"; or correct path).
+
+Do not delete any existing logic for chat, matching, or conversations. Only adjust layout and swap out the old static circles for the new avatar.
+
+Visual check:
+
+After your changes, the difference must be obvious:
+
+When I open “Talk to Aura”, I should see a big living avatar breathing/floating at the top.
+
+On “Match Score” and “Twin Intro”, I should see AuraAvatar used instead of plain circles.
+
+When you are finished, write a short summary for me:
+
+Which files you changed
+
+Where exactly the new avatar appears
+
+Anything you recommend as the next small step (for example: starting the dashboard shell or voice integration).

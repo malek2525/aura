@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { AuraProfile, AuraState, AuraChatMessage } from '../types';
 import { chatWithAura } from '../services/auraLLM';
 import useVoice from '../hooks/useVoice';
+import AuraAvatar from '../components/AuraAvatar';
 
 interface NeuralLinkScreenProps {
   profile: AuraProfile;
@@ -90,18 +91,61 @@ const NeuralLinkScreen: React.FC<NeuralLinkScreenProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col p-4">
+    <div className="h-full flex flex-col">
       
-      {/* Header */}
-      <div className="pb-4 border-b border-white/10 mb-4">
-        <div className="text-[10px] tracking-[0.3em] uppercase text-slate-500">Neural link online</div>
-        <p className="text-xs text-slate-400 mt-1">
-          Tell Aura what's on your mind. You can vent, rehearse, or think out loud.
-        </p>
+      {/* Hero Section with Living Avatar */}
+      <div className="rounded-3xl bg-slate-900/60 border border-white/10 backdrop-blur-xl p-6 mb-4">
+        <div className="flex flex-col lg:flex-row items-center gap-6">
+          
+          {/* Living Avatar - Left Side */}
+          <div className="flex-shrink-0">
+            <AuraAvatar
+              profile={profile}
+              auraState={auraState}
+              size="lg"
+              showName={false}
+              showVibes={false}
+              showMood={false}
+            />
+          </div>
+          
+          {/* Description - Right Side */}
+          <div className="flex-1 text-center lg:text-left space-y-3">
+            <div className="flex items-center gap-2 justify-center lg:justify-start">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)] animate-pulse" />
+              <span className="text-[10px] font-mono tracking-[0.3em] uppercase text-slate-400">
+                Neural link online
+              </span>
+            </div>
+            
+            <h2 className="text-xl lg:text-2xl font-semibold text-white">
+              {profile.displayName}'s Aura
+            </h2>
+            
+            <p className="text-sm text-slate-300 max-w-md">
+              A calm, non-judgmental mirror for your social life. Tell Aura what's on your mind — vent, rehearse, or think out loud.
+            </p>
+            
+            {/* Mood + Vibe Pills */}
+            <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
+              <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] uppercase tracking-[0.15em] text-slate-300">
+                {auraState.mood}
+              </span>
+              {profile.vibeWords?.slice(0, 2).map((word, idx) => (
+                <span
+                  key={idx}
+                  className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] uppercase tracking-[0.15em] text-slate-400"
+                >
+                  {word}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
           
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
+      <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2 min-h-0">
         {history.length === 0 && (
           <div className="text-xs text-slate-500 text-center mt-10 space-y-2">
             <p>Start with a message or voice note.</p>
