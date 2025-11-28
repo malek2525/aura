@@ -49,4 +49,9 @@ The application features a complete VisionOS-style glass aesthetic.
     - Personalized chat responses (`gemini-2.5-flash-lite` model)
     - Match analysis (`gemini-2.5-flash` model)
     - Reply generation for Reply Lab
+- **Firebase** (project: `aura-99330`):
+    - **Authentication**: Firebase Auth for user sign-in/sign-up (`src/firebase.ts` exports `auth`)
+    - **Database**: Firestore for data persistence (`src/firebase.ts` exports `db`)
+    - **Config**: Uses Vite environment variables (`VITE_FIREBASE_*`) for configuration
+    - **Context**: `AuthContext.tsx` provides `useAuth()` hook with `user`, `loading`, and `signOut`
 - **Browser APIs**: Speech Recognition API (STT) and Text-to-Speech (TTS) for voice interaction.
