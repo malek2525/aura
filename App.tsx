@@ -4,9 +4,10 @@ import OnboardingScreen from './screens/OnboardingScreen';
 import NeuralLinkScreen from './screens/NeuralLinkScreen';
 import MatchTestScreen from './screens/MatchTestScreen';
 import TwinIntroScreen from './screens/TwinIntroScreen';
+import ReplyLabScreen from './screens/ReplyLabScreen';
 import { AuraStage } from './components/AuraStage';
 
-type ViewScreen = 'onboarding' | 'neural' | 'match' | 'intro';
+type ViewScreen = 'onboarding' | 'neural' | 'match' | 'intro' | 'replylab';
 
 const App: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<ViewScreen>('onboarding');
@@ -92,6 +93,16 @@ const App: React.FC = () => {
               >
                 Twin Intro
               </button>
+              <button
+                onClick={() => setCurrentScreen('replylab')}
+                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  currentScreen === 'replylab' 
+                    ? 'bg-slate-100 text-slate-900 shadow-lg' 
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Reply Lab
+              </button>
             </div>
           </nav>
 
@@ -122,8 +133,14 @@ const App: React.FC = () => {
               </div>
             )}
 
+            {currentScreen === 'replylab' && profile && (
+              <div className="h-full">
+                <ReplyLabScreen profile={profile} />
+              </div>
+            )}
+
             {/* Placeholder if no profile */}
-            {(currentScreen === 'neural' || currentScreen === 'match') && !profile && (
+            {(currentScreen === 'neural' || currentScreen === 'match' || currentScreen === 'replylab') && !profile && (
               <div className="h-full flex flex-col items-center justify-center p-8 text-center">
                 <p className="text-slate-400">Please complete onboarding first.</p>
                 <button

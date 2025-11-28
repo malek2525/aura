@@ -10,7 +10,23 @@ Aura Twin is an AI-powered digital companion app for introverts, featuring a per
 - **Port**: 5000 (frontend)
 - **Styling**: Tailwind CSS (CDN) + custom glassmorphism CSS
 
-## Recent Changes (November 28, 2025) - PHASE 1.5 AVATAR INTEGRATION
+## Recent Changes (November 28, 2025)
+
+### Reply Lab Feature (New)
+- **New Screen**: `screens/ReplyLabScreen.tsx` - Draft replies in three styles
+  - Safe / Polite: Cautious, no risk of offense
+  - Direct / Honest: Clear and to the point
+  - Playful / Warm: Fun side showing
+- **New LLM Function**: `generateReplyOptions()` in `services/auraLLM.ts`
+  - Uses Gemini to generate three reply options based on user profile
+  - Respects user's boundaries, vibe, and personality
+- **Navigation**: Fourth tab "Reply Lab" added to top navigation
+- **UI Features**:
+  - Textarea for pasting messages to reply to
+  - Loading state with spinner
+  - Three glass cards displaying reply options
+  - Copy button for each reply
+  - Error handling with gentle error messages
 
 ### Phase 1.5: Avatar Wired into All Screens
 - **NeuralLinkScreen.tsx**: Added prominent hero section at top with living AuraAvatar

@@ -66,3 +66,9 @@ export interface TwinIntroResult {
 }
 
 export type ScreenName = 'ONBOARDING' | 'NEURAL_LINK' | 'MATCH_TEST';
+
+export interface ReplyOptions {
+  safe: string;
+  direct: string;
+  playful: string;
+}

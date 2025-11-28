@@ -6,6 +6,7 @@ import {
   MatchResult,
   AuraMatchResult,
   TwinIntroResult,
+  ReplyOptions,
 } from "../types";
 
 /* ------------------------------------------------------------------ */
@@ -75,6 +76,12 @@ const DEFAULT_TWIN_INTRO_RESULT = (): TwinIntroResult => ({
     "Move at a slow pace.",
     "Respect each other's boundaries around over-sharing."
   ]
+});
+
+const DEFAULT_REPLY_OPTIONS = (): ReplyOptions => ({
+  safe: "Thanks for reaching out! I appreciate the message and I'll get back to you soon.",
+  direct: "Hey, thanks for the message. Let me think about this and I'll let you know my thoughts.",
+  playful: "Ooh, interesting! Let me put on my thinking cap and get back to you with something good."
 });
 
 /* ------------------------------------------------------------------ */
@@ -636,5 +643,115 @@ ${JSON.stringify(otherAura, null, 2)}
   } catch (error) {
     console.error("[generateTwinIntro] Fatal error:", error);
     return DEFAULT_TWIN_INTRO_RESULT();
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 5. GENERATE REPLY OPTIONS (REPLY LAB)                              */
+/* ------------------------------------------------------------------ */
+
+const REPLY_LAB_SYSTEM_PROMPT = `
+You are Aura, an AI twin drafting text replies for your user.
+
+You must use the user's profile, boundaries, and vibe to stay in-character.
+Your job is to draft three different reply options for a message the user received.
+
+The three styles are:
+1. "safe" - Polite, cautious, no risk of offense. Good for professional or uncertain situations.
+2. "direct" - Honest, clear, and to the point. Still kind, but doesn't beat around the bush.
+3. "playful" - Warm, lighthearted, with a touch of personality. Shows the fun side.
+
+Rules:
+- Each reply should be 1-3 sentences max.
+- Match the user's vibe and personality from their profile.
+- Respect their boundaries and avoid topics they want to avoid.
+- No explicit or inappropriate content.
+- Keep replies natural and human-sounding.
+
+Output ONLY valid JSON with exactly these three fields:
+{
+  "safe": "string",
+  "direct": "string",
+  "playful": "string"
+}
+
+Do NOT include explanations, commentary, or markdown. Only valid JSON.
+`.trim();
+
+export async function generateReplyOptions(
+  profile: AuraProfile,
+  contextText: string
+): Promise<ReplyOptions> {
+  const apiKey = (window as any).__GEMINI_API_KEY || "";
+
+  if (!apiKey) {
+    console.error("[generateReplyOptions] Missing Gemini API key");
+    return DEFAULT_REPLY_OPTIONS();
+  }
+
+  if (!contextText.trim()) {
+    console.warn("[generateReplyOptions] Empty context text");
+    return DEFAULT_REPLY_OPTIONS();
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+
+    const persona = buildAuraPersonaDescription(profile);
+
+    const userText = `
+AURA_PROFILE:
+${JSON.stringify(profile, null, 2)}
+
+AURA_PERSONA:
+${persona}
+
+MESSAGE_TO_REPLY_TO:
+"${contextText}"
+
+Draft three replies in the user's voice: safe, direct, and playful.
+`.trim();
+
+    console.log("[generateReplyOptions] Generating reply options for:", profile.displayName);
+
+    try {
+      const res = await ai.models.generateContent({
+        model: CHAT_MODEL,
+        config: {
+          systemInstruction: REPLY_LAB_SYSTEM_PROMPT,
+          responseMimeType: "application/json",
+        },
+        contents: [{ role: "user", parts: [{ text: userText }] }],
+      });
+
+      const raw = res.text || "{}";
+
+      try {
+        const json = JSON.parse(raw);
+
+        const result: ReplyOptions = {
+          safe: json.safe || DEFAULT_REPLY_OPTIONS().safe,
+          direct: json.direct || DEFAULT_REPLY_OPTIONS().direct,
+          playful: json.playful || DEFAULT_REPLY_OPTIONS().playful,
+        };
+
+        console.log("[generateReplyOptions] Reply options generated successfully");
+        return result;
+      } catch (parseError) {
+        console.error("[generateReplyOptions] Failed to parse response:", parseError, "Raw:", raw);
+        return DEFAULT_REPLY_OPTIONS();
+      }
+    } catch (apiError) {
+      if (isQuotaError(apiError)) {
+        console.warn("[generateReplyOptions] Quota exhausted, using fallback");
+        return DEFAULT_REPLY_OPTIONS();
+      }
+
+      console.error("[generateReplyOptions] API error:", apiError);
+      return DEFAULT_REPLY_OPTIONS();
+    }
+  } catch (error) {
+    console.error("[generateReplyOptions] Fatal error:", error);
+    return DEFAULT_REPLY_OPTIONS();
   }
 }
