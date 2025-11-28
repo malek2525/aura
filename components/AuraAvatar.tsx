@@ -17,6 +17,7 @@ interface AuraAvatarProps {
   showVibes?: boolean;
   showMood?: boolean;
   isSpeaking?: boolean;
+  isListening?: boolean;
 }
 
 const getMoodAssets = (mood: string): { video: string | null; image: string } => {
@@ -92,7 +93,8 @@ const AuraAvatar: React.FC<AuraAvatarProps> = ({
   showName = true,
   showVibes = true,
   showMood = false,
-  isSpeaking = false
+  isSpeaking = false,
+  isListening = false
 }) => {
   const { video, image } = getMoodAssets(auraState.mood);
   const { color: glowColor, shadow: glowShadow } = getMoodGlow(auraState.mood, auraState.moodIntensity);
@@ -133,6 +135,30 @@ const AuraAvatar: React.FC<AuraAvatarProps> = ({
                 boxShadow: `0 0 40px 15px ${glowColor}`,
                 opacity: 0.5,
                 animation: 'pulse 2s ease-in-out infinite 0.3s'
+              }}
+            />
+          </>
+        )}
+
+        {/* Listening Ring (when isListening is true) */}
+        {isListening && !isSpeaking && (
+          <>
+            <div
+              className={`absolute ${dims.speakingRing} rounded-full pointer-events-none`}
+              style={{
+                background: 'transparent',
+                border: '3px solid rgba(239, 68, 68, 0.6)',
+                boxShadow: '0 0 20px 8px rgba(239, 68, 68, 0.4), inset 0 0 15px 5px rgba(239, 68, 68, 0.3)',
+                animation: 'pulse 1s ease-in-out infinite'
+              }}
+            />
+            <div
+              className={`absolute ${dims.speakingRing} rounded-full pointer-events-none`}
+              style={{
+                background: 'transparent',
+                boxShadow: '0 0 40px 15px rgba(239, 68, 68, 0.3)',
+                opacity: 0.6,
+                animation: 'pulse 1.5s ease-in-out infinite 0.2s'
               }}
             />
           </>
