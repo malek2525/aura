@@ -12,12 +12,26 @@ Aura Twin is an AI-powered digital companion app for introverts, featuring a per
 
 ## Recent Changes (November 26, 2025) - COMPLETE MVP WITH STYLING PASS
 
-### New Two-Column Layout with AuraStage
+### Phase 1: Visual Soul - Living Avatar
+- **AuraAvatar Component**: New unified avatar component at `components/AuraAvatar.tsx`
+  - Breathing animation (4s scale 1→1.05 with opacity shift)
+  - Floating animation (6s translateY -10px bob)
+  - Mood-based gradient colors with soft VisionOS styling
+  - Size variants: sm, md, lg, xl
+  - Optional name, vibe words, and mood badge display
+- **Mood → Gradient Mapping**:
+  - neutral: slate/blue gradients
+  - calm: blue/purple gradients  
+  - happy: pink/rose/amber gradients
+  - anxious: amber/orange/rose gradients (soft, no neon)
+  - sad: blue/indigo/slate gradients
+- **AuraStage Updated**: Now uses AuraAvatar component for the living character
+- **Animations**: `animate-aura-float`, `animate-aura-breathe`, `animate-aura-living` (combined)
+
+### New Two-Column Layout
 - **Layout**: 60/40 split - AuraStage on left (7 cols), content panels on right (5 cols)
-- **AuraStage Component**: Floating avatar with breathing animations, gradient glow, mood display, profile summary
 - **Navigation**: Moved to right panel as pill tabs (Talk to Aura, Match Score, Twin Intro)
 - **NeuralLinkScreen**: Simplified to chat-focused single column for narrower panel
-- **Animations**: Added `animate-breathe` (4s scale pulse) and enhanced `animate-float` (6s vertical bob)
 - **Status Bar**: Bottom indicator with connection status and user name
 
 ### Product Styling & Copy Refinement

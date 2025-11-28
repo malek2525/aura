@@ -159,3 +159,86 @@ body {
 button, [role="button"] {
   transition-property: all;
 }
+/* Tailwind base (only if not already included somewhere else) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global background fallback */
+body {
+  margin: 0;
+  padding: 0;
+  background: radial-gradient(circle at top, rgba(148, 163, 184, 0.18), transparent 55%),
+              linear-gradient(to bottom right, #020617, #020617, #000000);
+  color: #e5e7eb; /* slate-200 */
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(148, 163, 184, 0.1);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.5);
+  border-radius: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.8);
+}
+
+/* Aura float + breathe animations */
+@keyframes aura-float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes aura-breathe {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.04); opacity: 0.9; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-aura-float {
+  animation: aura-float 6s ease-in-out infinite;
+}
+
+.animate-aura-breathe {
+  animation: aura-breathe 5s ease-in-out infinite;
+}
+
+/* Combined float + breathe for avatar */
+.animate-aura-living {
+  animation: aura-float 6s ease-in-out infinite, aura-breathe 5s ease-in-out infinite;
+}
+
+/* Mood-specific glow pulses */
+@keyframes mood-pulse {
+  0%, 100% { 
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7;
+    transform: scale(1.02);
+  }
+}
+
+.animate-mood-pulse {
+  animation: mood-pulse 4s ease-in-out infinite;
+}
+
+/* Soft ambient glow for avatar backgrounds */
+.aura-ambient-glow {
+  filter: blur(60px);
+  opacity: 0.5;
+}
+
+/* Radial gradient utility for glows */
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-stops));
+}

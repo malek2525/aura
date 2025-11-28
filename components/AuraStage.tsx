@@ -1,69 +1,122 @@
-import React from 'react';
-import { AuraProfile, AuraState } from '../types';
+import React from "react";
+import { AuraProfile, AuraState } from "../types";
+import AuraAvatar from "./AuraAvatar";
 
 interface AuraStageProps {
-  profile?: AuraProfile | null;
-  auraState?: AuraState;
+  profile: AuraProfile | null;
+  auraState: AuraState;
 }
 
 export const AuraStage: React.FC<AuraStageProps> = ({ profile, auraState }) => {
-  const mood = auraState?.mood || 'neutral';
-  
+  const intensityPct = Math.round((auraState.moodIntensity ?? 0.2) * 100);
+
+  if (!profile) {
+    return (
+      <div className="relative w-full h-full min-h-[420px] rounded-[2.5rem] border border-white/10 bg-slate-900/60 backdrop-blur-2xl shadow-2xl overflow-hidden flex items-center justify-center">
+        <p className="text-slate-500 text-sm">Complete onboarding to meet your Aura</p>
+      </div>
+    );
+  }
+
+  const primaryVibe = profile.vibeWords?.[0] ?? "calm";
+  const snapshot =
+    profile.summary ||
+    `${profile.displayName} · ${primaryVibe} · ${profile.goals?.join(", ") || "getting to know themselves"}`;
+
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center p-8 overflow-hidden rounded-[40px] bg-slate-900/60 backdrop-blur-2xl border border-white/10 shadow-2xl">
+    <div className="relative w-full h-full min-h-[420px] rounded-[2.5rem] border border-white/10 bg-slate-900/60 backdrop-blur-2xl shadow-2xl overflow-hidden px-6 py-6 lg:px-8 lg:py-8 transition-all duration-700 flex flex-col">
       
-      {/* Background Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-500/20 blur-[120px] rounded-full pointer-events-none" />
+      {/* Ambient background glow based on mood */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-20 blur-3xl"
+        style={{
+          background: auraState.mood === 'happy' 
+            ? 'radial-gradient(circle at center, rgba(244,114,182,0.4), transparent 70%)'
+            : auraState.mood === 'calm'
+            ? 'radial-gradient(circle at center, rgba(96,165,250,0.4), transparent 70%)'
+            : auraState.mood === 'anxious'
+            ? 'radial-gradient(circle at center, rgba(251,191,36,0.3), transparent 70%)'
+            : auraState.mood === 'sad'
+            ? 'radial-gradient(circle at center, rgba(99,102,241,0.4), transparent 70%)'
+            : 'radial-gradient(circle at center, rgba(148,163,184,0.3), transparent 70%)'
+        }}
+      />
 
-      {/* Floating Avatar Container */}
-      <div className="relative z-10 animate-float">
-        {/* Breathing Inner Circle */}
-        <div className="w-64 h-64 rounded-full bg-gradient-to-br from-slate-200 to-slate-400 p-1 shadow-2xl animate-breathe flex items-center justify-center relative overflow-hidden border border-white/20">
-          
-          {/* Inner Glow/Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-10 rounded-full" />
-          
-          {/* Avatar or Placeholder */}
-          {profile?.avatarUrl ? (
-            <img 
-              src={profile.avatarUrl} 
-              alt={profile.displayName} 
-              className="w-full h-full object-cover rounded-full z-0"
-            />
-          ) : (
-            <div className="text-8xl select-none filter drop-shadow-lg z-0">
-              ⚪️
-            </div>
-          )}
-
-          {/* Glass Reflection Overlay */}
-          <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none rounded-t-full" />
-        </div>
-      </div>
-
-      {/* Info Section */}
-      <div className="relative z-10 mt-12 text-center space-y-2">
-        <h1 className="text-4xl font-thin tracking-[0.2em] text-white drop-shadow-sm">
-          {profile?.displayName ? `${profile.displayName}'s` : ''} AURA
-        </h1>
-        <div className="flex items-center justify-center gap-3 flex-wrap">
-          <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] uppercase tracking-widest text-slate-300 backdrop-blur-md">
-            Mood: {mood}
-          </span>
-          <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] uppercase tracking-widest text-slate-300 backdrop-blur-md">
-            Digital Twin
-          </span>
-          {profile?.vibeWords?.slice(0, 2).map((vibe, i) => (
-            <span key={i} className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] uppercase tracking-widest text-slate-300 backdrop-blur-md">
-              {vibe}
+      {/* Header */}
+      <div className="relative z-10 flex items-start justify-between mb-4">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)] animate-pulse" />
+            <span className="text-[11px] font-mono tracking-[0.25em] uppercase text-slate-300">
+              Aura · Neural Link
             </span>
-          ))}
+          </div>
+          <h1 className="text-2xl lg:text-3xl font-semibold tracking-tight text-white">
+            {profile.displayName}'s Twin
+          </h1>
+          <p className="text-xs text-slate-400 max-w-md">
+            A calm, non-judgmental mirror for your social life.
+          </p>
         </div>
-        <p className="text-slate-400 text-sm font-light mt-4 max-w-xs mx-auto leading-relaxed">
-          {profile?.summary || '"I am learning to feel what you feel."'}
-        </p>
+
+        <div className="hidden md:flex flex-col items-end gap-1">
+          <span className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.2em]">
+            Social Battery
+          </span>
+          <span className="text-xs font-mono text-slate-100 bg-white/5 border border-white/10 rounded-full px-3 py-1">
+            {profile.socialSpeed === "fast"
+              ? "Fast paced"
+              : profile.socialSpeed === "slow"
+                ? "Slow & gentle"
+                : "Balanced"}
+          </span>
+        </div>
       </div>
 
+      {/* Center: Living Avatar */}
+      <div className="relative z-10 flex-1 flex items-center justify-center">
+        <AuraAvatar
+          profile={profile}
+          auraState={auraState}
+          size="xl"
+          showName={false}
+          showVibes={true}
+          showMood={false}
+        />
+      </div>
+
+      {/* Bottom status */}
+      <div className="relative z-10 mt-auto bg-black/30 border border-white/10 rounded-2xl px-4 py-3 flex flex-col gap-3 backdrop-blur-xl">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-400">
+              Mood
+            </span>
+            <span className="text-sm font-mono text-slate-100">
+              {auraState.mood.toUpperCase()}{" "}
+              <span className="text-xs text-slate-400">({intensityPct}%)</span>
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-1 text-right">
+            <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-400">
+              Calibration
+            </span>
+            <span className="text-xl font-mono text-cyan-300">
+              {profile.introversionLevel ?? 5}/10
+            </span>
+          </div>
+        </div>
+
+        <div className="h-px w-full bg-white/5 my-1" />
+
+        <div className="flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <p className="text-[11px] font-mono text-slate-300 truncate">
+            {snapshot}
+          </p>
+        </div>
+      </div>
     </div>
   );
 };

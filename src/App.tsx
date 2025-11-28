@@ -1,18 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { AuraProfile, AuraChatMessage, AuraState } from './types';
-import OnboardingScreen from './screens/OnboardingScreen';
-import NeuralLinkScreen from './screens/NeuralLinkScreen';
-import MatchTestScreen from './screens/MatchTestScreen';
-import TwinConversationScreen from './screens/TwinConversationScreen';
-import { TwinVideoMomentsScreen } from './screens/TwinVideoMomentsScreen';
-import { NightDebriefScreen } from './screens/NightDebriefScreen';
-import { loadAuraProfile, persistAuraProfile, clearAuraProfile } from './storage/profileStorage';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import { AuthScreen } from './screens/AuthScreen';
+import React, { useState, useEffect } from "react";
+import { AuraProfile, AuraChatMessage, AuraState } from "./types";
+import OnboardingScreen from "./screens/OnboardingScreen";
+import NeuralLinkScreen from "./screens/NeuralLinkScreen";
+import MatchTestScreen from "./screens/MatchTestScreen";
+import { TwinConversationScreen } from "./screens/TwinConversationScreen";
+import { TwinVideoMomentsScreen } from "./screens/TwinVideoMomentsScreen";
+import { NightDebriefScreen } from "./screens/NightDebriefScreen";
 
-type Screen = 'onboarding' | 'neural' | 'match' | 'twinTalk' | 'videoMoments' | 'nightDebrief';
+import AuraStage from "./components/AuraStage";
 
-// Sample Profile used for B-side interactions
+import {
+  loadAuraProfile,
+  persistAuraProfile,
+  clearAuraProfile,
+} from "./storage/profileStorage";
+
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { AuthScreen } from "./screens/AuthScreen";
+
+type Tab = "neural" | "match" | "twin";
+
 const SAMPLE_LINA_PROFILE: AuraProfile = {
   id: "sample_lina",
   displayName: "Lina",
@@ -27,96 +34,59 @@ const SAMPLE_LINA_PROFILE: AuraProfile = {
   hardBoundaries: ["no explicit content", "no heavy drama"],
   greenFlags: ["honesty", "emotional maturity"],
   redFlags: ["ghosting", "mocking others"],
-  summary: "Lina is a quiet, thoughtful person who loves deep conversations and gentle people."
+  summary:
+    "Lina is a quiet, thoughtful person who loves deep conversations and gentle people.",
 };
 
-const AppContent: React.FC = () => {
+const AppContent = () => {
   const { user, loading: authLoading, signOut } = useAuth();
-  const [profile, setProfile] = useState<AuraProfile | null>(null);
-  const [screen, setScreen] = useState<Screen>('onboarding');
 
-  // Chat & Aura State
+  const [profile, setProfile] = useState<AuraProfile | null>(null);
+  const [tab, setTab] = useState<Tab>("neural");
+
   const [chatHistory, setChatHistory] = useState<AuraChatMessage[]>([]);
   const [auraState, setAuraState] = useState<AuraState>({
-    mood: 'neutral',
-    moodIntensity: 0.2
+    mood: "neutral",
+    moodIntensity: 0.28,
   });
 
-  // Load profile on mount or user change
+  // Load profile at startup
   useEffect(() => {
     if (user) {
-      const savedProfile = loadAuraProfile(user.uid);
-      if (savedProfile) {
-        setProfile(savedProfile);
-        setScreen('neural');
-        
-        // Reset chat history for new session if empty (assuming chat isn't persisted for now)
-        // If switching users, we should probably clear chatHistory, but let's assume component unmount handles that partially.
-        // Better to explicitly set based on user switch.
-      } else {
-        setProfile(null);
-        setScreen('onboarding');
+      const saved = loadAuraProfile(user.uid);
+      if (saved) {
+        setProfile(saved);
+        if (chatHistory.length === 0) {
+          setChatHistory([
+            {
+              id: "initial",
+              from: "aura",
+              text: `Hello ${saved.displayName}. I am your Aura — I’m here with you.`,
+              timestamp: Date.now(),
+            },
+          ]);
+        }
+        setAuraState({ mood: "calm", moodIntensity: 0.35 });
       }
     }
   }, [user]);
-  
-  // Clear state when user changes (e.g. logout)
-  useEffect(() => {
-    if (!user) {
-      setProfile(null);
-      setChatHistory([]);
-      setAuraState({ mood: 'neutral', moodIntensity: 0.2 });
-    }
-  }, [user]);
 
-  // Initial greeting logic when profile loads is handled above, but let's ensure chat greeting works
-  useEffect(() => {
-    if (profile && chatHistory.length === 0) {
-       setChatHistory([{
-          id: 'init-reload',
-          from: 'aura',
-          text: `Welcome back, ${profile.displayName}. I am here and listening.`,
-          timestamp: Date.now()
-        }]);
-        setAuraState({ mood: 'calm', moodIntensity: 0.3 });
-    }
-  }, [profile]);
+  const handleOnboardingComplete = (p: AuraProfile) => {
+    if (!user) return;
+    persistAuraProfile(p, user.uid);
+    setProfile(p);
+    setTab("neural");
 
+    setChatHistory([
+      {
+        id: "onboarding-init",
+        from: "aura",
+        text: `Welcome ${p.displayName}. I’ve connected to your profile. Let’s talk.`,
+        timestamp: Date.now(),
+      },
+    ]);
 
-  const handleOnboardingComplete = (newProfile: AuraProfile) => {
-    if (user) {
-      persistAuraProfile(newProfile, user.uid);
-      setProfile(newProfile);
-      setScreen('neural');
-      
-      // Initial Greeting
-      setChatHistory([{
-        id: 'init',
-        from: 'aura',
-        text: `Hello ${newProfile.displayName}. I am your Aura. I've analyzed your profile, and I feel... ${newProfile.vibeWords[0] || 'connected'}. I'm here for you.`,
-        timestamp: Date.now()
-      }]);
-      setAuraState({ mood: 'calm', moodIntensity: 0.5 });
-    }
-  };
-
-  const handleResetAura = () => {
-    if (user) {
-      clearAuraProfile(user.uid);
-      setProfile(null);
-      setChatHistory([]);
-      setAuraState({ mood: 'neutral', moodIntensity: 0.2 });
-      setScreen('onboarding');
-    }
-  };
-
-  const navButtonClass = (targetScreen: Screen) => {
-    const isActive = screen === targetScreen;
-    return `px-3 py-1.5 rounded-full border text-[11px] md:text-xs font-medium transition-all duration-300 whitespace-nowrap ${
-      isActive
-        ? 'bg-slate-800/80 text-slate-50 border-white/20 shadow-sm'
-        : 'bg-transparent text-slate-400 border-transparent hover:text-slate-200 hover:bg-white/5'
-    }`;
+    setAuraState({ mood: "calm", moodIntensity: 0.4 });
   };
 
   if (authLoading) {
@@ -127,145 +97,87 @@ const AppContent: React.FC = () => {
     );
   }
 
-  if (!user) {
-    return <AuthScreen />;
-  }
+  if (!user) return <AuthScreen />;
+
+  if (!profile)
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black p-4">
+        <OnboardingScreen onComplete={handleOnboardingComplete} />
+      </div>
+    );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-slate-100 font-sans selection:bg-blue-500/30 flex flex-col">
-      <div className="flex-1 max-w-6xl mx-auto w-full px-4 py-6 lg:py-8 flex flex-col gap-6 h-screen">
-        
-        {/* Header - Only visible if profile exists */}
-        {profile && screen !== 'nightDebrief' && (
-          <header className="flex flex-col md:flex-row items-center justify-between gap-4 py-2 shrink-0">
-            {/* Logo Area */}
-            <div className="flex items-center gap-2 md:w-1/4">
-              <div className="w-2 h-2 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.5)] animate-pulse" />
-              <span className="text-sm font-medium tracking-wide text-slate-200">Aura Twin</span>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-slate-100 overflow-hidden">
+      {/* TOP SECTION — Aura Stage */}
+      <div className="w-full max-w-5xl mx-auto pt-6 px-4">
+        <AuraStage profile={profile} auraState={auraState} />
+      </div>
 
-            {/* Navigation */}
-            <nav className="flex items-center justify-center bg-slate-900/50 backdrop-blur-md rounded-full p-1 border border-white/5 overflow-x-auto max-w-full">
-              <button
-                onClick={() => setScreen('onboarding')}
-                className={navButtonClass('onboarding')}
-              >
-                Profile
-              </button>
-              <button
-                onClick={() => setScreen('neural')}
-                className={navButtonClass('neural')}
-              >
-                Neural Link
-              </button>
-              <button
-                onClick={() => setScreen('match')}
-                className={navButtonClass('match')}
-              >
-                Match Test
-              </button>
-              <button
-                onClick={() => setScreen('twinTalk')}
-                className={navButtonClass('twinTalk')}
-              >
-                Twin Talk
-              </button>
-              <button
-                onClick={() => setScreen('videoMoments')}
-                className={navButtonClass('videoMoments')}
-              >
-                Video Moments
-              </button>
-            </nav>
+      {/* NAV TABS */}
+      <div className="w-full max-w-3xl mx-auto mt-6 px-4 flex justify-center">
+        <div className="flex bg-slate-900/60 border border-white/10 backdrop-blur-lg rounded-full overflow-hidden">
+          <button
+            onClick={() => setTab("neural")}
+            className={`px-5 py-2 text-sm transition-all ${
+              tab === "neural"
+                ? "bg-white/10 text-white"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            Talk to Aura
+          </button>
+          <button
+            onClick={() => setTab("match")}
+            className={`px-5 py-2 text-sm transition-all ${
+              tab === "match"
+                ? "bg-white/10 text-white"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            Match Score
+          </button>
+          <button
+            onClick={() => setTab("twin")}
+            className={`px-5 py-2 text-sm transition-all ${
+              tab === "twin"
+                ? "bg-white/10 text-white"
+                : "text-slate-400 hover:text-slate-200"
+            }`}
+          >
+            Twin Intro
+          </button>
+        </div>
+      </div>
 
-            {/* Actions Area */}
-            <div className="flex items-center justify-end md:w-1/4 gap-2">
-               <button
-                onClick={() => setScreen('nightDebrief')}
-                className="text-xs font-medium text-blue-200 bg-blue-500/10 border border-blue-400/20 px-4 py-1.5 rounded-full hover:bg-blue-500/20 transition-all shadow-sm"
-              >
-                Night Mode 🌙
-              </button>
-              <button
-                onClick={handleResetAura}
-                className="text-xs font-medium text-slate-500 hover:text-red-400 px-3 py-1.5 rounded-full border border-transparent hover:bg-red-500/5 hover:border-red-500/10 transition-all"
-              >
-                Reset
-              </button>
-              <button
-                onClick={() => signOut()}
-                className="text-xs font-medium text-slate-500 hover:text-white px-3 py-1.5 rounded-full border border-transparent hover:bg-white/5 transition-all"
-              >
-                Sign Out
-              </button>
-            </div>
-          </header>
+      {/* MAIN PANEL */}
+      <div className="max-w-5xl mx-auto mt-8 px-4 pb-20">
+        {tab === "neural" && (
+          <NeuralLinkScreen
+            profile={profile}
+            history={chatHistory}
+            setHistory={setChatHistory}
+            auraState={auraState}
+            setAuraState={setAuraState}
+          />
         )}
 
-        {/* Header fallback for when no profile exists but logged in */}
-        {!profile && (
-          <header className="flex items-center justify-end py-2 shrink-0">
-             <button
-                onClick={() => signOut()}
-                className="text-xs font-medium text-slate-500 hover:text-white px-3 py-1.5 rounded-full border border-transparent hover:bg-white/5 transition-all"
-              >
-                Sign Out
-              </button>
-          </header>
-        )}
+        {tab === "match" && <MatchTestScreen profile={profile} />}
 
-        {/* Main Content Area */}
-        <main className="flex-1 relative overflow-hidden flex flex-col">
-          {!profile || screen === 'onboarding' ? (
-            <div className="flex-1 h-full overflow-hidden">
-              <OnboardingScreen onComplete={handleOnboardingComplete} />
-            </div>
-          ) : screen === 'neural' ? (
-            <div className="flex-1 h-full overflow-hidden">
-               <NeuralLinkScreen 
-                 profile={profile} 
-                 history={chatHistory}
-                 setHistory={setChatHistory}
-                 auraState={auraState}
-                 setAuraState={setAuraState}
-               />
-            </div>
-          ) : screen === 'match' ? (
-            <div className="flex-1 h-full overflow-y-auto custom-scrollbar">
-              <MatchTestScreen profile={profile} />
-            </div>
-          ) : screen === 'twinTalk' ? (
-            <div className="flex-1 h-full overflow-hidden">
-              <TwinConversationScreen 
-                profileA={profile} 
-                profileB={SAMPLE_LINA_PROFILE} 
-              />
-            </div>
-          ) : screen === 'videoMoments' ? (
-             <div className="flex-1 h-full overflow-y-auto custom-scrollbar">
-               <TwinVideoMomentsScreen profile={profile} />
-             </div>
-          ) : (
-            /* Night Debrief Mode - Full Screen Immersive */
-            <div className="absolute inset-0 z-50 bg-slate-950">
-               <NightDebriefScreen 
-                 profile={profile} 
-                 onExit={() => setScreen('neural')} 
-               />
-            </div>
-          )}
-        </main>
+        {tab === "twin" && (
+          <TwinConversationScreen
+            profileA={profile}
+            profileB={SAMPLE_LINA_PROFILE}
+          />
+        )}
       </div>
     </div>
   );
 };
 
-const App: React.FC = () => {
+export default function App() {
   return (
     <AuthProvider>
       <AppContent />
     </AuthProvider>
   );
-};
-
-export default App;
+}

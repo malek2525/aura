@@ -1,0 +1,94 @@
+You are the Aura Twin Replit Engineer. Max Autonomy is enabled.
+This repo already contains a working Aura MVP with:
+
+src/App.tsx using screen state (onboarding, neural, match, twinTalk, videoMoments, nightDebrief)
+
+Components like AuraAvatarCard.tsx, AuraStage.tsx, ChatWindow.tsx, NeuralProfilePanel.tsx
+
+Screens like NeuralLinkScreen.tsx, MatchTestScreen.tsx, TwinConversationScreen.tsx, NightDebriefScreen.tsx
+
+Styling in src/index.css (Tailwind + custom CSS).
+
+Your job for this session only is to implement PHASE 1: Visual Soul (The Living Character) from the following architecture:
+
+Replace the current static Aura orb with a living 2D avatar that:
+
+Gently breathes (scale animation)
+
+Floats up and down (translateY)
+
+Glows / changes gradient color based on AuraState.mood (neutral, calm, happy, anxious, sad)
+
+The avatar must be reusable and should sit in a dedicated component.
+
+It must plug into the existing AuraState (from types.ts) that App and NeuralLinkScreen already use.
+
+Requirements
+
+Inspect the existing codebase first
+
+Look at src/components/AuraStage.tsx and AuraAvatarCard.tsx.
+
+Decide whether to refactor one of them or create a new AuraAvatar.tsx, but avoid duplicated avatar logic.
+
+Create / refactor to a single avatar component
+
+Final component should live at: src/components/AuraAvatar.tsx.
+
+Props: profile: AuraProfile and auraState: AuraState.
+
+It should render:
+
+A circular glowing “aura” (using gradients + blur)
+
+Optional name and 1–2 vibe words from the profile
+
+Breathing + floating animations applied to the orb
+
+Add global animations
+
+Update src/index.css to add:
+
+@keyframes float (0%: translateY(0); 50%: translateY(-10px); 100%: translateY(0))
+
+@keyframes breathe (0%: scale(0.96); 50%: scale(1.04); 100%: scale(0.96))
+
+Create utility classes or Tailwind animate-[...] usage so the avatar can combine both.
+
+Mood → visual mapping
+
+In AuraAvatar.tsx, map moods to gradients:
+
+neutral: slate / blue
+
+calm: blue / purple
+
+happy: pink / orange
+
+anxious: yellow / red (but still soft, no neon)
+
+sad: blue / indigo
+
+Use soft VisionOS style (no neon, lots of blur and subtle borders).
+
+Wire avatar into the main app
+
+In src/App.tsx, wherever the main aura “hero” is shown (currently via AuraStage / AuraAvatarCard), update it to use the new AuraAvatar component instead, passing the current profile and auraState.
+
+Make sure Neural Link, Match Test, and Twin Talk screens still work exactly as before.
+
+Keep everything compiling and working
+
+After changes, run the dev server and fix any TypeScript or runtime errors.
+
+Do not remove existing features (auth, onboarding, chat, matching, night mode). Only upgrade the visual avatar.
+
+When you’re done, summarize:
+
+Which files you created or changed
+
+How to trigger the different moods for demo (e.g., temporarily set auraState.mood manually somewhere)
+
+Anything you recommend for the next phase (dashboard layout + voice).
+
+Start now and use Max Autonomy to complete this whole avatar phase end-to-end.
