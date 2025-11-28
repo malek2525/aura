@@ -1,0 +1,207 @@
+<replit-edit-file name="src/components/AuraStage.tsx">
+import React from 'react';
+// Placeholder props if you want to connect data later
+interface AuraStageProps {
+mood?: string;
+}
+export const AuraStage: React.FC<AuraStageProps> = ({ mood = 'neutral' }) => {
+return (
+<div className="relative w-full h-full flex flex-col items-center justify-center p-8 overflow-hidden rounded-[40px] bg-slate-900/60 backdrop-blur-2xl border border-white/10 shadow-2xl">
+code
+Code
+{/* Background Glow */}
+  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-500/20 blur-[120px] rounded-full pointer-events-none" />
+
+  {/* Floating Avatar Container */}
+  <div className="relative z-10 animate-float">
+    {/* Breathing Inner Circle */}
+    <div className="w-64 h-64 rounded-full bg-gradient-to-br from-slate-200 to-slate-400 p-1 shadow-2xl animate-breathe flex items-center justify-center relative overflow-hidden border border-white/20">
+      
+      {/* Inner Glow/Gradient - Placeholder for 3D character */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-10" />
+      
+      {/* REPLACE THIS IMG WITH YOUR CHARACTER ASSET LATER */}
+      <div className="text-8xl select-none filter drop-shadow-lg z-0">
+        ⚪️
+      </div>
+
+      {/* Glass Reflection Overlay */}
+      <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none" />
+    </div>
+  </div>
+
+  {/* Info Section */}
+  <div className="relative z-10 mt-12 text-center space-y-2">
+    <h1 className="text-4xl font-thin tracking-[0.2em] text-white drop-shadow-sm">
+      AURA
+    </h1>
+    <div className="flex items-center justify-center gap-3">
+       <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] uppercase tracking-widest text-slate-300 backdrop-blur-md">
+         Mood: {mood}
+       </span>
+       <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] uppercase tracking-widest text-slate-300 backdrop-blur-md">
+         Digital Twin
+       </span>
+    </div>
+    <p className="text-slate-400 text-sm font-light mt-4 max-w-xs mx-auto leading-relaxed">
+      "I am learning to feel what you feel."
+    </p>
+  </div>
+
+</div>
+);
+};
+</replit-edit-file>
+<replit-edit-file name="src/App.tsx">
+import React, { useState } from 'react';
+import { AuraProfile, AuraChatMessage, AuraState, ScreenName } from './types';
+import OnboardingScreen from './screens/OnboardingScreen';
+import NeuralLinkScreen from './screens/NeuralLinkScreen';
+import MatchTestScreen from './screens/MatchTestScreen';
+import { AuraStage } from './components/AuraStage'; // NEW IMPORT
+const App: React.FC = () => {
+// --- APP STATE ---
+const [screen, setScreen] = useState<ScreenName>('ONBOARDING');
+// User Data
+const [profile, setProfile] = useState<AuraProfile | null>(null);
+// Chat Data
+const [chatHistory, setChatHistory] = useState<AuraChatMessage[]>([]);
+const [auraState, setAuraState] = useState<AuraState>({
+mood: 'neutral',
+moodIntensity: 0.2
+});
+// --- HANDLERS ---
+const handleProfileCreated = (newProfile: AuraProfile) => {
+setProfile(newProfile);
+setScreen('NEURAL_LINK');
+// Add initial greeting from Aura
+setChatHistory([{
+id: 'init',
+from: 'aura',
+text: Hello ${newProfile.displayName}. I am your Aura. I've analyzed your profile, and I feel... ${newProfile.vibeWords[0]}. I'm here for you.,
+timestamp: Date.now()
+}]);
+setAuraState({ mood: 'calm', moodIntensity: 0.5 });
+};
+// --- RENDER ---
+return (
+<div className="min-h-screen bg-aura-dark text-aura-text font-sans selection:bg-aura-accent selection:text-white flex flex-col p-4 lg:p-6 overflow-hidden">
+code
+Code
+{screen === 'ONBOARDING' && (
+     <div className="flex-1 overflow-hidden relative">
+        <OnboardingScreen onProfileCreated={handleProfileCreated} />
+     </div>
+  )}
+
+  {screen !== 'ONBOARDING' && (
+     <main className="w-full max-w-[1400px] h-[90vh] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fade-in">
+        
+        {/* Left Column: Aura Stage (60% on desktop) */}
+        <div className="lg:col-span-7 h-full">
+           <AuraStage mood={auraState.mood} />
+        </div>
+
+        {/* Right Column: Existing Panels */}
+        <div className="lg:col-span-5 h-full flex flex-col gap-6 relative">
+           
+           {/* HEADER NAVIGATION WITHIN PANEL */}
+           <nav className="absolute top-0 right-0 left-0 z-50 flex justify-center p-4">
+              <div className="flex gap-2 bg-slate-900/80 backdrop-blur-md p-1 rounded-full border border-white/10 shadow-lg">
+                 <button
+                    onClick={() => setScreen('NEURAL_LINK')}
+                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                       screen === 'NEURAL_LINK' 
+                          ? 'bg-aura-accent text-white shadow-lg' 
+                          : 'text-aura-muted hover:text-white'
+                    }`}
+                 >
+                    Neural Link
+                 </button>
+                 <button
+                    onClick={() => setScreen('MATCH_TEST')}
+                    className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                       screen === 'MATCH_TEST' 
+                          ? 'bg-aura-accent text-white shadow-lg' 
+                          : 'text-aura-muted hover:text-white'
+                    }`}
+                 >
+                    Match Test
+                 </button>
+              </div>
+           </nav>
+
+           {/* CONTENT AREA */}
+           <div className="flex-1 overflow-hidden rounded-[32px] bg-slate-900/60 backdrop-blur-xl border border-white/10 shadow-xl relative pt-16">
+              
+              {screen === 'NEURAL_LINK' && profile && (
+                 <div className="h-full">
+                   <NeuralLinkScreen 
+                      profile={profile}
+                      history={chatHistory}
+                      setHistory={setChatHistory}
+                      auraState={auraState}
+                      setAuraState={setAuraState}
+                   />
+                 </div>
+              )}
+
+              {screen === 'MATCH_TEST' && profile && (
+                 <div className="h-full overflow-y-auto custom-scrollbar">
+                    <MatchTestScreen userProfile={profile} />
+                 </div>
+              )}
+
+           </div>
+        </div>
+     </main>
+  )}
+
+</div>
+);
+};
+export default App;
+</replit-edit-file>
+<replit-edit-file name="src/index.css">
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer utilities {
+.animate-fade-in {
+animation: fadeIn 0.5s ease-out;
+}
+}
+@keyframes fadeIn {
+from { opacity: 0; transform: translateY(10px); }
+to { opacity: 1; transform: translateY(0); }
+}
+/* Custom scrollbar for chat */
+.custom-scrollbar::-webkit-scrollbar {
+width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+background-color: rgba(255, 255, 255, 0.1);
+border-radius: 20px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+background-color: rgba(255, 255, 255, 0.2);
+}
+/* --- ANIMATIONS FOR AURA STAGE --- */
+@keyframes float {
+0%, 100% { transform: translateY(0); }
+50% { transform: translateY(-10px); }
+}
+@keyframes breathe {
+0%, 100% { transform: scale(1); opacity: 1; }
+50% { transform: scale(1.05); opacity: 0.9; }
+}
+.animate-float {
+animation: float 6s ease-in-out infinite;
+}
+.animate-breathe {
+animation: breathe 4s ease-in-out infinite;
+}
+</replit-edit-file>

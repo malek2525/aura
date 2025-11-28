@@ -12,12 +12,18 @@ Aura Twin is an AI-powered digital companion app for introverts, featuring a per
 
 ## Recent Changes (November 26, 2025) - COMPLETE MVP WITH STYLING PASS
 
+### New Two-Column Layout with AuraStage
+- **Layout**: 60/40 split - AuraStage on left (7 cols), content panels on right (5 cols)
+- **AuraStage Component**: Floating avatar with breathing animations, gradient glow, mood display, profile summary
+- **Navigation**: Moved to right panel as pill tabs (Talk to Aura, Match Score, Twin Intro)
+- **NeuralLinkScreen**: Simplified to chat-focused single column for narrower panel
+- **Animations**: Added `animate-breathe` (4s scale pulse) and enhanced `animate-float` (6s vertical bob)
+- **Status Bar**: Bottom indicator with connection status and user name
+
 ### Product Styling & Copy Refinement
-- **Navigation**: "Onboarding" → "Calibrate Aura", "Neural Link" → "Talk to Aura", "Match Test" → "Match Score"
-- **Header**: "Aura Twin · Private Neural Link" + "● Connected · For your eyes only" status
-- **Onboarding**: Renamed steps to "Core Identity", "Social Energy", "Boundaries & Goals"; refined all field labels and helper text to feel intimate and non-clinical
-- **Neural Link**: Changed stage label to "Neural link online", simplified description about mirroring vibe and emotional safety, improved empty state messaging
-- **Match Score**: Clarified purpose as "sandbox" demo with compatibility score caveat, softened result labels ("possible friction points" instead of risks)
+- **Onboarding**: Full-page centered layout with glass card, renamed steps to "Core Identity", "Social Energy", "Boundaries & Goals"
+- **Neural Link**: Changed stage label to "Neural link online", simplified description about mirroring vibe and emotional safety
+- **Match Score**: Clarified purpose as "sandbox" demo with compatibility score caveat, softened result labels
 - **Twin Intro**: Updated result headings to "What your twins noticed", maintained supportive tone throughout
 
 ## Recent Changes (November 26, 2025) - FINAL BUILD
