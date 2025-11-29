@@ -1,0 +1,815 @@
+You are the lead engineer for a web app called Aura Twin.
+The founder is a non-developer. You must handle all coding, refactors, and file edits yourself. Do NOT ask them to write code, only to test and give feedback.
+We already have a working React + Vite + TypeScript + Tailwind app with Firebase auth and Gemini-based chat. Your mission now is to turn it into a polished Investor MVP with:
+
+
+A big character stage on the left (hologram video of Aura)
+
+
+A tabbed panel on the right (LINK / SKILLS / TWINS / MIRROR)
+
+
+A “Reply as Me” tool
+
+
+A simple “Twin-to-Twin” match demo
+
+
+Voice that speaks only Aura’s replies using a soft, feminine, non-robotic TTS
+
+
+The founder has already:
+
+
+Created a Firebase project and sign-in works (email/password + Google).
+
+
+Set up some Google TTS credentials as Replit secrets.
+
+
+Uploaded these assets into src/assets:
+
+
+aura-neutral.png
+
+
+aura-happy.png
+
+
+aura-playful.png
+
+
+aura-neutral.mp4 (looping, calm, full/upper body aura video)
+
+
+aura-happy.mp4 (looping, happy aura video)
+
+
+
+
+Assume these files exist. If paths are wrong, fix them yourself.
+
+GLOBAL GOAL
+Create a VisionOS-style “Neural Dashboard”:
+
+
+Left side: “AuraStage” with the Aura character (full/upper body video or image) floating in a glass circle, breathing and glowing.
+
+
+Right side: Glass panel with 4 tabs:
+
+
+LINK – main chat + voice with Aura
+
+
+SKILLS – “Reply as Me” drafting tool
+
+
+TWINS – simple match demo (user’s Aura vs sample “Lina”)
+
+
+MIRROR – Nightly debrief / Night Mirror screen
+
+
+
+
+Make everything look clean, premium, glassy, not neon, not cluttered, and fit nicely on one screen on desktop, with a good stacked layout on mobile.
+
+STEP 1 – Refactor App Layout (AuraStage + Tabbed Panel)
+
+
+Open src/App.tsx.
+
+
+Refactor it into this structure (while keeping existing logic):
+
+
+Wrap the app in the existing AuthProvider.
+
+
+After sign-in, render a layout like:
+
+
+div full-screen gradient background.
+
+
+Inside: a centered container with two main columns on desktop:
+
+
+Left: ~55–60% width – AuraStage (the big character).
+
+
+Right: ~40–45% width – glass panel with tabs.
+
+
+
+
+On mobile: AuraStage on top, right panel below (full width).
+
+
+
+
+
+
+Tabs:
+In the right panel, add 4 tabs:
+
+
+LINK
+
+
+SKILLS
+
+
+TWINS
+
+
+MIRROR
+
+
+Visual style:
+
+
+container: bg-slate-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-3 md:p-4
+
+
+tab buttons: pill-style, rounded-full, small text, subtle hover
+
+
+State:
+
+
+Use a local activeTab state in App (e.g. 'LINK' | 'SKILLS' | 'TWINS' | 'MIRROR').
+
+
+
+
+Content routing:
+
+
+When activeTab === "LINK" → render the existing NeuralLinkScreen inside the right panel.
+
+
+When activeTab === "SKILLS" → render the new SkillsPanel (you will create in Step 3).
+
+
+When activeTab === "TWINS" → render the new TwinsPanel (you will create in Step 5).
+
+
+When activeTab === "MIRROR" → render the existing NightDebriefScreen inside the panel (not full-screen overlay anymore).
+
+
+Keep using the existing AuraProfile, AuraState, and chatHistory logic from the current App.tsx, just adapt the layout.
+
+
+Sign Out button:
+
+
+Make sure there is always a global header area (top-right) with:
+
+
+"Sign Out" button
+
+
+Optional: small “Aura Twin” label on the left
+
+
+
+
+The founder said: Sign out only appears once and then disappears; fix this so it’s always visible whenever the user is logged in.
+
+
+
+
+
+STEP 2 – AuraStage + AuraAvatar with Video Assets
+
+
+Create or update src/components/AuraAvatar.tsx:
+Requirements:
+
+
+Props:
+
+
+auraState: AuraState (includes mood and moodIntensity)
+
+
+size?: "sm" | "md" | "lg" (default "lg")
+
+
+isSpeaking?: boolean (default false)
+
+
+className?: string
+
+
+
+
+Import:
+import neutralImg from "../assets/aura-neutral.png";
+import happyImg from "../assets/aura-happy.png";
+import playfulImg from "../assets/aura-playful.png";
+
+import neutralVideo from "../assets/aura-neutral.mp4";
+import happyVideo from "../assets/aura-happy.mp4";
+
+If some imports are missing, handle it gracefully (e.g. fallback to image).
+
+
+Mood mapping:
+
+
+neutral, calm, sad, anxious → neutral media
+
+
+happy, excited → happy media
+
+
+playful, flirty → playful media (fallback to happy or neutral if no explicit asset)
+
+
+
+
+Rendering:
+
+
+Use a rounded-full container with Tailwind classes like:
+<div className={`relative flex items-center justify-center ${sizeClass} ${className}`}>
+
+
+
+Inside, render:
+
+
+Outer glow: a blurred div with mood-based color & optional pulsing when isSpeaking.
+
+
+Inner circle: overflow-hidden rounded-full border border-white/10 bg-slate-900/40 shadow-2xl.
+
+
+If video exists for chosen mood:
+
+
+<video src={...} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+
+
+
+
+Else:
+
+
+<img src={...} alt="Aura Avatar" className="w-full h-full object-cover" />
+
+
+
+
+Apply subtle animations:
+
+
+floating: e.g. animate-[float_6s_ease-in-out_infinite]
+
+
+breathing: e.g. animate-[breathe_5s_ease-in-out_infinite]
+
+
+
+
+
+
+When isSpeaking === true, add:
+
+
+Outer ring: ring-2 ring-white/30 animate-pulse
+
+
+Maybe an extra halo using before: or an absolutely positioned div.
+
+
+
+
+
+
+
+
+Add keyframes to global CSS (if not already existing):
+In src/index.css (or your global CSS file), add:
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes breathe {
+  0% { transform: scale(0.97); opacity: 0.95; }
+  50% { transform: scale(1.03); opacity: 1; }
+  100% { transform: scale(0.97); opacity: 0.95; }
+}
+
+Then define helper classes or just use style inside the AuraAvatar container.
+
+
+Create or update src/components/AuraStage.tsx:
+
+
+Goal: big left-side hero.
+
+
+Component should:
+
+
+Accept profile?: AuraProfile, auraState: AuraState, isSpeaking?: boolean.
+
+
+Render a glass card:
+<div className="w-full h-full bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-3xl p-4 md:p-6 flex flex-col justify-between">
+
+
+
+Inside:
+
+
+Top: small label like “Aura Twin” & maybe current mood.
+
+
+Center: <AuraAvatar auraState={auraState} size="lg" isSpeaking={isSpeaking} />.
+
+
+Bottom: short text like:
+
+
+user’s displayName
+
+
+their vibeWords as small tags.
+
+
+
+
+
+
+
+
+Import and use AuraStage in App.tsx for the left side.
+
+
+
+
+Wire AuraStage from App:
+
+
+In App.tsx, pass current profile, auraState, and some boolean isSpeaking from your voice hook (will be added in Step 4; for now, it can be false until voice is finished).
+
+
+
+
+
+STEP 3 – SKILLS Panel: “Reply As Me” Tool
+
+
+Create src/panels/SkillsPanel.tsx.
+Requirements:
+
+
+Props:
+
+
+profile: AuraProfile
+
+
+
+
+UI:
+
+
+Glass card container inside:
+
+
+Title: “Reply As Me”
+
+
+Subtext: “Paste any message and Aura will draft replies like you.”
+
+
+
+
+textarea for “Incoming message”.
+
+
+Button: “Ask Aura”.
+
+
+When user clicks:
+
+
+Call generateReplyOptions(profile, contextText) from auraLLM.ts.
+
+
+Show loading state (spinner or “Aura is thinking...”).
+
+
+
+
+Results:
+
+
+Show three cards:
+
+
+“Safe / Polite”
+
+
+“Direct / Honest”
+
+
+“Playful / Warm”
+
+
+
+
+Each card has:
+
+
+The reply text.
+
+
+A small “Copy” button (use navigator.clipboard.writeText).
+
+
+
+
+
+
+
+
+
+
+Update src/services/auraLLM.ts:
+
+
+Add:
+export async function generateReplyOptions(
+  profile: AuraProfile,
+  contextText: string
+): Promise<{ safe: string; direct: string; playful: string }> {
+  // Call Gemini / LLM here.
+}
+
+
+
+Prompt:
+
+
+System: “You are Aura, an AI twin drafting text replies for your human. You know their personality and boundaries. You must be emotionally safe and aligned with their profile.”
+
+
+Inject profile as JSON and the contextText.
+
+
+Ask the model to respond with JSON:
+{
+  "safe": "...",
+  "direct": "...",
+  "playful": "..."
+}
+
+
+
+
+
+Parse JSON safely with try/catch. If parsing fails, show a friendly error in the UI.
+
+
+
+
+Connect SkillsPanel in App.tsx:
+
+
+When activeTab === "SKILLS" → render <SkillsPanel profile={profile} /> inside the right glass panel.
+
+
+
+
+
+STEP 4 – Voice Hook + Speaking Glow
+We already have some voice/STS/TTS logic and Google TTS key set as Replit secrets. Clean this up into a dedicated hook and connect it to Aura.
+
+
+Create src/hooks/useAuraVoice.ts:
+
+
+State:
+
+
+isListening: boolean
+
+
+isSpeaking: boolean
+
+
+transcript: string (last recognized user speech)
+
+
+
+
+Functions:
+
+
+startListening()
+
+
+stopListening()
+
+
+speak(text: string) – calls Google TTS with our chosen voice and plays the audio.
+
+
+
+
+Implementation:
+
+
+Use browser SpeechRecognition if available; fallback gracefully if not.
+
+
+For TTS, use the existing Google Cloud TTS secret + REST API:
+
+
+Soft, feminine voice; choose EN female, neutral accent (the most human-like).
+
+
+Audio format: mp3 or ogg, create an Audio object in browser and play it.
+
+
+
+
+When speak is called:
+
+
+Set isSpeaking = true while audio is playing, then false when finished.
+
+
+
+
+
+
+
+
+In NeuralLinkScreen:
+
+
+Integrate the hook:
+
+
+const { isListening, isSpeaking, transcript, startListening, stopListening, speak } = useAuraVoice(profile);
+
+
+
+
+UI changes:
+
+
+Add a round “Voice” button / mic icon near the chat input.
+
+
+When pressed:
+
+
+Toggle listening on/off.
+
+
+When speech recognition finishes with a transcript:
+
+
+Send the transcript as a user message via the existing chat function.
+
+
+
+
+
+
+When Aura replies (you already have call to chatWithAura or similar):
+
+
+After adding Aura’s reply to chat, call speak(auraReplyText).
+
+
+
+
+
+
+Pass isSpeaking up to App.tsx or directly into AuraStage / AuraAvatar so that the avatar glows while speaking.
+
+
+
+
+
+STEP 5 – TWINS Panel: Simple Match Demo vs “Lina”
+We already have a sample profile for “Lina” (e.g. SAMPLE_LINA_PROFILE) in the project. Use it.
+
+
+Create src/panels/TwinsPanel.tsx:
+
+
+Props:
+
+
+profile: AuraProfile
+
+
+
+
+UI Layout:
+
+
+Top:
+
+
+Title: “Twin-to-Twin Match”
+
+
+Subtext: “Let your Aura talk to another Aura first.”
+
+
+
+
+Middle:
+
+
+Two small glass cards side by side:
+
+
+Left: current user’s Aura
+
+
+name, 3 vibe words, goals
+
+
+
+
+Right: sample “Lina”
+
+
+from SAMPLE_LINA_PROFILE
+
+
+
+
+
+
+Button: “Let our Auras talk”.
+
+
+
+
+When button clicked:
+
+
+Call a new function simulateTwinChat(profileA, profileB) from auraLLM.ts.
+
+
+Show loading state.
+
+
+
+
+Result:
+
+
+Glass card with “Transcript”:
+
+
+Render a simple conversation log with lines like:
+
+
+Aura (You): ...
+
+
+Lina’s Aura: ...
+
+
+
+
+
+
+Glass card with “Match Summary”:
+
+
+3–5 sentences explaining why they might be a good match.
+
+
+
+
+
+
+
+
+
+
+Update src/services/auraLLM.ts:
+
+
+Add:
+export async function simulateTwinChat(
+  profileA: AuraProfile,
+  profileB: AuraProfile
+): Promise<{ transcript: { from: "auraA" | "auraB"; text: string }[]; summary: string }> {
+  // Gemini call
+}
+
+
+
+Prompt:
+
+
+System: “You are simulating a conversation between two AI twins: Aura A and Aura B. Each Aura represents a human with the given profiles. Write a friendly, low-pressure conversation of 6–8 messages total. Then write a short compatibility summary.”
+
+
+Input: JSON with both profiles.
+
+
+Output JSON:
+{
+  "transcript": [
+    { "from": "auraA", "text": "..." },
+    { "from": "auraB", "text": "..." }
+  ],
+  "summary": "..."
+}
+
+
+
+
+
+Parse safely and display in TwinsPanel.
+
+
+
+
+Connect TwinsPanel in App.tsx:
+
+
+When activeTab === "TWINS" → render <TwinsPanel profile={profile} />.
+
+
+
+
+
+STYLING & AESTHETIC RULES
+
+
+Background: dark gradient
+
+
+bg-gradient-to-br from-slate-950 via-slate-900 to-black
+
+
+
+
+Glass panels:
+
+
+bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-3xl
+
+
+
+
+Text:
+
+
+No pure white walls of text; use text-slate-100 / text-slate-300.
+
+
+
+
+No neon, no harsh colors.
+
+
+Animations: slow, smooth, breathing. No bouncy cartoon motion.
+
+
+
+IMPORTANT
+
+
+Do NOT remove working logic; only refactor and wrap it in this new structure.
+
+
+The founder is non-technical. After you finish, give them a short checklist:
+
+
+“Click LINK tab → test chat + voice”
+
+
+“Click SKILLS tab → paste message → test Reply As Me”
+
+
+“Click TWINS tab → run match vs Lina”
+
+
+“Click MIRROR tab → test nightly debrief”
+
+
+
+
+Implement all these steps in one long Max Autonomy session.
