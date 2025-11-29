@@ -26,7 +26,12 @@ The application features a complete VisionOS-style glass aesthetic.
 - **Styling**: Tailwind CSS (CDN) augmented with custom glassmorphism CSS for VisionOS aesthetic.
 - **Avatar Implementation**: The `AuraAvatar` component dynamically switches between video (`<video>`) and image (`<img>`) assets (`aura-neutral.mp4`, `aura-happy.mp4`, `aura-playful.png`, etc.) based on the Aura's mood and `isSpeaking` prop.
 - **Reply Lab**: `generateReplyOptions()` in `services/auraLLM.ts` uses Gemini to create three distinct reply options, prioritizing safety and user boundaries.
-- **Voice Integration**: `useVoice` hook leverages browser Speech Recognition API (STT) and Text-to-Speech (TTS) for hands-free interaction, including auto-sending transcripts and speaking Aura replies.
+- **Voice Integration**: `useAuraVoice` hook (`hooks/useAuraVoice.ts`) provides hands-free interaction:
+    - **Cloud TTS**: Google Cloud Text-to-Speech API via Express backend (`server/index.ts` on port 3001)
+    - **Browser Fallback**: Falls back to Web Speech API TTS if cloud fails
+    - **STT**: Browser Speech Recognition API for voice input
+    - **Voice Service**: `services/voiceService.ts` handles API calls to `/api/tts`
+    - **Vite Proxy**: Routes `/api/*` to Express server in development
 - **Telemetry**: `utils/telemetry.ts` is used for structured event logging for analytics (e.g., `reply_lab_opened`, `reply_lab_generated`).
 - **Quota Management**: Implemented a Gemini quota fix with fallback profiles and user-friendly messages for API exhaustion.
 
@@ -40,8 +45,9 @@ The application features a complete VisionOS-style glass aesthetic.
 ### System Design Choices
 - **Centralized State Management**: `App.tsx` manages global state for screen switching, ensuring a single-page application feel without reloads.
 - **Modular File Structure**: Components, screens, services, and hooks are organized into distinct directories for maintainability.
-- **Environment Variables**: `GEMINI_API_KEY` is managed via Replit Secrets and injected securely.
-- **Deployment**: Configured for Autoscale (stateless web application) with `npm run build` and `npm run preview` commands, running on port 5000.
+- **Environment Variables**: `GEMINI_API_KEY` and `GOOGLE_TTS_API_KEY` are managed via Replit Secrets and injected securely.
+- **Backend**: Express server (`server/index.ts`) runs on port 3001 for TTS API.
+- **Deployment**: Configured for Autoscale with `npm run build` and combined Express + Vite preview, running on port 5000.
 
 ## External Dependencies
 - **AI Integration**: Google Gemini AI (via `@google/genai` library) for:
@@ -54,4 +60,5 @@ The application features a complete VisionOS-style glass aesthetic.
     - **Database**: Firestore for data persistence (`src/firebase.ts` exports `db`)
     - **Config**: Uses Vite environment variables (`VITE_FIREBASE_*`) for configuration
     - **Context**: `AuthContext.tsx` provides `useAuth()` hook with `user`, `loading`, and `signOut`
-- **Browser APIs**: Speech Recognition API (STT) and Text-to-Speech (TTS) for voice interaction.
+- **Google Cloud Text-to-Speech**: Neural voice synthesis via `GOOGLE_TTS_API_KEY` for high-quality Aura voice (en-US-Neural2-F).
+- **Browser APIs**: Speech Recognition API (STT) for voice input, with browser TTS as fallback.
