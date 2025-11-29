@@ -1,0 +1,124 @@
+I need a persistent voice engine hook for my Aura Twin app.
+
+Please create a new file:
+
+src/hooks/useAuraVoice.ts
+
+Requirements:
+- Does NOT depend on UI mounting to survive.
+- Must support both Speech-to-Text (STT) and Text-to-Speech (TTS).
+- Use the Web Speech API:
+    - window.SpeechRecognition || window.webkitSpeechRecognition
+    - window.speechSynthesis
+- Expose state variables:
+    isListening
+    isSpeaking
+    transcript
+    lastFinalTranscript
+    error
+
+- Expose functions:
+    startListening()
+    stopListening()
+    speak(text: string)
+    stopSpeaking()
+    clearTranscript()
+
+- Behavior:
+    STT:
+        - startListening() clears transcript and begins recognition
+        - On final result: set lastFinalTranscript
+        - On error: set error and stop
+    TTS:
+        - speak(text) should cancel previous speech and then speak
+        - Choose a feminine voice automatically: voices named Amy, Joanna, Aria, Sara, or anything with “female”
+        - isSpeaking true/false must track onstart/onend
+
+- The hook must be safe on React 19 strict mode (double runs).
+
+After creating the file, DO NOT modify other files yet.
+Just generate the full content of useAuraVoice.ts
+Send that to Replit and wait until it creates the file.
+
+STEP 2 — Fix the VoiceControls so it uses the new hook
+Your current VoiceControls breaks because it expects the old structure.
+
+Here is the Replit AI prompt:
+
+csharp
+Copy code
+Please update src/components/VoiceControls.tsx to use the new
+useAuraVoice() hook from src/hooks/useAuraVoice.ts.
+
+Requirements:
+- Import { useAuraVoice } from "../hooks/useAuraVoice";
+- Show the following states:
+    - “● Listening” (red)
+    - “● Aura Speaking” (amber)
+    - “● Voice Ready” (gray)
+- Buttons:
+    - Main mic button:
+        when !isListening → startListening()
+        when isListening → stopListening()
+    - A mute/stop-speaking button appears only when isSpeaking = true
+
+- When lastFinalTranscript has text:
+      call props.onFinalTranscript(lastFinalTranscript)
+      then clearTranscript()
+
+- Add subtle VisionOS styling:
+    rounded-full buttons
+    bg-white/10 or bg-red-500/20 when listening
+    border-white/10
+
+- Do NOT break the layout of NeuralLinkScreen.
+
+Please show the full updated file for VoiceControls.tsx.
+This will make the UI reliably send transcripts into chat.
+
+STEP 3 — Make Aura speak ONLY her replies
+Right now the issue is:
+🔴 Aura sometimes “speaks” user messages OR speaks twice.
+
+We fix that in NeuralLinkScreen.
+
+👉 PROMPT FOR REPLIT AI:
+csharp
+Copy code
+Open src/screens/NeuralLinkScreen.tsx.
+
+Integrate the new useAuraVoice() hook properly.
+
+Requirements:
+- Import { useAuraVoice } from "../hooks/useAuraVoice";
+- Call speak(auraReply) ONLY when a new assistant message is added.
+- Do NOT speak user messages.
+- When startListening() is activated, show a listening indicator on the avatar (isSpeaking and isListening props).
+- Pass the following props to the avatar:
+    isSpeaking={isSpeaking}
+    isListening={isListening}
+
+Fix any double-renders so speech works exactly once per message.
+Show me the full updated NeuralLinkScreen.tsx file.
+STEP 4 — Make Avatar react to Voice
+Now the avatar will glow when speaking & pulse when listening.
+
+Replit prompt:
+sql
+Copy code
+Open src/components/AuraAvatar.tsx.
+
+Add two optional props:
+    isSpeaking?: boolean
+    isListening?: boolean
+
+Behavior:
+- When isSpeaking: add a bright outer glow + pulsing ring.
+- When isListening: add a soft cyan pulsing ring.
+- If neither: normal breathing + floating.
+
+Do not remove existing mood animations.
+
+Show full updated file.
+After these 4 steps, you get:
+⭐ Completely stable voice system:
