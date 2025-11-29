@@ -1,0 +1,59 @@
+I want to add a simple “nano hologram aura” behind my Ice Princess avatar in the Aura Twin app.
+
+Context:
+- Tech stack: React + TypeScript + Vite + Tailwind.
+- Current UI: AuraStage shows a full-body PNG (or MP4) of the avatar on the left, no circle mask.
+- Goal: DO NOT change the right side UI. Only enhance the left “stage”.
+
+Requirements:
+
+1) Add react-three-fiber and three.js
+- Install dependencies: @react-three/fiber and three.
+- If you need @react-three/drei for helpers, you can add it too.
+
+2) Create a hologram particle field component
+Create a new file: src/components/HologramField.tsx
+
+Behavior:
+- Use <Canvas> from @react-three/fiber.
+- Render a group of small glowing particles (Points or InstancedMesh, 200–800 points is enough).
+- Particles should:
+  - Slowly float and drift (orbital or noise-like movement).
+  - Slightly react to a “moodIntensity” value: higher intensity = faster / more energetic movement.
+- Color:
+  - Accept a prop "mood" (string) and choose a base color:
+    - calm/neutral -> blue/cyan
+    - happy/excited -> pink/magenta
+    - anxious/sad -> amber/orange
+    - default -> soft violet
+- Use a dark transparent background so it blends into the existing gradient, not a solid color.
+- Disable orbit controls and anything interactive; it should just animate in the background.
+- Make sure the Canvas stretches to fill its container (full height/width).
+
+3) Hook it to AuraState
+- AuraState already exists in types. Use auraState.mood and auraState.moodIntensity.
+- Update src/components/AuraStage.tsx (or wherever the left avatar is rendered) to:
+
+  - Wrap the left side content in a relatively positioned container.
+  - Put <HologramField mood={auraState.mood} moodIntensity={auraState.moodIntensity} /> as an absolutely positioned background layer (z-index below the avatar).
+  - Render the current avatar PNG/MP4 on top, centered, without any circle mask.
+
+4) Voice reaction (basic)
+- If there is already a voice state (like isSpeaking from a voice hook), pass an optional boolean prop "isSpeaking" to HologramField.
+- When isSpeaking is true, make the particles:
+  - Slightly increase scale or movement speed.
+  - Add a gentle pulsating effect (e.g. sine wave scaling over time).
+
+5) Keep layout and styling consistent
+- Do NOT break the existing split layout.
+- The right-side tabs (LINK / SKILLS / TWINS / MIRROR) must stay exactly as they are.
+- The mood/calibration bar at the bottom of the left side must stay visible.
+
+6) TypeScript & performance
+- Use proper TS types for the props and components.
+- Keep the particle count reasonable so it runs smoothly even on average laptops.
+- Do not add complex custom shaders; just use simple Three.js materials for now.
+
+When you’re done, explain briefly:
+- Which files you added or edited.
+- How to tweak particle count, colors, and speed if I want to later.
