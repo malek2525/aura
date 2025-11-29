@@ -56,9 +56,12 @@ The application features a complete VisionOS-style glass aesthetic.
     - Match analysis (`gemini-2.5-flash` model)
     - Reply generation for Reply Lab
 - **Firebase** (project: `aura-99330`):
-    - **Authentication**: Firebase Auth for user sign-in/sign-up (`src/firebase.ts` exports `auth`)
+    - **Authentication**: Firebase Auth for user sign-in/sign-up (`src/firebase.ts` exports `auth`, `googleProvider`)
+    - **Sign-in Methods**: Email/password + Google Sign-In (via `signInWithPopup`)
     - **Database**: Firestore for data persistence (`src/firebase.ts` exports `db`)
     - **Config**: Uses Vite environment variables (`VITE_FIREBASE_*`) for configuration
-    - **Context**: `AuthContext.tsx` provides `useAuth()` hook with `user`, `loading`, and `signOut`
-- **Google Cloud Text-to-Speech**: Neural voice synthesis via `GOOGLE_TTS_API_KEY` for high-quality Aura voice (en-US-Neural2-F).
+    - **Context**: `AuthContext.tsx` provides `useAuth()` hook with `user`, `loading`, `signIn`, `signUp`, `signInWithGoogle`, `signOut`
+    - **Auth Flow**: App shows `AuthScreen` when no user logged in, main app after authentication
+    - **Sign Out**: Button in top-right navigation bar (labeled "Sign Out")
+- **Google Cloud Text-to-Speech**: Neural voice synthesis via `GOOGLE_TTS_API_KEY` for high-quality Aura voice (en-US-Neural2-H, speaking rate 0.9, pitch +2.0).
 - **Browser APIs**: Speech Recognition API (STT) for voice input, with browser TTS as fallback.

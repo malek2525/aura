@@ -1,0 +1,63 @@
+You are my Replit agent working on the "Aura Twin" React + Vite + TypeScript app.
+
+Problem:
+When I open the app, it goes directly into the Aura experience (Onboarding / Neural Link) and I NEVER see a login screen. I also do not see any "Sign Out" button. I want a proper authentication flow using Firebase Auth with:
+- Email + password login
+- Google Sign-In
+- Visible Sign Out
+
+Important: I don't want to edit code myself. Please update the codebase for me.
+
+Do the following tasks step by step:
+
+1) Check the Auth context
+   - Open src/context/AuthContext.tsx (or similar file that defines AuthProvider / useAuth).
+   - Ensure it:
+     - Subscribes to Firebase auth state (onAuthStateChanged)
+     - Exposes in context: { user, loading, signInWithEmailPassword, registerWithEmailPassword, signInWithGoogle, signOut }
+   - If signInWithGoogle is missing, create it using GoogleAuthProvider and signInWithPopup(auth, provider).
+   - Make sure signOut() calls firebaseAuth.signOut().
+
+2) Check the Auth screen UI
+   - Open src/screens/AuthScreen.tsx.
+   - This screen should render:
+     - Email input
+     - Password input
+     - "Sign in" button that calls signInWithEmailPassword
+     - "Create account" button or toggle that calls registerWithEmailPassword (or similar)
+     - A separator (e.g., a line with "or")
+     - A SECOND button: "Continue with Google" that calls signInWithGoogle from the AuthContext.
+   - Style the Google button to match the rest of the VisionOS / glass UI, but label must clearly say “Continue with Google”.
+   - Handle loading and errors gracefully (disable buttons while waiting, show a short error message text if something fails).
+
+3) Fix App.tsx to actually use authentication
+   - Open src/App.tsx.
+   - Wrap the whole app in <AuthProvider> (if not already done) at the root.
+   - Inside the main AppContent, use the useAuth() hook to get { user, loading, signOut }.
+   - Implement logic:
+       if (loading) {
+         show a full-screen loading spinner with a dark background.
+       }
+       else if (!user) {
+         return <AuthScreen />;
+       }
+       else {
+         return the main Aura UI (header + onboarding / neural link / match / etc).
+       }
+   - Make sure the header (top right) includes a “Sign Out” button that calls signOut() from AuthContext. When clicked, it should return the user to the AuthScreen.
+
+4) Remove any hard-coded fake user
+   - Search the codebase for any place where a fake or test user object is being created or set manually (e.g., setUser({ id: "test" ... }) or anonymous sign-in).
+   - Remove or comment that out so that only real Firebase Auth state controls whether the user is logged in.
+
+5) Confirm everything builds
+   - Fix any TypeScript errors.
+   - Run the dev server and confirm:
+     - When I first open the app, I see ONLY the AuthScreen.
+     - When I log in with email/password or Google, I see the Aura app (Core Identity / Neural Link) after login.
+     - In the top-right of the Aura app, I see a Sign Out button that logs me out and returns to the AuthScreen.
+
+Finally, summarize:
+- Which files you changed
+- The exact label text of the Google button
+- Where the Sign Out button appears in the UI so I can find it.
