@@ -29,6 +29,15 @@ The application features a complete VisionOS-style glass aesthetic.
     - Mood Mapping: neutral/calm/sad → neutral asset, happy/excited → happy asset, playful/flirty → playful asset
     - Video Support: Uses `<video>` with autoPlay, loop, muted, playsInline for mp4 assets, falls back to images
     - Animations: Breathing (`animate-aura-breathe`), floating (`animate-aura-float`)
+- **Hologram Particle Field** (`components/HologramField.tsx`): 3D particle aura background using react-three-fiber
+  - 400 glowing particles in a spherical orbital pattern
+  - Mood-reactive colors: calm/neutral → cyan/blue, happy/excited → pink/magenta, playful → purple, anxious → amber
+  - moodIntensity affects particle movement speed and opacity
+  - isSpeaking causes pulsating scale effect and increased glow
+  - isListening adds subtle pulse animation
+  - Inner glow sphere behind particles for ambient effect
+  - Slow orbital rotation and noise-based floating movement
+  - Customizable: PARTICLE_COUNT constant (default 400), color functions, animation speeds
 - **Layout**: A two-column layout (60/40 split) is used for desktop, with the AuraStage on the left and content panels on the right. This stacks responsively for mobile.
 - **Navigation**: Pill-style navigation bar for main screens (Onboarding, Neural Link, Match Test, Twin Intro, Reply Lab).
 - **Reply Lab UI**: Three glass cards with colored tone chips (Safe, Direct, Playful) for generated replies, with context dropdown and copy functionality.

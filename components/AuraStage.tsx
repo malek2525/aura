@@ -1,6 +1,7 @@
 import React from "react";
 import { AuraProfile, AuraState } from "../types";
 import HologramAvatar from "./HologramAvatar";
+import HologramField from "./HologramField";
 
 interface AuraStageProps {
   profile: AuraProfile | null;
@@ -36,21 +37,11 @@ export const AuraStage: React.FC<AuraStageProps> = ({
   return (
     <div className="relative w-full h-full min-h-[300px] lg:min-h-[420px] bg-gradient-to-b from-slate-950/80 via-slate-900/40 to-slate-950/90 overflow-hidden flex flex-col">
       
-      <div
-        className="absolute inset-0 pointer-events-none opacity-40 blur-3xl"
-        style={{
-          background: auraState.mood === 'happy' || auraState.mood === 'excited'
-            ? 'radial-gradient(ellipse 60% 80% at 50% 60%, rgba(244,114,182,0.4), transparent 70%)'
-            : auraState.mood === 'calm' || auraState.mood === 'peaceful'
-            ? 'radial-gradient(ellipse 60% 80% at 50% 60%, rgba(96,165,250,0.4), transparent 70%)'
-            : auraState.mood === 'playful' || auraState.mood === 'flirty'
-            ? 'radial-gradient(ellipse 60% 80% at 50% 60%, rgba(217,70,239,0.4), transparent 70%)'
-            : auraState.mood === 'anxious'
-            ? 'radial-gradient(ellipse 60% 80% at 50% 60%, rgba(251,191,36,0.3), transparent 70%)'
-            : auraState.mood === 'sad'
-            ? 'radial-gradient(ellipse 60% 80% at 50% 60%, rgba(99,102,241,0.4), transparent 70%)'
-            : 'radial-gradient(ellipse 60% 80% at 50% 60%, rgba(139,92,246,0.35), transparent 70%)'
-        }}
+      <HologramField 
+        mood={auraState.mood} 
+        moodIntensity={auraState.moodIntensity} 
+        isSpeaking={isSpeaking}
+        isListening={isListening}
       />
 
       <div className="absolute top-4 left-4 right-4 z-20 flex items-start justify-between">
@@ -86,7 +77,7 @@ export const AuraStage: React.FC<AuraStageProps> = ({
         </div>
       </div>
 
-      <div className="relative z-10 flex-1 flex items-center justify-center">
+      <div className="relative z-10 flex-1 flex items-center justify-center pointer-events-none">
         <HologramAvatar
           auraState={auraState}
           isSpeaking={isSpeaking}

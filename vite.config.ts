@@ -31,6 +31,12 @@ export default defineConfig(({ mode }) => {
           '@': path.resolve(__dirname, '.'),
           '@assets': path.resolve(__dirname, 'src/assets'),
         }
+      },
+      optimizeDeps: {
+        include: ['react', 'react-dom', 'three', '@react-three/fiber', '@react-three/drei'],
+        esbuildOptions: {
+          target: 'esnext'
+        }
       }
     };
 });
