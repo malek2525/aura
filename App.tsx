@@ -9,6 +9,7 @@ import { AuraStage } from './components/AuraStage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AuthScreen } from './screens/AuthScreen';
 import { loadAuraProfile, persistAuraProfile } from './src/storage/profileStorage';
+import { useAuraVoice } from './hooks/useAuraVoice';
 
 type ActiveTab = 'link' | 'skills' | 'twins' | 'mirror';
 
@@ -62,6 +63,8 @@ const AppContent: React.FC = () => {
     moodIntensity: 0.2
   });
   const [replyLabPrefill, setReplyLabPrefill] = useState<string | undefined>(undefined);
+
+  const voice = useAuraVoice();
 
   useEffect(() => {
     if (user) {
@@ -161,13 +164,24 @@ const AppContent: React.FC = () => {
       <div className="h-full w-full flex flex-col lg:flex-row p-3 lg:p-4 gap-3 lg:gap-4">
         
         <div className="w-full lg:w-[58%] h-[35vh] lg:h-full flex-shrink-0 rounded-3xl overflow-hidden relative">
-          <AuraStage profile={profile} auraState={auraState} />
+          <AuraStage 
+            profile={profile} 
+            auraState={auraState} 
+            isSpeaking={voice.isSpeaking}
+            isListening={voice.isListening}
+          />
           
           <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-950/60 backdrop-blur-md rounded-full border border-white/10">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
+              <div className={`w-2 h-2 rounded-full animate-pulse shadow-[0_0_8px] ${
+                voice.isListening 
+                  ? 'bg-red-400 shadow-red-400/60' 
+                  : voice.isSpeaking 
+                  ? 'bg-amber-400 shadow-amber-400/60' 
+                  : 'bg-emerald-400 shadow-emerald-400/60'
+              }`} />
               <span className="text-[10px] font-mono tracking-widest uppercase text-slate-300">
-                {profile.displayName} · Online
+                {voice.isListening ? 'Listening' : voice.isSpeaking ? 'Speaking' : `${profile.displayName} · Online`}
               </span>
             </div>
           </div>
@@ -204,6 +218,7 @@ const AppContent: React.FC = () => {
                   auraState={auraState}
                   setAuraState={setAuraState}
                   onOpenReplyLab={handleOpenReplyLab}
+                  voice={voice}
                 />
               </div>
             )}
