@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { AuraProfile, AuraChatMessage, AuraState } from './types';
 import OnboardingScreen from './screens/OnboardingScreen';
 import NeuralLinkScreen from './screens/NeuralLinkScreen';
-import MatchTestScreen from './screens/MatchTestScreen';
 import TwinIntroScreen from './screens/TwinIntroScreen';
 import ReplyLabScreen from './screens/ReplyLabScreen';
+import SkillsPanel from './src/panels/SkillsPanel';
 import { AuraStage } from './components/AuraStage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AuthScreen } from './screens/AuthScreen';
@@ -224,8 +224,8 @@ const AppContent: React.FC = () => {
             )}
 
             {activeTab === 'skills' && (
-              <div className="h-full overflow-y-auto p-4 lg:p-5">
-                <MatchTestScreen userProfile={profile} auraState={auraState} />
+              <div className="h-full overflow-hidden">
+                <SkillsPanel profile={profile} />
               </div>
             )}
 

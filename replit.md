@@ -25,6 +25,12 @@ The application features a complete VisionOS-style glass aesthetic.
 - **Layout**: A two-column layout (60/40 split) is used for desktop, with the AuraStage on the left and content panels on the right. This stacks responsively for mobile.
 - **Navigation**: Pill-style navigation bar for main screens (Onboarding, Neural Link, Match Test, Twin Intro, Reply Lab).
 - **Reply Lab UI**: Three glass cards with colored tone chips (Safe, Direct, Playful) for generated replies, with context dropdown and copy functionality.
+- **SkillsPanel**: Located in `src/panels/SkillsPanel.tsx`, provides:
+  - Textarea for pasting incoming messages
+  - Context dropdown (General, Friend, Dating, Work)
+  - "Ask Aura" button to generate 3 reply options
+  - Color-coded reply cards: Safe/Polite (emerald), Direct/Honest (blue), Playful/Warm (pink)
+  - Copy button for each reply with visual feedback
 
 ### Technical Implementations
 - **Framework**: React 19 with TypeScript.
@@ -55,7 +61,7 @@ The application features a complete VisionOS-style glass aesthetic.
   - **Right Panel**: Glass panel with 4 tabs and content area
 - **Tab Navigation**: Four tabs inside the right glass panel:
   - LINK → NeuralLinkScreen (chat with Aura)
-  - SKILLS → MatchTestScreen (compatibility analysis)
+  - SKILLS → SkillsPanel (reply drafting with 3 tones: Safe/Polite, Direct/Honest, Playful/Warm)
   - TWINS → TwinIntroScreen (ice-breaker generation)
   - MIRROR → ReplyLabScreen (reply drafting)
 - **Sign Out Button**: Always visible in absolute top-right corner when logged in (during onboarding and main app).
