@@ -15,13 +15,20 @@ The application features a complete VisionOS-style glass aesthetic.
 - **Colors**: Deep slate (`slate-950`, `slate-900`) with soft white/slate text. Accent colors are violet (primary) and blue/teal (secondary), avoiding neon.
 - **Typography**: Uppercase tracking, small text sizes, monospace for labels.
 - **Motion**: Soft animations for indicators (pulse) and smooth transitions.
-- **Avatar System**: Features a "Living Avatar" (`AuraAvatar`) that uses video or image assets based on mood state:
-  - **Mood Mapping**: neutral/calm/sad → neutral asset, happy/excited → happy asset, playful/flirty → playful asset
-  - **Video Support**: Uses `<video>` with autoPlay, loop, muted, playsInline for mp4 assets, falls back to images
-  - **Size Prop**: Supports 'sm' | 'md' | 'lg' | 'xl' sizes for different contexts
-  - **Voice State**: Accepts isSpeaking/isListening props to show speaking rings and listening indicators
-  - **Animations**: Breathing (`animate-aura-breathe`), floating (`animate-aura-float`), and holographic shimmer effects
-  - **Glass Border**: Rounded circular container with glassmorphism styling and mood-reactive glow
+- **Avatar System**: Two avatar components for different use cases:
+  - **HologramAvatar** (`components/HologramAvatar.tsx`): Full-body floating hologram for AuraStage
+    - No circular containers or masks - character floats freely
+    - Uses `object-fit: contain` to preserve full body without cropping
+    - Mood-reactive ambient glow behind the character
+    - Subtle holographic effects: scanlines, light sweep, drop shadows
+    - Speaking/listening state affects glow intensity
+  - **AuraAvatar** (`components/AuraAvatar.tsx`): Circular avatar for smaller UI contexts
+    - Rounded circular container with glassmorphism styling
+    - Size prop: 'sm' | 'md' | 'lg' | 'xl'
+  - **Shared Features**:
+    - Mood Mapping: neutral/calm/sad → neutral asset, happy/excited → happy asset, playful/flirty → playful asset
+    - Video Support: Uses `<video>` with autoPlay, loop, muted, playsInline for mp4 assets, falls back to images
+    - Animations: Breathing (`animate-aura-breathe`), floating (`animate-aura-float`)
 - **Layout**: A two-column layout (60/40 split) is used for desktop, with the AuraStage on the left and content panels on the right. This stacks responsively for mobile.
 - **Navigation**: Pill-style navigation bar for main screens (Onboarding, Neural Link, Match Test, Twin Intro, Reply Lab).
 - **Reply Lab UI**: Three glass cards with colored tone chips (Safe, Direct, Playful) for generated replies, with context dropdown and copy functionality.
