@@ -44,8 +44,15 @@ The application features a complete VisionOS-style glass aesthetic.
 
 ### System Design Choices
 - **Centralized State Management**: `App.tsx` manages global state for screen switching and authentication, ensuring a single-page application feel without reloads.
-- **Header Layout**: Full-width header bar with Aura Twin logo (left), pill-style tab navigation (center), and Sign Out button (right). Visible on all main screens after login.
-- **Tab Navigation**: Four tabs - "Talk to Aura", "Match Score", "Twin Intro", "Reply Lab" - switch content while keeping header persistent.
+- **Split Layout**: Left/right split on desktop (58%/42%), stacked on mobile (AuraStage top, content below).
+  - **Left Panel**: AuraStage with holographic avatar (55-60% width on desktop, full width on mobile top)
+  - **Right Panel**: Glass panel with 4 tabs and content area
+- **Tab Navigation**: Four tabs inside the right glass panel:
+  - LINK → NeuralLinkScreen (chat with Aura)
+  - SKILLS → MatchTestScreen (compatibility analysis)
+  - TWINS → TwinIntroScreen (ice-breaker generation)
+  - MIRROR → ReplyLabScreen (reply drafting)
+- **Sign Out Button**: Always visible in absolute top-right corner when logged in (during onboarding and main app).
 - **Modular File Structure**: Components, screens, services, hooks, and context are organized into distinct directories for maintainability.
 - **Environment Variables**: `GEMINI_API_KEY` and `GOOGLE_TTS_API_KEY` are managed via Replit Secrets and injected securely.
 - **Backend**: Express server (`server/index.ts`) runs on port 3001 for TTS API.
