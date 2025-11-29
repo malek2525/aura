@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { speakWithAuraTTS, checkTTSHealth } from '../services/voiceService';
 
 interface SpeechRecognitionEvent extends Event {
   resultIndex: number;
@@ -35,6 +36,7 @@ interface UseAuraVoiceReturn {
   error: string | null;
   hasSpeechSupport: boolean;
   hasTTSSupport: boolean;
+  hasCloudTTS: boolean;
   startListening: () => void;
   stopListening: () => void;
   speak: (text: string) => void;
@@ -77,9 +79,10 @@ export const useAuraVoice = (): UseAuraVoiceReturn => {
   const [transcript, setTranscript] = useState('');
   const [lastFinalTranscript, setLastFinalTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [hasCloudTTS, setHasCloudTTS] = useState(false);
 
   const recognitionRef = useRef<any>(null);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const isMountedRef = useRef(true);
 
   const hasSpeechSupport = typeof window !== 'undefined' && 
@@ -89,12 +92,24 @@ export const useAuraVoice = (): UseAuraVoiceReturn => {
 
   useEffect(() => {
     isMountedRef.current = true;
+    
+    checkTTSHealth().then(available => {
+      if (isMountedRef.current) {
+        setHasCloudTTS(available);
+        console.log(`Cloud TTS available: ${available}`);
+      }
+    });
+
     return () => {
       isMountedRef.current = false;
       if (recognitionRef.current) {
         try {
           recognitionRef.current.abort();
         } catch {}
+      }
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
       }
       if (hasTTSSupport) {
         window.speechSynthesis.cancel();
@@ -197,14 +212,12 @@ export const useAuraVoice = (): UseAuraVoiceReturn => {
     setIsListening(false);
   }, []);
 
-  const speak = useCallback((text: string) => {
-    if (!hasTTSSupport || !text.trim()) return;
+  const speakWithBrowserTTS = useCallback((text: string) => {
+    if (!hasTTSSupport) return;
 
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utteranceRef.current = utterance;
-
     utterance.rate = 0.95;
     utterance.pitch = 1.1;
     utterance.volume = 1;
@@ -245,7 +258,78 @@ export const useAuraVoice = (): UseAuraVoiceReturn => {
     window.speechSynthesis.speak(utterance);
   }, [hasTTSSupport]);
 
+  const speakWithCloudTTS = useCallback(async (text: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      (async () => {
+        try {
+          if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current = null;
+          }
+
+          setIsSpeaking(true);
+          
+          const audio = await speakWithAuraTTS(text);
+          audioRef.current = audio;
+
+          audio.onplay = () => {
+            if (isMountedRef.current) {
+              setIsSpeaking(true);
+            }
+          };
+
+          audio.onended = () => {
+            if (isMountedRef.current) {
+              setIsSpeaking(false);
+            }
+            audioRef.current = null;
+            resolve();
+          };
+
+          audio.onerror = () => {
+            if (isMountedRef.current) {
+              setIsSpeaking(false);
+            }
+            audioRef.current = null;
+            reject(new Error('Audio playback failed'));
+          };
+
+          await audio.play();
+        } catch (err) {
+          console.error('Cloud TTS error:', err);
+          if (isMountedRef.current) {
+            setIsSpeaking(false);
+          }
+          reject(err);
+        }
+      })();
+    });
+  }, []);
+
+  const speak = useCallback((text: string) => {
+    if (!text.trim()) return;
+
+    if (hasCloudTTS) {
+      speakWithCloudTTS(text).catch(() => {
+        if (hasTTSSupport) {
+          speakWithBrowserTTS(text);
+        } else {
+          setError('No text-to-speech available');
+          setIsSpeaking(false);
+        }
+      });
+    } else if (hasTTSSupport) {
+      speakWithBrowserTTS(text);
+    } else {
+      setError('No text-to-speech available in this browser');
+    }
+  }, [hasCloudTTS, hasTTSSupport, speakWithCloudTTS, speakWithBrowserTTS]);
+
   const stopSpeaking = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
     if (hasTTSSupport) {
       window.speechSynthesis.cancel();
     }
@@ -265,6 +349,7 @@ export const useAuraVoice = (): UseAuraVoiceReturn => {
     error,
     hasSpeechSupport,
     hasTTSSupport,
+    hasCloudTTS,
     startListening,
     stopListening,
     speak,
