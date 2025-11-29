@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { AuraProfile, AuraChatMessage, AuraState, ScreenName } from './types';
+import { AuraProfile, AuraChatMessage, AuraState } from './types';
 import OnboardingScreen from './screens/OnboardingScreen';
 import NeuralLinkScreen from './screens/NeuralLinkScreen';
 import MatchTestScreen from './screens/MatchTestScreen';
 import TwinIntroScreen from './screens/TwinIntroScreen';
 import ReplyLabScreen from './screens/ReplyLabScreen';
 import { AuraStage } from './components/AuraStage';
-import { AuthProvider, useAuth } from './src/context/AuthContext';
-import { AuthScreen } from './src/screens/AuthScreen';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthScreen } from './screens/AuthScreen';
 import { loadAuraProfile, persistAuraProfile } from './src/storage/profileStorage';
 
-type ViewScreen = 'onboarding' | 'neural' | 'match' | 'intro' | 'replylab';
+type ActiveTab = 'talk' | 'match' | 'intro' | 'reply';
 
 const AppContent: React.FC = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   
-  const [currentScreen, setCurrentScreen] = useState<ViewScreen>('onboarding');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('talk');
   const [profile, setProfile] = useState<AuraProfile | null>(null);
   const [chatHistory, setChatHistory] = useState<AuraChatMessage[]>([]);
   const [auraState, setAuraState] = useState<AuraState>({
@@ -29,7 +29,6 @@ const AppContent: React.FC = () => {
       const saved = loadAuraProfile(user.uid);
       if (saved) {
         setProfile(saved);
-        setCurrentScreen('neural');
         if (chatHistory.length === 0) {
           setChatHistory([{
             id: 'init',
@@ -45,7 +44,7 @@ const AppContent: React.FC = () => {
 
   const handleOpenReplyLab = (prefillText?: string) => {
     setReplyLabPrefill(prefillText);
-    setCurrentScreen('replylab');
+    setActiveTab('reply');
   };
 
   const handleProfileCreated = (newProfile: AuraProfile) => {
@@ -53,7 +52,6 @@ const AppContent: React.FC = () => {
       persistAuraProfile(newProfile, user.uid);
     }
     setProfile(newProfile);
-    setCurrentScreen('neural');
     setChatHistory([{
       id: 'init',
       from: 'aura',
@@ -67,7 +65,6 @@ const AppContent: React.FC = () => {
     await signOut();
     setProfile(null);
     setChatHistory([]);
-    setCurrentScreen('onboarding');
   };
 
   if (authLoading) {
@@ -85,18 +82,22 @@ const AppContent: React.FC = () => {
     return <AuthScreen />;
   }
 
-  if (currentScreen === 'onboarding' && !profile) {
+  if (!profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-slate-100 font-sans flex flex-col p-4 lg:p-6 overflow-hidden">
-        <div className="absolute top-4 right-4 z-50">
-          <button
-            onClick={handleSignOut}
-            className="px-4 py-2 text-sm text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-700/50 border border-white/10 rounded-full transition-all"
-          >
-            Sign Out
-          </button>
-        </div>
-        <div className="flex-1 overflow-hidden relative animate-fade-in">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-slate-100">
+        <div className="max-w-6xl mx-auto px-4 py-6">
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 animate-pulse" />
+              <span className="text-lg font-light tracking-wide text-white">Aura Twin</span>
+            </div>
+            <button
+              onClick={handleSignOut}
+              className="px-4 py-2 text-sm text-slate-400 hover:text-white bg-slate-800/50 hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 rounded-full transition-all"
+            >
+              Sign Out
+            </button>
+          </div>
           <div className="max-w-2xl mx-auto">
             <div className="rounded-3xl bg-slate-900/70 border border-white/10 backdrop-blur-2xl shadow-2xl p-4 lg:p-8">
               <OnboardingScreen onProfileCreated={handleProfileCreated} />
@@ -108,122 +109,121 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-slate-100 font-sans flex flex-col p-4 lg:p-6 overflow-hidden">
-      
-      <main className="w-full max-w-[1400px] h-[90vh] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fade-in">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black text-slate-100">
+      <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-4" style={{ height: '100vh', maxHeight: '100vh' }}>
         
-        <div className="lg:col-span-7 h-full hidden lg:block">
-          <AuraStage profile={profile} auraState={auraState} />
-        </div>
+        <header className="flex items-center justify-between py-2 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 animate-pulse shadow-lg shadow-blue-500/30" />
+            <span className="text-lg font-light tracking-wide text-white hidden sm:inline">Aura Twin</span>
+          </div>
 
-        <div className="lg:col-span-5 h-full flex flex-col gap-4 relative">
-          
-          <nav className="flex justify-between items-center p-2">
-            <div className="flex gap-2 bg-slate-900/80 backdrop-blur-md p-1.5 rounded-full border border-white/10 shadow-lg">
-              <button
-                onClick={() => setCurrentScreen('neural')}
-                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  currentScreen === 'neural' 
-                    ? 'bg-slate-100 text-slate-900 shadow-lg' 
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Talk to Aura
-              </button>
-              <button
-                onClick={() => setCurrentScreen('match')}
-                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  currentScreen === 'match' 
-                    ? 'bg-slate-100 text-slate-900 shadow-lg' 
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Match Score
-              </button>
-              <button
-                onClick={() => setCurrentScreen('intro')}
-                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  currentScreen === 'intro' 
-                    ? 'bg-slate-100 text-slate-900 shadow-lg' 
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Twin Intro
-              </button>
-              <button
-                onClick={() => setCurrentScreen('replylab')}
-                className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  currentScreen === 'replylab' 
-                    ? 'bg-slate-100 text-slate-900 shadow-lg' 
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Reply Lab
-              </button>
-            </div>
-
+          <nav className="flex gap-1 bg-slate-900/80 backdrop-blur-md p-1 rounded-full border border-white/10 shadow-lg">
             <button
-              onClick={handleSignOut}
-              className="px-4 py-1.5 text-xs text-slate-400 hover:text-white bg-slate-800/50 hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 rounded-full transition-all"
+              onClick={() => setActiveTab('talk')}
+              className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                activeTab === 'talk' 
+                  ? 'bg-white text-slate-900 shadow-lg' 
+                  : 'text-slate-400 hover:text-white'
+              }`}
             >
-              Sign Out
+              Talk to Aura
+            </button>
+            <button
+              onClick={() => setActiveTab('match')}
+              className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                activeTab === 'match' 
+                  ? 'bg-white text-slate-900 shadow-lg' 
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Match Score
+            </button>
+            <button
+              onClick={() => setActiveTab('intro')}
+              className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                activeTab === 'intro' 
+                  ? 'bg-white text-slate-900 shadow-lg' 
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Twin Intro
+            </button>
+            <button
+              onClick={() => setActiveTab('reply')}
+              className={`px-3 sm:px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+                activeTab === 'reply' 
+                  ? 'bg-white text-slate-900 shadow-lg' 
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Reply Lab
             </button>
           </nav>
 
-          <div className="flex-1 overflow-hidden rounded-[32px] bg-slate-900/60 backdrop-blur-xl border border-white/10 shadow-xl">
-            
-            {currentScreen === 'neural' && profile && (
-              <div className="h-full">
-                <NeuralLinkScreen 
-                  profile={profile}
-                  history={chatHistory}
-                  setHistory={setChatHistory}
-                  auraState={auraState}
-                  setAuraState={setAuraState}
-                  onOpenReplyLab={handleOpenReplyLab}
-                />
-              </div>
-            )}
+          <button
+            onClick={handleSignOut}
+            className="px-4 py-1.5 text-xs text-slate-400 hover:text-white bg-slate-800/50 hover:bg-red-500/20 border border-white/10 hover:border-red-500/30 rounded-full transition-all flex items-center gap-2"
+          >
+            <span className="hidden sm:inline">Sign Out</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+          </button>
+        </header>
 
-            {currentScreen === 'match' && profile && (
-              <div className="h-full overflow-y-auto custom-scrollbar p-4 lg:p-6">
-                <MatchTestScreen userProfile={profile} auraState={auraState} />
-              </div>
-            )}
-
-            {currentScreen === 'intro' && (
-              <div className="h-full overflow-y-auto custom-scrollbar">
-                <TwinIntroScreen />
-              </div>
-            )}
-
-            {currentScreen === 'replylab' && profile && (
-              <div className="h-full">
-                <ReplyLabScreen profile={profile} prefillText={replyLabPrefill} />
-              </div>
-            )}
-
-            {(currentScreen === 'neural' || currentScreen === 'match' || currentScreen === 'replylab') && !profile && (
-              <div className="h-full flex flex-col items-center justify-center p-8 text-center">
-                <p className="text-slate-400">Please complete onboarding first.</p>
-                <button
-                  onClick={() => setCurrentScreen('onboarding')}
-                  className="mt-4 rounded-full px-6 py-2 bg-slate-100 text-slate-900 text-sm font-medium hover:bg-white transition-colors"
-                >
-                  Calibrate Aura
-                </button>
-              </div>
-            )}
+        <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-0 overflow-hidden">
+          
+          <div className="lg:col-span-5 hidden lg:block overflow-hidden">
+            <div className="h-full rounded-3xl overflow-hidden">
+              <AuraStage profile={profile} auraState={auraState} />
+            </div>
           </div>
 
-          <div className="flex items-center justify-center gap-2 text-[10px] text-slate-500">
-            <div className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-pulse" />
-            <span className="font-mono tracking-widest uppercase">
-              {profile ? `● Connected · ${profile.displayName}` : 'Aura Twin · Private Link'}
-            </span>
+          <div className="lg:col-span-7 flex flex-col min-h-0 overflow-hidden">
+            <div className="flex-1 rounded-3xl bg-slate-900/60 backdrop-blur-xl border border-white/10 shadow-xl overflow-hidden">
+              
+              {activeTab === 'talk' && (
+                <div className="h-full">
+                  <NeuralLinkScreen 
+                    profile={profile}
+                    history={chatHistory}
+                    setHistory={setChatHistory}
+                    auraState={auraState}
+                    setAuraState={setAuraState}
+                    onOpenReplyLab={handleOpenReplyLab}
+                  />
+                </div>
+              )}
+
+              {activeTab === 'match' && (
+                <div className="h-full overflow-y-auto p-4 lg:p-6">
+                  <MatchTestScreen userProfile={profile} auraState={auraState} />
+                </div>
+              )}
+
+              {activeTab === 'intro' && (
+                <div className="h-full overflow-y-auto">
+                  <TwinIntroScreen />
+                </div>
+              )}
+
+              {activeTab === 'reply' && (
+                <div className="h-full overflow-y-auto">
+                  <ReplyLabScreen profile={profile} prefillText={replyLabPrefill} />
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-center gap-2 text-[10px] text-slate-500 py-2 flex-shrink-0">
+              <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
+              <span className="font-mono tracking-widest uppercase">
+                ● Connected · {profile.displayName}
+              </span>
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 };

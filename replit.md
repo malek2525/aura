@@ -43,8 +43,10 @@ The application features a complete VisionOS-style glass aesthetic.
 - **Onboarding**: Multi-step profile creation ("Core Identity", "Social Energy", "Boundaries & Goals") capturing user data.
 
 ### System Design Choices
-- **Centralized State Management**: `App.tsx` manages global state for screen switching, ensuring a single-page application feel without reloads.
-- **Modular File Structure**: Components, screens, services, and hooks are organized into distinct directories for maintainability.
+- **Centralized State Management**: `App.tsx` manages global state for screen switching and authentication, ensuring a single-page application feel without reloads.
+- **Header Layout**: Full-width header bar with Aura Twin logo (left), pill-style tab navigation (center), and Sign Out button (right). Visible on all main screens after login.
+- **Tab Navigation**: Four tabs - "Talk to Aura", "Match Score", "Twin Intro", "Reply Lab" - switch content while keeping header persistent.
+- **Modular File Structure**: Components, screens, services, hooks, and context are organized into distinct directories for maintainability.
 - **Environment Variables**: `GEMINI_API_KEY` and `GOOGLE_TTS_API_KEY` are managed via Replit Secrets and injected securely.
 - **Backend**: Express server (`server/index.ts`) runs on port 3001 for TTS API.
 - **Deployment**: Configured for Autoscale with `npm run build` and combined Express + Vite preview, running on port 5000.
