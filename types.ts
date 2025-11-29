@@ -72,3 +72,13 @@ export interface ReplyOptions {
   direct: string;
   playful: string;
 }
+
+export interface TwinChatMessage {
+  from: "auraA" | "auraB";
+  text: string;
+}
+
+export interface TwinChatResult {
+  transcript: TwinChatMessage[];
+  summary: string;
+}

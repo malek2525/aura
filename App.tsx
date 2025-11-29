@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { AuraProfile, AuraChatMessage, AuraState } from './types';
 import OnboardingScreen from './screens/OnboardingScreen';
 import NeuralLinkScreen from './screens/NeuralLinkScreen';
-import TwinIntroScreen from './screens/TwinIntroScreen';
 import ReplyLabScreen from './screens/ReplyLabScreen';
 import SkillsPanel from './src/panels/SkillsPanel';
+import TwinsPanel from './src/panels/TwinsPanel';
 import { AuraStage } from './components/AuraStage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AuthScreen } from './screens/AuthScreen';
@@ -12,6 +12,24 @@ import { loadAuraProfile, persistAuraProfile } from './src/storage/profileStorag
 import { useAuraVoice } from './hooks/useAuraVoice';
 
 type ActiveTab = 'link' | 'skills' | 'twins' | 'mirror';
+
+const SAMPLE_LINA_PROFILE: AuraProfile = {
+  id: "sample_lina",
+  displayName: "Lina",
+  ageRange: "22-27",
+  country: "Germany",
+  introversionLevel: 6,
+  goals: ["friends", "practice_talking"],
+  vibeWords: ["thoughtful", "kind", "curious"],
+  topicsLike: ["art", "music", "late-night walks"],
+  topicsAvoid: ["politics"],
+  socialSpeed: "slow",
+  hardBoundaries: ["no explicit content", "no heavy drama"],
+  greenFlags: ["honesty", "emotional maturity"],
+  redFlags: ["ghosting", "mocking others"],
+  summary:
+    "Lina is a quiet, thoughtful person who loves deep conversations and gentle people.",
+};
 
 const TAB_CONFIG: { id: ActiveTab; label: string; icon: React.ReactNode }[] = [
   {
@@ -230,8 +248,8 @@ const AppContent: React.FC = () => {
             )}
 
             {activeTab === 'twins' && (
-              <div className="h-full overflow-y-auto">
-                <TwinIntroScreen />
+              <div className="h-full overflow-hidden">
+                <TwinsPanel profile={profile} sampleProfile={SAMPLE_LINA_PROFILE} />
               </div>
             )}
 

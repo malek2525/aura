@@ -38,6 +38,10 @@ The application features a complete VisionOS-style glass aesthetic.
 - **Styling**: Tailwind CSS (CDN) augmented with custom glassmorphism CSS for VisionOS aesthetic.
 - **Avatar Implementation**: The `AuraAvatar` component dynamically switches between video (`<video>`) and image (`<img>`) assets (`aura-neutral.mp4`, `aura-happy.mp4`, `aura-playful.png`, etc.) based on the Aura's mood and `isSpeaking` prop.
 - **Reply Lab**: `generateReplyOptions()` in `services/auraLLM.ts` uses Gemini to create three distinct reply options, prioritizing safety and user boundaries.
+- **Twin Chat Simulation**: `simulateTwinChat()` in `services/auraLLM.ts` simulates a 6-8 message conversation between two Aura Twins to analyze compatibility:
+    - Returns `TwinChatResult` with `transcript` (array of messages) and `summary` (3-5 sentence compatibility explanation)
+    - Each message has `from` ("auraA" or "auraB") and `text` fields
+    - Used by TwinsPanel for the investor demo feature
 - **Voice Integration**: `useAuraVoice` hook (`hooks/useAuraVoice.ts`) provides hands-free interaction:
     - **Unified Voice Hook**: Single shared hook instance lifted to App.tsx, passed to all components via props for synchronized state
     - **State**: `isListening` (STT active), `isSpeaking` (TTS playing), `transcript`, `lastFinalTranscript`, `error`
@@ -67,7 +71,7 @@ The application features a complete VisionOS-style glass aesthetic.
 - **Tab Navigation**: Four tabs inside the right glass panel:
   - LINK → NeuralLinkScreen (chat with Aura)
   - SKILLS → SkillsPanel (reply drafting with 3 tones: Safe/Polite, Direct/Honest, Playful/Warm)
-  - TWINS → TwinIntroScreen (ice-breaker generation)
+  - TWINS → TwinsPanel (Aura-to-Aura conversation simulation)
   - MIRROR → ReplyLabScreen (reply drafting)
 - **Sign Out Button**: Always visible in absolute top-right corner when logged in (during onboarding and main app).
 - **Modular File Structure**: Components, screens, services, hooks, and context are organized into distinct directories for maintainability.

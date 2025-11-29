@@ -7,6 +7,8 @@ import {
   AuraMatchResult,
   TwinIntroResult,
   ReplyOptions,
+  TwinChatResult,
+  TwinChatMessage,
 } from "../types";
 
 /* ------------------------------------------------------------------ */
@@ -82,6 +84,18 @@ const DEFAULT_REPLY_OPTIONS = (): ReplyOptions => ({
   safe: "Thanks for reaching out! I appreciate the message and I'll get back to you soon.",
   direct: "Hey, thanks for the message. Let me think about this and I'll let you know my thoughts.",
   playful: "Ooh, interesting! Let me put on my thinking cap and get back to you with something good."
+});
+
+const DEFAULT_TWIN_CHAT_RESULT = (): TwinChatResult => ({
+  transcript: [
+    { from: "auraA", text: "Hey, I'm curious about your person. What's their vibe like?" },
+    { from: "auraB", text: "They're thoughtful, a little reserved, but really genuine. How about yours?" },
+    { from: "auraA", text: "Similar energy actually. They like deep conversations over small talk." },
+    { from: "auraB", text: "That's a good sign. I think they'd appreciate each other's pace." },
+    { from: "auraA", text: "Should we suggest they talk?" },
+    { from: "auraB", text: "I think so. Let's give them a gentle nudge." },
+  ],
+  summary: "Both Auras sense a calm, genuine energy between their humans. They share similar social speeds and appreciate depth over superficiality. This could be a comfortable, low-pressure connection worth exploring."
 });
 
 /* ------------------------------------------------------------------ */
@@ -773,5 +787,127 @@ Draft three replies in the user's voice: safe, direct, and playful.
   } catch (error) {
     console.error("[generateReplyOptions] Fatal error:", error);
     return DEFAULT_REPLY_OPTIONS();
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 6. SIMULATE TWIN CHAT (AURA-TO-AURA CONVERSATION)                   */
+/* ------------------------------------------------------------------ */
+
+const TWIN_CHAT_SYSTEM_PROMPT = `
+You are simulating a private conversation between two AI Aura Twins.
+
+Each Aura represents a real human user. You will receive two profiles:
+- AURA_A: Represents the first user's digital twin
+- AURA_B: Represents the second user's digital twin (Lina)
+
+Imagine the two Auras having a private, genuine back-and-forth conversation about their respective humans.
+They are trying to figure out if their humans would get along, what they have in common, and what a connection between them might look like.
+
+The conversation should:
+1. Be 6-8 messages total (alternating between auraA and auraB)
+2. Feel natural, warm, and slightly curious
+3. Reference specific traits, interests, or values from each profile
+4. Build towards a conclusion about compatibility
+
+After the conversation, provide a 3-5 sentence summary explaining the compatibility between the two humans.
+
+Return ONLY a JSON object with this exact shape:
+
+{
+  "transcript": [
+    { "from": "auraA", "text": "string" },
+    { "from": "auraB", "text": "string" },
+    ...
+  ],
+  "summary": "string"
+}
+
+Rules:
+- Keep each message short (1-3 sentences)
+- The Auras should speak about their humans in third person ("my person", "they", etc.)
+- Be genuine and insightful, not generic
+- No explicit sexual content
+- The summary should be helpful and encouraging, even if compatibility is moderate
+`.trim();
+
+export async function simulateTwinChat(
+  profileA: AuraProfile,
+  profileB: AuraProfile
+): Promise<TwinChatResult> {
+  const apiKey = (window as any).__GEMINI_API_KEY || "";
+
+  if (!apiKey) {
+    console.error("Missing Gemini API key for twin chat");
+    return DEFAULT_TWIN_CHAT_RESULT();
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+
+    const personaA = buildAuraPersonaDescription(profileA);
+    const personaB = buildAuraPersonaDescription(profileB);
+
+    const userText = `
+AURA_A (representing ${profileA.displayName}):
+${JSON.stringify(profileA, null, 2)}
+
+AURA_A PERSONA:
+${personaA}
+
+---
+
+AURA_B (representing ${profileB.displayName}):
+${JSON.stringify(profileB, null, 2)}
+
+AURA_B PERSONA:
+${personaB}
+`.trim();
+
+    console.log("[simulateTwinChat] Starting twin chat between:", profileA.displayName, "and", profileB.displayName);
+
+    try {
+      const res = await ai.models.generateContent({
+        model: MATCH_MODEL,
+        config: {
+          systemInstruction: TWIN_CHAT_SYSTEM_PROMPT,
+          responseMimeType: "application/json",
+        },
+        contents: [{ role: "user", parts: [{ text: userText }] }],
+      });
+
+      const raw = res.text || "{}";
+
+      try {
+        const json = JSON.parse(raw);
+
+        const transcript: TwinChatMessage[] = (json.transcript || []).map((msg: any) => ({
+          from: msg.from === "auraB" ? "auraB" : "auraA",
+          text: msg.text || "",
+        }));
+
+        const result: TwinChatResult = {
+          transcript: transcript.length > 0 ? transcript : DEFAULT_TWIN_CHAT_RESULT().transcript,
+          summary: json.summary || DEFAULT_TWIN_CHAT_RESULT().summary,
+        };
+
+        console.log("[simulateTwinChat] Twin chat simulation complete, messages:", result.transcript.length);
+        return result;
+      } catch (parseError) {
+        console.error("[simulateTwinChat] Failed to parse response:", parseError, "Raw:", raw);
+        return DEFAULT_TWIN_CHAT_RESULT();
+      }
+    } catch (apiError) {
+      if (isQuotaError(apiError)) {
+        console.warn("[simulateTwinChat] Quota exhausted, using fallback");
+        return DEFAULT_TWIN_CHAT_RESULT();
+      }
+
+      console.error("[simulateTwinChat] API error:", apiError);
+      return DEFAULT_TWIN_CHAT_RESULT();
+    }
+  } catch (error) {
+    console.error("[simulateTwinChat] Fatal error:", error);
+    return DEFAULT_TWIN_CHAT_RESULT();
   }
 }
