@@ -47,7 +47,7 @@ app.post('/api/tts', async (req: Request<{}, {}, TTSRequestBody>, res: Response)
       return;
     }
 
-    const voiceName = voice || 'en-US-Neural2-F';
+    const voiceName = voice || 'en-US-Neural2-H';
 
     const ttsRequest: GoogleTTSRequest = {
       input: { text },
@@ -58,7 +58,7 @@ app.post('/api/tts', async (req: Request<{}, {}, TTSRequestBody>, res: Response)
       },
       audioConfig: {
         audioEncoding: 'MP3',
-        speakingRate: 0.95,
+        speakingRate: 0.9,
         pitch: 2.0,
         volumeGainDb: 0
       }

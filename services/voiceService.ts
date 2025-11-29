@@ -15,7 +15,7 @@ export async function speakWithAuraTTS(
     },
     body: JSON.stringify({
       text,
-      voice: options.voice || 'en-US-Neural2-F',
+      voice: options.voice || 'en-US-Neural2-H',
     }),
   });
 
