@@ -42,14 +42,31 @@ interface UseAuraVoiceReturn {
   clearTranscript: () => void;
 }
 
-const getFeminineVoice = (voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null => {
-  const feminineNames = ['amy', 'joanna', 'aria', 'sara', 'emma', 'luna', 'samantha', 'victoria', 'karen', 'moira', 'tessa', 'female'];
-  
-  for (const name of feminineNames) {
+const getBestFeminineVoice = (voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null => {
+  const premiumNames = ['aria', 'jenny', 'salli', 'joanna', 'emma', 'amy', 'sara'];
+  for (const name of premiumNames) {
     const match = voices.find(v => v.name.toLowerCase().includes(name));
     if (match) return match;
   }
-  
+
+  const neuralVoice = voices.find(v => 
+    v.name.toLowerCase().includes('neural') && 
+    (v.name.toLowerCase().includes('female') || v.lang.startsWith('en'))
+  );
+  if (neuralVoice) return neuralVoice;
+
+  const secondaryNames = ['samantha', 'victoria', 'karen', 'moira', 'tessa', 'zira', 'hazel', 'susan', 'linda', 'female'];
+  for (const name of secondaryNames) {
+    const match = voices.find(v => v.name.toLowerCase().includes(name));
+    if (match) return match;
+  }
+
+  const enUSVoice = voices.find(v => v.lang === 'en-US');
+  if (enUSVoice) return enUSVoice;
+
+  const enGBVoice = voices.find(v => v.lang === 'en-GB');
+  if (enGBVoice) return enGBVoice;
+
   const englishVoice = voices.find(v => v.lang.startsWith('en'));
   return englishVoice || voices[0] || null;
 };
@@ -188,13 +205,13 @@ export const useAuraVoice = (): UseAuraVoiceReturn => {
     const utterance = new SpeechSynthesisUtterance(text);
     utteranceRef.current = utterance;
 
-    utterance.rate = 1;
+    utterance.rate = 0.95;
     utterance.pitch = 1.1;
     utterance.volume = 1;
 
     const setVoice = () => {
       const voices = window.speechSynthesis.getVoices();
-      const voice = getFeminineVoice(voices);
+      const voice = getBestFeminineVoice(voices);
       if (voice) {
         utterance.voice = voice;
       }
