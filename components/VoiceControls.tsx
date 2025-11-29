@@ -1,14 +1,31 @@
 import React, { useEffect, useRef } from 'react';
-import { useAuraVoice } from '../hooks/useAuraVoice';
+
+interface VoiceHook {
+  isListening: boolean;
+  isSpeaking: boolean;
+  transcript: string;
+  lastFinalTranscript: string;
+  error: string | null;
+  hasSpeechSupport: boolean;
+  hasTTSSupport: boolean;
+  hasCloudTTS: boolean;
+  startListening: () => void;
+  stopListening: () => void;
+  speak: (text: string) => void;
+  stopSpeaking: () => void;
+  clearTranscript: () => void;
+}
 
 interface VoiceControlsProps {
+  voice: VoiceHook;
   onFinalTranscript: (text: string) => void;
 }
 
-const VoiceControls: React.FC<VoiceControlsProps> = ({ onFinalTranscript }) => {
+const VoiceControls: React.FC<VoiceControlsProps> = ({ voice, onFinalTranscript }) => {
   const {
     isListening,
     isSpeaking,
+    transcript,
     lastFinalTranscript,
     error,
     hasSpeechSupport,
@@ -16,7 +33,7 @@ const VoiceControls: React.FC<VoiceControlsProps> = ({ onFinalTranscript }) => {
     stopListening,
     stopSpeaking,
     clearTranscript,
-  } = useAuraVoice();
+  } = voice;
 
   const processedTranscriptRef = useRef<string>('');
 
@@ -33,6 +50,10 @@ const VoiceControls: React.FC<VoiceControlsProps> = ({ onFinalTranscript }) => {
   }, [lastFinalTranscript, isListening, onFinalTranscript, clearTranscript]);
 
   const handleMicClick = () => {
+    if (isSpeaking) {
+      stopSpeaking();
+    }
+    
     if (isListening) {
       stopListening();
     } else {
@@ -41,29 +62,20 @@ const VoiceControls: React.FC<VoiceControlsProps> = ({ onFinalTranscript }) => {
     }
   };
 
-  const getStatusIndicator = () => {
+  const getStatusText = () => {
+    if (isListening && transcript) {
+      return transcript;
+    }
     if (isListening) {
-      return (
-        <span className="flex items-center gap-1.5 text-red-400">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-          Listening
-        </span>
-      );
+      return 'Listening...';
     }
     if (isSpeaking) {
-      return (
-        <span className="flex items-center gap-1.5 text-amber-400">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-          Aura Speaking
-        </span>
-      );
+      return 'Aura is speaking';
     }
-    return (
-      <span className="flex items-center gap-1.5 text-slate-500">
-        <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
-        Voice Ready
-      </span>
-    );
+    if (error) {
+      return error;
+    }
+    return 'Tap mic to talk';
   };
 
   if (!hasSpeechSupport) {
@@ -71,7 +83,7 @@ const VoiceControls: React.FC<VoiceControlsProps> = ({ onFinalTranscript }) => {
       <div className="flex items-center gap-2 text-[10px] text-slate-500">
         <span className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
-          Voice not supported
+          Voice not available
         </span>
       </div>
     );
@@ -82,15 +94,22 @@ const VoiceControls: React.FC<VoiceControlsProps> = ({ onFinalTranscript }) => {
       <button
         type="button"
         onClick={handleMicClick}
-        className={`rounded-full p-2.5 border transition-all duration-200 ${
+        disabled={isSpeaking}
+        className={`relative rounded-full p-3 border transition-all duration-300 ${
           isListening
-            ? 'bg-red-500/20 border-red-500/40 text-red-300 hover:bg-red-500/30'
-            : 'bg-white/10 border-white/10 text-slate-300 hover:bg-white/15 hover:border-white/20'
+            ? 'bg-red-500/20 border-red-500/50 text-red-300 shadow-lg shadow-red-500/20'
+            : isSpeaking
+            ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 cursor-not-allowed opacity-70'
+            : 'bg-white/10 border-white/15 text-slate-300 hover:bg-violet-500/20 hover:border-violet-500/40 hover:text-violet-300'
         }`}
-        title={isListening ? 'Stop listening' : 'Start listening'}
+        title={isListening ? 'Stop listening' : isSpeaking ? 'Aura is speaking' : 'Start talking'}
       >
+        {isListening && (
+          <span className="absolute inset-0 rounded-full animate-ping bg-red-500/30" />
+        )}
+        
         <svg
-          className="w-4 h-4"
+          className="w-5 h-5 relative z-10"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -108,25 +127,44 @@ const VoiceControls: React.FC<VoiceControlsProps> = ({ onFinalTranscript }) => {
         <button
           type="button"
           onClick={stopSpeaking}
-          className="rounded-full p-2 bg-white/10 border border-white/10 text-slate-300 hover:bg-white/15 hover:border-white/20 transition-all duration-200"
-          title="Stop speaking"
+          className="rounded-full p-2.5 bg-white/10 border border-white/15 text-slate-300 hover:bg-red-500/20 hover:border-red-500/40 hover:text-red-300 transition-all duration-200"
+          title="Stop Aura"
         >
           <svg
-            className="w-3.5 h-3.5"
+            className="w-4 h-4"
             fill="currentColor"
             viewBox="0 0 24 24"
           >
-            <rect x="6" y="6" width="12" height="12" rx="1" />
+            <rect x="6" y="6" width="12" height="12" rx="2" />
           </svg>
         </button>
       )}
 
-      <div className="text-[10px] font-mono tracking-wide">
-        {error ? (
-          <span className="text-red-400">{error}</span>
-        ) : (
-          getStatusIndicator()
-        )}
+      <div className="flex-1 min-w-0">
+        <div className={`text-[11px] font-mono tracking-wide truncate ${
+          error 
+            ? 'text-red-400' 
+            : isListening 
+            ? 'text-red-300' 
+            : isSpeaking 
+            ? 'text-amber-300' 
+            : 'text-slate-500'
+        }`}>
+          {getStatusText()}
+        </div>
+        
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <span className={`w-1.5 h-1.5 rounded-full ${
+            isListening 
+              ? 'bg-red-500 animate-pulse' 
+              : isSpeaking 
+              ? 'bg-amber-500 animate-pulse' 
+              : 'bg-slate-600'
+          }`} />
+          <span className="text-[9px] text-slate-500 uppercase tracking-wider">
+            {isListening ? 'Recording' : isSpeaking ? 'Playing' : 'Voice Ready'}
+          </span>
+        </div>
       </div>
     </div>
   );

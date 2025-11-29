@@ -39,11 +39,16 @@ The application features a complete VisionOS-style glass aesthetic.
 - **Avatar Implementation**: The `AuraAvatar` component dynamically switches between video (`<video>`) and image (`<img>`) assets (`aura-neutral.mp4`, `aura-happy.mp4`, `aura-playful.png`, etc.) based on the Aura's mood and `isSpeaking` prop.
 - **Reply Lab**: `generateReplyOptions()` in `services/auraLLM.ts` uses Gemini to create three distinct reply options, prioritizing safety and user boundaries.
 - **Voice Integration**: `useAuraVoice` hook (`hooks/useAuraVoice.ts`) provides hands-free interaction:
+    - **Unified Voice Hook**: Single shared hook instance lifted to App.tsx, passed to all components via props for synchronized state
+    - **State**: `isListening` (STT active), `isSpeaking` (TTS playing), `transcript`, `lastFinalTranscript`, `error`
+    - **Functions**: `startListening()`, `stopListening()`, `speak(text)`, `stopSpeaking()`, `clearTranscript()`
     - **Cloud TTS**: Google Cloud Text-to-Speech API via Express backend (`server/index.ts` on port 3001)
     - **Browser Fallback**: Falls back to Web Speech API TTS if cloud fails
-    - **STT**: Browser Speech Recognition API for voice input
+    - **STT**: Browser Speech Recognition API for voice input with interim transcripts
+    - **Auto-Speak**: Aura automatically speaks her replies (only Aura messages, never user messages)
     - **Voice Service**: `services/voiceService.ts` handles API calls to `/api/tts`
     - **Vite Proxy**: Routes `/api/*` to Express server in development
+    - **VoiceControls Component**: Receives shared voice hook as prop, shows live transcript, status indicators
 - **Telemetry**: `utils/telemetry.ts` is used for structured event logging for analytics (e.g., `reply_lab_opened`, `reply_lab_generated`).
 - **Quota Management**: Implemented a Gemini quota fix with fallback profiles and user-friendly messages for API exhaustion.
 
