@@ -281,3 +281,20 @@ body {
 .bg-gradient-radial {
   background: radial-gradient(circle, var(--tw-gradient-stops));
 }
+@keyframes holoSweep {
+  0% {
+    transform: translateX(-40%);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(40%);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateX(80%);
+    opacity: 0;
+  }
+}
