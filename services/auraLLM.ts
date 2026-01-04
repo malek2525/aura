@@ -23,29 +23,202 @@ const isQuotaError = (err: any) =>
   err?.status === 429 ||
   /quota|RESOURCE_EXHAUSTED/i.test(String(err?.message ?? ""));
 
-// Default fallback profile when quota is exhausted
-const DEFAULT_FAKE_PROFILE = (answers: OnboardingAnswers): AuraProfile => ({
-  id: `user_${Date.now()}`,
-  displayName: answers.displayName || "User",
-  bio: "",
-  avatarUrl: "",
-  vibeTags: ["thoughtful", "genuine"],
-  ageRange: answers.ageRange ?? null,
-  country: answers.country ?? null,
-  introversionLevel: answers.introversionLevel,
-  goals: ["Connect with others", "Grow socially"],
-  vibeWords: ["calm", "thoughtful", "genuine"],
-  topicsLike: answers.topicsLike ? answers.topicsLike.split(",").map(s => s.trim()) : ["conversations", "art", "nature"],
-  topicsAvoid: answers.topicsAvoid ? answers.topicsAvoid.split(",").map(s => s.trim()) : [],
-  socialSpeed: answers.socialSpeed,
-  hardBoundaries: answers.hardBoundaries ? answers.hardBoundaries.split(",").map(s => s.trim()) : [],
-  greenFlags: answers.greenFlags ? answers.greenFlags.split(",").map(s => s.trim()) : ["kindness", "authenticity"],
-  redFlags: answers.redFlags ? answers.redFlags.split(",").map(s => s.trim()) : ["dishonesty"],
-  summary: answers.whatShouldPeopleKnow || "A curious introvert looking to connect meaningfully.",
-});
+// Small helper: split comma-separated strings into clean arrays
+const parseCommaList = (input?: string): string[] =>
+  input
+    ? input
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
 
-const DEFAULT_CHAT_RESPONSE = (): { replyText: string; auraState: AuraState } => ({
-  replyText: "I'm feeling a bit fuzzy right now, but I'm here with you. Can you say that again in a slightly different way?",
+// Safe random id for photos / insights
+const safeRandomId = () => {
+  try {
+    if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+      return (crypto as any).randomUUID();
+    }
+  } catch {
+    // ignore
+  }
+  return `id_${Math.random().toString(36).slice(2)}`;
+};
+
+/* ------------------------------------------------------------------ */
+/* ONBOARDING ANSWERS TYPE (SOURCE OF TRUTH FOR PROFILE BUILD)        */
+/* ------------------------------------------------------------------ */
+
+export interface OnboardingAnswers {
+  displayName: string;
+  ageRange?: string;
+  country?: string;
+
+  introversionLevel: number;
+
+  // goals, topics, etc - still stored as comma-separated or raw strings from UI
+  goals: string;
+  topicsLike: string;
+  topicsAvoid: string;
+  vibeWords: string;
+
+  socialSpeed: "slow" | "normal" | "fast";
+  hardBoundaries: string;
+  greenFlags: string;
+  redFlags: string;
+
+  // Photos
+  primaryPhotoUrl: string | null;
+  photo2Url: string | null;
+  photo3Url: string | null;
+
+  // Preferences
+  relationshipIntent: "friends" | "serious" | "fun" | "not_sure";
+  preferredMatchGender: "male" | "female" | "any";
+
+  // Interests (comma separated in the UI)
+  interestsInput: string;
+
+  // Profile prompts
+  idealFirstMessage: string;
+  idealFirstMeeting: string;
+  lifestyleNotes: string;
+  whatShouldPeopleKnow: string;
+  whatFeelsSafe: string;
+
+  avatarUrl?: string;
+}
+
+// Build photos array from onboarding answers (3 slots → structured AuraPhoto[])
+const buildPhotosFromAnswers = (answers: OnboardingAnswers) => {
+  const urls = [
+    answers.primaryPhotoUrl,
+    answers.photo2Url,
+    answers.photo3Url,
+  ].filter((url): url is string => Boolean(url && url.trim()));
+
+  return urls.map((url) => ({
+    id: safeRandomId(),
+    url,
+  }));
+};
+
+// Stubbed AuraInsights (LLM-generated later)
+const buildStubAuraInsights = () => [
+  {
+    id: safeRandomId(),
+    shortSummary: "Aura thinks this person is warm, open and curious.",
+    vibeSentence: "Feels emotionally safe and expressive.",
+    createdAt: Date.now(),
+  },
+];
+
+// Map new onboarding relationshipIntent → internal RelationshipIntent
+const mapRelationshipIntent = (
+  intent?: OnboardingAnswers["relationshipIntent"],
+): AuraProfile["relationshipIntent"] | undefined => {
+  switch (intent) {
+    case "friends":
+      return "friends_only";
+    case "serious":
+      return "serious_relationship";
+    case "fun":
+      return "casual_dating";
+    case "not_sure":
+      return "open_to_see";
+    default:
+      return undefined;
+  }
+};
+
+// Map new preferredMatchGender → internal PreferredMatchGender
+const mapPreferredMatchGender = (
+  gender?: OnboardingAnswers["preferredMatchGender"],
+): AuraProfile["preferredMatchGender"] | undefined => {
+  switch (gender) {
+    case "male":
+      return "men";
+    case "female":
+      return "women";
+    case "any":
+      return "any";
+    default:
+      return undefined;
+  }
+};
+
+// Default fallback profile when quota is exhausted
+const DEFAULT_FAKE_PROFILE = (answers: OnboardingAnswers): AuraProfile => {
+  const topicsLike = parseCommaList(answers.topicsLike);
+  const topicsAvoid = parseCommaList(answers.topicsAvoid);
+  const hardBoundaries = parseCommaList(answers.hardBoundaries);
+  const greenFlags = parseCommaList(answers.greenFlags);
+  const redFlags = parseCommaList(answers.redFlags);
+  const interests = parseCommaList(answers.interestsInput);
+  const photos = buildPhotosFromAnswers(answers);
+
+  return {
+    id: `user_${Date.now()}`,
+    displayName: answers.displayName || "User",
+    bio: "",
+    avatarUrl: answers.avatarUrl || "",
+    photos,
+    photoUrls: photos.map((p) => p.url),
+    vibeTags: ["thoughtful", "genuine"],
+    ageRange: answers.ageRange ?? null,
+    country: answers.country ?? null,
+
+    introversionLevel: answers.introversionLevel,
+    goals: ["Connect with others", "Grow socially"],
+    socialSpeed: answers.socialSpeed,
+
+    vibeWords: ["calm", "thoughtful", "genuine"],
+    interests,
+    topicsLike: topicsLike.length
+      ? topicsLike
+      : ["conversations", "art", "nature"],
+    topicsAvoid,
+
+    relationshipIntent: mapRelationshipIntent(answers.relationshipIntent),
+    preferredMatchGender: mapPreferredMatchGender(answers.preferredMatchGender),
+
+    loveLanguages: [],
+
+    idealFirstMessage: answers.idealFirstMessage,
+    idealFirstMeeting: answers.idealFirstMeeting,
+    lifestyleNotes: answers.lifestyleNotes,
+    whatFeelsSafe: answers.whatFeelsSafe,
+    whatShouldPeopleKnow: answers.whatShouldPeopleKnow,
+    prompts: {
+      idealFirstMessage: answers.idealFirstMessage,
+      idealFirstMeeting: answers.idealFirstMeeting,
+      lifestyleNotes: answers.lifestyleNotes,
+      whatShouldPeopleKnow: answers.whatShouldPeopleKnow,
+      whatFeelsSafe: answers.whatFeelsSafe,
+    },
+
+    hardBoundaries,
+    greenFlags: greenFlags.length ? greenFlags : ["kindness", "authenticity"],
+    redFlags: redFlags.length ? redFlags : ["dishonesty"],
+
+    matchPreferences: {
+      intent: answers.relationshipIntent,
+      preferredGender: answers.preferredMatchGender,
+    },
+
+    auraInsights: buildStubAuraInsights(),
+
+    summary:
+      answers.whatShouldPeopleKnow ||
+      "A curious introvert looking to connect meaningfully.",
+  };
+};
+
+const DEFAULT_CHAT_RESPONSE = (): {
+  replyText: string;
+  auraState: AuraState;
+} => ({
+  replyText:
+    "I'm feeling a bit fuzzy right now, but I'm here with you. Can you say that again in a slightly different way?",
   auraState: { mood: "calm", moodIntensity: 0.5 },
 });
 
@@ -57,45 +230,65 @@ const DEFAULT_MATCH_RESULT = (): MatchResult => ({
     "Good balance of personality types",
   ],
   riskFlags: [],
-  suggestedOpeningForUserA: "Hey, I think we might have some things in common. Want to chat?",
-  suggestedOpeningForUserB: "Hey, I think we might have some things in common. Want to chat?",
-  auraToUserSummaryA: "I got a neutral vibe from their profile, but that's okay—sometimes the best connections start quiet.",
-  auraToUserSummaryB: "I got a neutral vibe from their profile, but that's okay—sometimes the best connections start quiet.",
+  suggestedOpeningForUserA:
+    "Hey, I think we might have some things in common. Want to chat?",
+  suggestedOpeningForUserB:
+    "Hey, I think we might have some things in common. Want to chat?",
+  auraToUserSummaryA:
+    "I got a neutral vibe from their profile, but that's okay—sometimes the best connections start quiet.",
+  auraToUserSummaryB:
+    "I got a neutral vibe from their profile, but that's okay—sometimes the best connections start quiet.",
 });
 
 const DEFAULT_TWIN_INTRO_RESULT = (): TwinIntroResult => ({
   title: "Soft, cautious connection",
   auraToAuraScript: [
     `"I think they'd feel safer talking to you first," says your Aura.`,
-    `"And I think you'd actually get their weird jokes," replies the other Aura.`
+    `"And I think you'd actually get their weird jokes," replies the other Aura.`,
   ],
-  introSummary: "Your Auras sense there is a gentle fit here. If you both move slowly and stay honest, this could turn into a safe, deep connection.",
+  introSummary:
+    "Your Auras sense there is a gentle fit here. If you both move slowly and stay honest, this could turn into a safe, deep connection.",
   suggestedOpeners: [
     "Hey, our twins think we'd vibe. Want to trade one thing we're secretly nerdy about?",
-    "Hi, I'm a bit shy but curious—what's something small that makes your day better?"
+    "Hi, I'm a bit shy but curious—what's something small that makes your day better?",
   ],
   safetyNotes: [
     "Move at a slow pace.",
-    "Respect each other's boundaries around over-sharing."
-  ]
+    "Respect each other's boundaries around over-sharing.",
+  ],
 });
 
 const DEFAULT_REPLY_OPTIONS = (): ReplyOptions => ({
   safe: "Thanks for reaching out! I appreciate the message and I'll get back to you soon.",
-  direct: "Hey, thanks for the message. Let me think about this and I'll let you know my thoughts.",
-  playful: "Ooh, interesting! Let me put on my thinking cap and get back to you with something good."
+  direct:
+    "Hey, thanks for the message. Let me think about this and I'll let you know my thoughts.",
+  playful:
+    "Ooh, interesting! Let me put on my thinking cap and get back to you with something good.",
 });
 
 const DEFAULT_TWIN_CHAT_RESULT = (): TwinChatResult => ({
   transcript: [
-    { from: "auraA", text: "Hey, I'm curious about your person. What's their vibe like?" },
-    { from: "auraB", text: "They're thoughtful, a little reserved, but really genuine. How about yours?" },
-    { from: "auraA", text: "Similar energy actually. They like deep conversations over small talk." },
-    { from: "auraB", text: "That's a good sign. I think they'd appreciate each other's pace." },
+    {
+      from: "auraA",
+      text: "Hey, I'm curious about your person. What's their vibe like?",
+    },
+    {
+      from: "auraB",
+      text: "They're thoughtful, a little reserved, but really genuine. How about yours?",
+    },
+    {
+      from: "auraA",
+      text: "Similar energy actually. They like deep conversations over small talk.",
+    },
+    {
+      from: "auraB",
+      text: "That's a good sign. I think they'd appreciate each other's pace.",
+    },
     { from: "auraA", text: "Should we suggest they talk?" },
     { from: "auraB", text: "I think so. Let's give them a gentle nudge." },
   ],
-  summary: "Both Auras sense a calm, genuine energy between their humans. They share similar social speeds and appreciate depth over superficiality. This could be a comfortable, low-pressure connection worth exploring."
+  summary:
+    "Both Auras sense a calm, genuine energy between their humans. They share similar social speeds and appreciate depth over superficiality. This could be a comfortable, low-pressure connection worth exploring.",
 });
 
 /* ------------------------------------------------------------------ */
@@ -103,17 +296,19 @@ const DEFAULT_TWIN_CHAT_RESULT = (): TwinChatResult => ({
 /* ------------------------------------------------------------------ */
 
 export function buildAuraPersonaDescription(profile: AuraProfile): string {
-  const introversionDesc = profile.introversionLevel >= 8
-    ? "Very introverted. Speaks gently, leaves space, asks questions, avoids flooding text."
-    : profile.introversionLevel >= 5
-    ? "Balanced introvert. Thoughtful, reflective, but capable of holding conversation."
-    : "Socially comfortable (for an introvert). More leading, slightly more talkative, but still sensitive.";
+  const introversionDesc =
+    profile.introversionLevel >= 8
+      ? "Very introverted. Speaks gently, leaves space, asks questions, avoids flooding text."
+      : profile.introversionLevel >= 5
+        ? "Balanced introvert. Thoughtful, reflective, but capable of holding conversation."
+        : "Socially comfortable (for an introvert). More leading, slightly more talkative, but still sensitive.";
 
-  const speedDesc = profile.socialSpeed === 'slow'
-    ? "Takes things very slowly. cautious, patient, never pushes."
-    : profile.socialSpeed === 'fast'
-    ? "More direct and ready to connect, though still kind."
-    : "Neutral pacing, matches the user.";
+  const speedDesc =
+    profile.socialSpeed === "slow"
+      ? "Takes things very slowly. cautious, patient, never pushes."
+      : profile.socialSpeed === "fast"
+        ? "More direct and ready to connect, though still kind."
+        : "Neutral pacing, matches the user.";
 
   return `
 Core Vibe: ${profile.vibeWords.join(", ")}.
@@ -176,24 +371,6 @@ Rules:
 - Keep the summary to 1–2 sentences, real and human.
 `.trim();
 
-export interface OnboardingAnswers {
-  displayName: string;
-  ageRange?: string;
-  country?: string;
-  introversionLevel: number;
-  goals: string;
-  topicsLike: string;
-  topicsAvoid: string;
-  vibeWords: string;
-  socialSpeed: "slow" | "normal" | "fast";
-  hardBoundaries: string;
-  greenFlags: string;
-  redFlags: string;
-  whatShouldPeopleKnow: string;
-  whatFeelsSafe: string;
-  avatarUrl?: string;
-}
-
 export interface ProfileBuildResult {
   profile: AuraProfile;
   isUsingFallback?: boolean;
@@ -201,13 +378,17 @@ export interface ProfileBuildResult {
 }
 
 export async function buildAuraProfile(
-  answers: OnboardingAnswers
+  answers: OnboardingAnswers,
 ): Promise<ProfileBuildResult> {
   const apiKey = (window as any).__GEMINI_API_KEY || "";
 
   if (!apiKey) {
     console.error("Missing Gemini API key");
-    return { profile: DEFAULT_FAKE_PROFILE(answers), isUsingFallback: true, message: "API key not configured. Using default profile." };
+    return {
+      profile: DEFAULT_FAKE_PROFILE(answers),
+      isUsingFallback: true,
+      message: "API key not configured. Using default profile.",
+    };
   }
 
   try {
@@ -218,7 +399,10 @@ ONBOARDING_ANSWERS:
 ${JSON.stringify(answers, null, 2)}
 `.trim();
 
-    console.log("[buildAuraProfile] Starting profile construction for:", answers.displayName);
+    console.log(
+      "[buildAuraProfile] Starting profile construction for:",
+      answers.displayName,
+    );
 
     try {
       const res = await ai.models.generateContent({
@@ -235,45 +419,108 @@ ${JSON.stringify(answers, null, 2)}
       try {
         const json = JSON.parse(raw);
 
+        const interestsFromInput = parseCommaList(answers.interestsInput);
+        const photos = buildPhotosFromAnswers(answers);
+
         const profile: AuraProfile = {
           id: json.id || `user_${Date.now()}`,
           displayName: json.displayName || answers.displayName,
           bio: json.bio || "",
           avatarUrl: answers.avatarUrl || json.avatarUrl || "",
+
+          photos,
+          photoUrls: json.photoUrls || photos.map((p) => p.url),
+
           vibeTags: json.vibeTags || [],
           ageRange: json.ageRange ?? answers.ageRange ?? null,
           country: json.country ?? answers.country ?? null,
-          introversionLevel: json.introversionLevel ?? answers.introversionLevel,
+
+          introversionLevel:
+            json.introversionLevel ?? answers.introversionLevel,
           goals: json.goals || [],
+
           vibeWords: json.vibeWords || [],
+          interests:
+            Array.isArray(json.interests) && json.interests.length > 0
+              ? json.interests
+              : interestsFromInput,
           topicsLike: json.topicsLike || [],
           topicsAvoid: json.topicsAvoid || [],
+
           socialSpeed: json.socialSpeed || answers.socialSpeed,
+
+          relationshipIntent:
+            mapRelationshipIntent(answers.relationshipIntent) ??
+            json.relationshipIntent,
+          preferredMatchGender:
+            mapPreferredMatchGender(answers.preferredMatchGender) ??
+            json.preferredMatchGender,
+
+          loveLanguages: json.loveLanguages || [],
+
+          idealFirstMessage:
+            answers.idealFirstMessage || json.idealFirstMessage || "",
+          idealFirstMeeting:
+            answers.idealFirstMeeting || json.idealFirstMeeting || "",
+          lifestyleNotes: answers.lifestyleNotes || json.lifestyleNotes || "",
+          whatFeelsSafe: answers.whatFeelsSafe || json.whatFeelsSafe || "",
+          whatShouldPeopleKnow:
+            answers.whatShouldPeopleKnow || json.whatShouldPeopleKnow || "",
+
+          prompts: {
+            idealFirstMessage: answers.idealFirstMessage,
+            idealFirstMeeting: answers.idealFirstMeeting,
+            lifestyleNotes: answers.lifestyleNotes,
+            whatShouldPeopleKnow: answers.whatShouldPeopleKnow,
+            whatFeelsSafe: answers.whatFeelsSafe,
+          },
+
           hardBoundaries: json.hardBoundaries || [],
           greenFlags: json.greenFlags || [],
           redFlags: json.redFlags || [],
-          summary: json.summary || answers.whatShouldPeopleKnow || "A thoughtful introvert seeking genuine connection.",
+
+          matchPreferences: {
+            ...(json.matchPreferences || {}),
+            intent: answers.relationshipIntent,
+            preferredGender: answers.preferredMatchGender,
+          },
+
+          auraInsights: buildStubAuraInsights(),
+
+          summary:
+            json.summary ||
+            answers.whatShouldPeopleKnow ||
+            "A thoughtful introvert seeking genuine connection.",
         };
 
         console.log("[buildAuraProfile] Received response from Gemini");
-        console.log("[buildAuraProfile] Profile created successfully:", profile.displayName);
+        console.log(
+          "[buildAuraProfile] Profile created successfully:",
+          profile.displayName,
+        );
 
         return { profile };
       } catch (parseError) {
-        console.error("[buildAuraProfile] Failed to parse profile response:", parseError);
+        console.error(
+          "[buildAuraProfile] Failed to parse profile response:",
+          parseError,
+        );
         return {
           profile: DEFAULT_FAKE_PROFILE(answers),
           isUsingFallback: true,
-          message: "Could not parse profile. Using fallback."
+          message: "Could not parse profile. Using fallback.",
         };
       }
     } catch (apiError) {
       if (isQuotaError(apiError)) {
-        console.warn("[buildAuraProfile] Quota exhausted, using fallback profile");
+        console.warn(
+          "[buildAuraProfile] Quota exhausted, using fallback profile",
+        );
         return {
           profile: DEFAULT_FAKE_PROFILE(answers),
           isUsingFallback: true,
-          message: "API quota reached. Using a default profile for now. Try again later."
+          message:
+            "API quota reached. Using a default profile for now. Try again later.",
         };
       }
 
@@ -281,7 +528,7 @@ ${JSON.stringify(answers, null, 2)}
       return {
         profile: DEFAULT_FAKE_PROFILE(answers),
         isUsingFallback: true,
-        message: "Network error. Using fallback profile."
+        message: "Network error. Using fallback profile.",
       };
     }
   } catch (error) {
@@ -289,7 +536,7 @@ ${JSON.stringify(answers, null, 2)}
     return {
       profile: DEFAULT_FAKE_PROFILE(answers),
       isUsingFallback: true,
-      message: "Unexpected error. Using fallback profile."
+      message: "Unexpected error. Using fallback profile.",
     };
   }
 }
@@ -346,10 +593,10 @@ export interface ChatResult {
 export async function chatWithAura(
   profile: AuraProfile,
   history: AuraChatMessage[],
-  userMessage: string
+  userMessage: string,
 ): Promise<ChatResult> {
   const apiKey = (window as any).__GEMINI_API_KEY || "";
-  
+
   if (!apiKey) {
     console.error("Missing Gemini API key for chat");
     return DEFAULT_CHAT_RESPONSE();
@@ -379,7 +626,10 @@ USER_MESSAGE:
 "${userMessage}"
 `.trim();
 
-    console.log("[chatWithAura] Sending message to Aura for user:", profile.displayName);
+    console.log(
+      "[chatWithAura] Sending message to Aura for user:",
+      profile.displayName,
+    );
 
     try {
       const res = await ai.models.generateContent({
@@ -408,7 +658,10 @@ USER_MESSAGE:
         console.log("[chatWithAura] Chat response received, mood:", mood);
         return { replyText, auraState };
       } catch (parseError) {
-        console.error("[chatWithAura] Failed to parse chat response:", parseError);
+        console.error(
+          "[chatWithAura] Failed to parse chat response:",
+          parseError,
+        );
         return DEFAULT_CHAT_RESPONSE();
       }
     } catch (apiError) {
@@ -416,7 +669,7 @@ USER_MESSAGE:
         console.warn("[chatWithAura] Quota exhausted, using fallback response");
         return DEFAULT_CHAT_RESPONSE();
       }
-      
+
       console.error("[chatWithAura] Chat API error:", apiError);
       return DEFAULT_CHAT_RESPONSE();
     }
@@ -471,10 +724,10 @@ Rules:
 
 export async function matchAuras(
   profileA: AuraProfile,
-  profileB: AuraProfile
+  profileB: AuraProfile,
 ): Promise<MatchResult> {
   const apiKey = (window as any).__GEMINI_API_KEY || "";
-  
+
   if (!apiKey) {
     console.error("Missing Gemini API key for match");
     return DEFAULT_MATCH_RESULT();
@@ -491,7 +744,12 @@ PROFILE_B:
 ${JSON.stringify(profileB, null, 2)}
 `.trim();
 
-    console.log("[matchAuras] Analyzing compatibility between:", profileA.displayName, "and", profileB.displayName);
+    console.log(
+      "[matchAuras] Analyzing compatibility between:",
+      profileA.displayName,
+      "and",
+      profileB.displayName,
+    );
 
     try {
       const res = await ai.models.generateContent({
@@ -527,18 +785,26 @@ ${JSON.stringify(profileB, null, 2)}
             "I talked to their Aura and I think you might get along.",
         };
 
-        console.log("[matchAuras] Match analysis complete, score:", result.compatibilityScore);
+        console.log(
+          "[matchAuras] Match analysis complete, score:",
+          result.compatibilityScore,
+        );
         return result;
       } catch (parseError) {
-        console.error("[matchAuras] Failed to parse match response:", parseError);
+        console.error(
+          "[matchAuras] Failed to parse match response:",
+          parseError,
+        );
         return DEFAULT_MATCH_RESULT();
       }
     } catch (apiError) {
       if (isQuotaError(apiError)) {
-        console.warn("[matchAuras] Quota exhausted, using fallback match result");
+        console.warn(
+          "[matchAuras] Quota exhausted, using fallback match result",
+        );
         return DEFAULT_MATCH_RESULT();
       }
-      
+
       console.error("[matchAuras] Match API error:", apiError);
       return DEFAULT_MATCH_RESULT();
     }
@@ -549,7 +815,7 @@ ${JSON.stringify(profileB, null, 2)}
 }
 
 /* ------------------------------------------------------------------ */
-/* 4. GENERATE TWIN INTRO (AURA INTRODUCTION SCRIPT)                   */
+/* 4. GENERATE TWIN INTRO (AURA INTRODUCTION SCRIPT)                  */
 /* ------------------------------------------------------------------ */
 
 const TWIN_INTRO_SYSTEM_PROMPT = `
@@ -586,7 +852,7 @@ Rules:
 
 export async function generateTwinIntro(
   yourAura: AuraProfile,
-  otherAura: AuraProfile
+  otherAura: AuraProfile,
 ): Promise<TwinIntroResult> {
   const apiKey = (window as any).__GEMINI_API_KEY || "";
 
@@ -606,7 +872,12 @@ OTHER_AURA:
 ${JSON.stringify(otherAura, null, 2)}
 `.trim();
 
-    console.log("[generateTwinIntro] Generating intro for:", yourAura.displayName, "and", otherAura.displayName);
+    console.log(
+      "[generateTwinIntro] Generating intro for:",
+      yourAura.displayName,
+      "and",
+      otherAura.displayName,
+    );
 
     try {
       const res = await ai.models.generateContent({
@@ -627,27 +898,34 @@ ${JSON.stringify(otherAura, null, 2)}
           title: json.title || "Warm connection",
           auraToAuraScript: json.auraToAuraScript || [
             "I think they'd appreciate your honesty.",
-            "And I think you'd get their dry humor."
+            "And I think you'd get their dry humor.",
           ],
           introSummary:
             json.introSummary ||
             "Your Auras sense genuine potential here. Take it slow, be yourself, and see where it goes.",
           suggestedOpeners: json.suggestedOpeners || [
             "Hey, our twins think we'd get along. What's something you're passionate about?",
-            "Hi! I'm a bit shy but I noticed we might have similar interests. Want to chat?"
+            "Hi! I'm a bit shy but I noticed we might have similar interests. Want to chat?",
           ],
-          safetyNotes: json.safetyNotes || []
+          safetyNotes: json.safetyNotes || [],
         };
 
         console.log("[generateTwinIntro] Twin intro generated successfully");
         return result;
       } catch (parseError) {
-        console.error("[generateTwinIntro] Failed to parse intro response:", parseError, "Raw:", raw);
+        console.error(
+          "[generateTwinIntro] Failed to parse intro response:",
+          parseError,
+          "Raw:",
+          raw,
+        );
         return DEFAULT_TWIN_INTRO_RESULT();
       }
     } catch (apiError) {
       if (isQuotaError(apiError)) {
-        console.warn("[generateTwinIntro] Quota exhausted, using fallback intro");
+        console.warn(
+          "[generateTwinIntro] Quota exhausted, using fallback intro",
+        );
         return DEFAULT_TWIN_INTRO_RESULT();
       }
 
@@ -702,12 +980,12 @@ Output ONLY valid JSON with exactly these three fields:
 Do NOT include explanations, commentary, or markdown. Only valid JSON.
 `.trim();
 
-export type ReplyContext = 'General' | 'Friend' | 'Dating' | 'Work';
+export type ReplyContext = "General" | "Friend" | "Dating" | "Work";
 
 export async function generateReplyOptions(
   profile: AuraProfile,
   contextText: string,
-  context: ReplyContext = 'General'
+  context: ReplyContext = "General",
 ): Promise<ReplyOptions> {
   const apiKey = (window as any).__GEMINI_API_KEY || "";
 
@@ -726,7 +1004,10 @@ export async function generateReplyOptions(
 
     const persona = buildAuraPersonaDescription(profile);
 
-    const contextHint = context === 'General' ? '' : `
+    const contextHint =
+      context === "General"
+        ? ""
+        : `
 CONTEXT: This is a ${context.toLowerCase()} conversation. Adjust tone appropriately.
 - Friend: Casual, warm, supportive
 - Dating: Flirty but respectful, show personality
@@ -746,7 +1027,10 @@ MESSAGE_TO_REPLY_TO:
 Draft three replies in the user's voice: safe, direct, and playful.
 `.trim();
 
-    console.log("[generateReplyOptions] Generating reply options for:", profile.displayName);
+    console.log(
+      "[generateReplyOptions] Generating reply options for:",
+      profile.displayName,
+    );
 
     try {
       const res = await ai.models.generateContent({
@@ -769,10 +1053,17 @@ Draft three replies in the user's voice: safe, direct, and playful.
           playful: json.playful || DEFAULT_REPLY_OPTIONS().playful,
         };
 
-        console.log("[generateReplyOptions] Reply options generated successfully");
+        console.log(
+          "[generateReplyOptions] Reply options generated successfully",
+        );
         return result;
       } catch (parseError) {
-        console.error("[generateReplyOptions] Failed to parse response:", parseError, "Raw:", raw);
+        console.error(
+          "[generateReplyOptions] Failed to parse response:",
+          parseError,
+          "Raw:",
+          raw,
+        );
         return DEFAULT_REPLY_OPTIONS();
       }
     } catch (apiError) {
@@ -791,26 +1082,44 @@ Draft three replies in the user's voice: safe, direct, and playful.
 }
 
 /* ------------------------------------------------------------------ */
-/* 6. SIMULATE TWIN CHAT (AURA-TO-AURA CONVERSATION)                   */
+/* 6. SIMULATE TWIN CHAT (AURA-TO-AURA CONVERSATION)                  */
 /* ------------------------------------------------------------------ */
 
 const TWIN_CHAT_SYSTEM_PROMPT = `
 You are simulating a private conversation between two AI Aura Twins.
 
 Each Aura represents a real human user. You will receive two profiles:
-- AURA_A: Represents the first user's digital twin
-- AURA_B: Represents the second user's digital twin (Lina)
+- AURA_A: represents the first user's digital twin
+- AURA_B: represents the second user's digital twin
 
-Imagine the two Auras having a private, genuine back-and-forth conversation about their respective humans.
-They are trying to figure out if their humans would get along, what they have in common, and what a connection between them might look like.
+The Auras are **characters**. They talk in first person as "I" and "me" when speaking as themselves,
+and refer to their humans in third person ("my person", "they", "she", "he").
 
-The conversation should:
-1. Be 6-8 messages total (alternating between auraA and auraB)
-2. Feel natural, warm, and slightly curious
-3. Reference specific traits, interests, or values from each profile
-4. Build towards a conclusion about compatibility
+Your job is to create a short, human-feeling chat between the two Auras where they:
+- Introduce who they represent
+- Share concrete details about their humans (vibeWords, interests, lifestyle, ideal first meeting, etc.)
+- Notice overlap and differences in:
+  - interests / hobbies / aesthetic
+  - relationshipIntent and preferredMatchGender
+  - socialSpeed, whatFeelsSafe, hardBoundaries, greenFlags, redFlags
+- Gently explore whether their humans might enjoy talking someday.
 
-After the conversation, provide a 3-5 sentence summary explaining the compatibility between the two humans.
+CONVERSATION REQUIREMENTS:
+- 8–14 messages total.
+- Alternate strictly between "auraA" and "auraB".
+- Each message is short: 1–3 sentences, like real chat messages.
+- Tone: warm, curious, slightly playful, never robotic or formal.
+- Use specific details from the profiles where possible
+  (e.g. "late-night walks", "slow social speed", "no drama", "coffee and a quiet bar").
+
+AFTER the conversation, you must write a **3–5 sentence summary** explaining the compatibility
+between the two humans, for example:
+- what they might vibe over,
+- what pace would feel safe,
+- and any small frictions (e.g. one replies slower, one is more social) framed gently.
+
+Do NOT promise that they will meet or that things will definitely work.
+You can say things like "if they decide to talk" or "if it feels right for them".
 
 Return ONLY a JSON object with this exact shape:
 
@@ -824,16 +1133,15 @@ Return ONLY a JSON object with this exact shape:
 }
 
 Rules:
-- Keep each message short (1-3 sentences)
-- The Auras should speak about their humans in third person ("my person", "they", etc.)
-- Be genuine and insightful, not generic
-- No explicit sexual content
-- The summary should be helpful and encouraging, even if compatibility is moderate
+- Be genuine and insightful, not generic.
+- No explicit sexual content.
+- No sharing of exact locations or private data.
+- The summary should be encouraging and kind, even if compatibility is only moderate.
 `.trim();
 
 export async function simulateTwinChat(
   profileA: AuraProfile,
-  profileB: AuraProfile
+  profileB: AuraProfile,
 ): Promise<TwinChatResult> {
   const apiKey = (window as any).__GEMINI_API_KEY || "";
 
@@ -864,7 +1172,12 @@ AURA_B PERSONA:
 ${personaB}
 `.trim();
 
-    console.log("[simulateTwinChat] Starting twin chat between:", profileA.displayName, "and", profileB.displayName);
+    console.log(
+      "[simulateTwinChat] Starting twin chat between:",
+      profileA.displayName,
+      "and",
+      profileB.displayName,
+    );
 
     try {
       const res = await ai.models.generateContent({
@@ -881,20 +1194,33 @@ ${personaB}
       try {
         const json = JSON.parse(raw);
 
-        const transcript: TwinChatMessage[] = (json.transcript || []).map((msg: any) => ({
-          from: msg.from === "auraB" ? "auraB" : "auraA",
-          text: msg.text || "",
-        }));
+        const transcript: TwinChatMessage[] = (json.transcript || []).map(
+          (msg: any) => ({
+            from: msg.from === "auraB" ? "auraB" : "auraA",
+            text: msg.text || "",
+          }),
+        );
 
         const result: TwinChatResult = {
-          transcript: transcript.length > 0 ? transcript : DEFAULT_TWIN_CHAT_RESULT().transcript,
+          transcript:
+            transcript.length > 0
+              ? transcript
+              : DEFAULT_TWIN_CHAT_RESULT().transcript,
           summary: json.summary || DEFAULT_TWIN_CHAT_RESULT().summary,
         };
 
-        console.log("[simulateTwinChat] Twin chat simulation complete, messages:", result.transcript.length);
+        console.log(
+          "[simulateTwinChat] Twin chat simulation complete, messages:",
+          result.transcript.length,
+        );
         return result;
       } catch (parseError) {
-        console.error("[simulateTwinChat] Failed to parse response:", parseError, "Raw:", raw);
+        console.error(
+          "[simulateTwinChat] Failed to parse response:",
+          parseError,
+          "Raw:",
+          raw,
+        );
         return DEFAULT_TWIN_CHAT_RESULT();
       }
     } catch (apiError) {

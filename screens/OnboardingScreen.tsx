@@ -1,333 +1,917 @@
-import React, { useState } from 'react';
-import { buildAuraProfile, OnboardingAnswers } from '../services/auraLLM';
-import { AuraProfile } from '../types';
+// screens/OnboardingScreen.tsx
+import React, { useState } from "react";
+import {
+  AuraProfile,
+  AuraPersonality,
+  DatingProfile,
+  Gender,
+  SexualOrientation,
+  RelationshipIntent,
+  MatchGenderPreference,
+  SmokingHabit,
+  DrinkingHabit,
+  KidsPreference,
+  SleepSchedule,
+  LifestyleInfo,
+  MatchPreferences,
+  ProfilePhoto,
+  SocialSpeed,
+} from "../types";
 
 interface OnboardingScreenProps {
+  userId: string;
   onProfileCreated: (profile: AuraProfile) => void;
 }
 
-const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onProfileCreated }) => {
-  const [step, setStep] = useState(0);
-  const [isGenerating, setIsGenerating] = useState(false);
-  
-  const [formData, setFormData] = useState<OnboardingAnswers>({
-    displayName: '',
-    ageRange: '',
-    country: '',
-    introversionLevel: 5,
-    goals: '',
-    topicsLike: '',
-    topicsAvoid: '',
-    vibeWords: '',
-    socialSpeed: 'normal',
-    hardBoundaries: '',
-    greenFlags: '',
-    redFlags: '',
-    whatShouldPeopleKnow: '',
-    whatFeelsSafe: '',
-    avatarUrl: ''
-  });
+const splitList = (value: string): string[] =>
+  value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 
-  const handleInputChange = (field: keyof OnboardingAnswers, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+const buildPhotos = (
+  primaryUrl: string,
+  url2: string,
+  url3: string,
+): { profilePhotos: ProfilePhoto[]; primaryPhotoUrl?: string } => {
+  const urls = [primaryUrl, url2, url3].filter((u) => u && u.trim());
+  const photos: ProfilePhoto[] = urls.map((url, index) => ({
+    id: `photo_${index}_${Date.now()}`,
+    url,
+    isPrimary: index === 0,
+    position: index,
+  }));
+  return {
+    profilePhotos: photos,
+    primaryPhotoUrl: photos[0]?.url,
   };
+};
 
-  const finishOnboarding = async () => {
-    setIsGenerating(true);
-    try {
-      const result = await buildAuraProfile(formData);
-      if (result.isUsingFallback && result.message) {
-        console.warn("[OnboardingScreen] Using fallback profile:", result.message);
-        alert(result.message);
-      }
-      onProfileCreated(result.profile);
-    } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : "Failed to build profile. Please try again.";
-      console.error("[OnboardingScreen] Profile build failed:", errorMessage);
-      alert(errorMessage);
-      setIsGenerating(false);
+const todayISO = () => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
+const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
+  userId,
+  onProfileCreated,
+}) => {
+  // Basic identity
+  const [displayName, setDisplayName] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [country, setCountry] = useState("");
+  const [city, setCity] = useState("");
+
+  const [gender, setGender] = useState<Gender | "">("");
+  const [orientation, setOrientation] = useState<SexualOrientation | "">("");
+
+  // Photos as URLs (for now)
+  const [primaryPhotoUrl, setPrimaryPhotoUrl] = useState("");
+  const [photo2Url, setPhoto2Url] = useState("");
+  const [photo3Url, setPhoto3Url] = useState("");
+
+  // Dating text
+  const [bio, setBio] = useState("");
+  const [favoriteQuote, setFavoriteQuote] = useState("");
+  const [musicTaste, setMusicTaste] = useState("");
+  const [interestsInput, setInterestsInput] = useState("");
+
+  const [idealFirstMessage, setIdealFirstMessage] = useState("");
+  const [idealFirstMeeting, setIdealFirstMeeting] = useState("");
+
+  // Lifestyle
+  const [smoking, setSmoking] = useState<SmokingHabit>("prefer_not_say");
+  const [drinking, setDrinking] = useState<DrinkingHabit>("prefer_not_say");
+  const [kids, setKids] = useState<KidsPreference>("prefer_not_say");
+  const [petsInput, setPetsInput] = useState("");
+  const [sleepSchedule, setSleepSchedule] =
+    useState<SleepSchedule>("prefer_not_say");
+  const [jobOrStudy, setJobOrStudy] = useState("");
+  const [religionNote, setReligionNote] = useState("");
+
+  // Aura personality
+  const [introversionLevel, setIntroversionLevel] = useState(7);
+  const [socialSpeed, setSocialSpeed] = useState<SocialSpeed>("slow");
+  const [goalsInput, setGoalsInput] = useState("friends, practice_talking");
+  const [vibeWordsInput, setVibeWordsInput] = useState("thoughtful, calm");
+  const [topicsLikeInput, setTopicsLikeInput] = useState(
+    "late-night chats, music, games",
+  );
+  const [topicsAvoidInput, setTopicsAvoidInput] = useState("politics");
+  const [greenFlagsInput, setGreenFlagsInput] = useState(
+    "kindness, emotional maturity",
+  );
+  const [redFlagsInput, setRedFlagsInput] = useState("ghosting, mocking");
+  const [whatFeelsSafe, setWhatFeelsSafe] = useState(
+    "slow pace, clear communication, no pressure to call.",
+  );
+  const [whatShouldPeopleKnow, setWhatShouldPeopleKnow] = useState(
+    "I’m introverted, I reply slow, but I care a lot.",
+  );
+
+  // Preferences
+  const [preferredGenders, setPreferredGenders] =
+    useState<MatchGenderPreference>("any");
+  const [minAge, setMinAge] = useState(20);
+  const [maxAge, setMaxAge] = useState(35);
+  const [relationshipIntent, setRelationshipIntent] =
+    useState<RelationshipIntent>("open_to_see");
+  const [filterByIntent, setFilterByIntent] = useState<RelationshipIntent | "">(
+    "",
+  );
+
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = () => {
+    if (!displayName.trim()) {
+      alert("Please enter a display name.");
+      return;
     }
+    if (!dateOfBirth) {
+      alert("Please select your date of birth.");
+      return;
+    }
+
+    setSubmitting(true);
+
+    const { profilePhotos, primaryPhotoUrl: mainPhoto } = buildPhotos(
+      primaryPhotoUrl,
+      photo2Url,
+      photo3Url,
+    );
+    const interests = splitList(interestsInput);
+    const goals = splitList(goalsInput);
+    const vibeWords = splitList(vibeWordsInput);
+    const topicsLike = splitList(topicsLikeInput);
+    const topicsAvoid = splitList(topicsAvoidInput);
+    const greenFlags = splitList(greenFlagsInput);
+    const redFlags = splitList(redFlagsInput);
+    const pets = splitList(petsInput);
+
+    const lifestyle: LifestyleInfo = {
+      smoking,
+      drinking,
+      kids,
+      pets: pets.length ? pets : undefined,
+      sleepSchedule,
+      religionNote: religionNote || undefined,
+      jobOrStudy: jobOrStudy || undefined,
+    };
+
+    const dating: DatingProfile = {
+      displayName: displayName.trim(),
+      dateOfBirth,
+      gender: gender || undefined,
+      orientation: orientation || undefined,
+      country: country ? country.trim() : null,
+      city: city ? city.trim() : null,
+      photos: profilePhotos,
+      bio: bio || undefined,
+      favoriteQuote: favoriteQuote || undefined,
+      musicTaste: musicTaste || undefined,
+      interests: interests.length ? interests : undefined,
+      idealFirstMessage: idealFirstMessage || undefined,
+      idealFirstMeeting: idealFirstMeeting || undefined,
+      lifestyle,
+      relationshipIntent,
+    };
+
+    const auraSummary =
+      bio ||
+      whatShouldPeopleKnow ||
+      "A thoughtful introvert looking for safe, genuine connections.";
+
+    const aura: AuraPersonality = {
+      introversionLevel,
+      goals,
+      vibeWords,
+      topicsLike,
+      topicsAvoid,
+      socialSpeed,
+      hardBoundaries: redFlags, // treat redFlags roughly as hard boundaries for now
+      greenFlags,
+      redFlags,
+      whatFeelsSafe,
+      whatShouldPeopleKnow,
+      summary: auraSummary,
+    };
+
+    const preferences: MatchPreferences = {
+      preferredGenders,
+      minAge,
+      maxAge,
+      relationshipIntent: filterByIntent || undefined,
+    };
+
+    const profileId = `profile_${userId}`;
+
+    const profile: AuraProfile = {
+      id: profileId,
+      userId,
+      displayName: dating.displayName,
+      aura,
+      dating,
+      preferences,
+      avatarUrl: mainPhoto,
+
+      // ---- Legacy flattening for compatibility ----
+      ageRange: null,
+      country: dating.country || null,
+      introversionLevel,
+      goals,
+      vibeWords,
+      topicsLike,
+      topicsAvoid,
+      socialSpeed,
+      hardBoundaries: aura.hardBoundaries,
+      greenFlags,
+      redFlags,
+      whatFeelsSafe,
+      whatShouldPeopleKnow,
+      summary: auraSummary,
+      photoUrls: profilePhotos.map((p) => p.url),
+      photos: profilePhotos.map((p) => ({ id: p.id, url: p.url })),
+      relationshipIntent,
+      preferredMatchGender: preferredGenders,
+      idealFirstMessage,
+      idealFirstMeeting,
+      lifestyleNotes: lifestyle.jobOrStudy || "",
+      musicTaste: dating.musicTaste,
+      favoriteQuote: dating.favoriteQuote,
+      interests,
+      prompts: {
+        idealFirstMessage,
+        idealFirstMeeting,
+        lifestyleNotes: lifestyle.jobOrStudy || "",
+        whatShouldPeopleKnow,
+        whatFeelsSafe,
+      },
+    };
+
+    onProfileCreated(profile);
   };
 
-  const steps = [
-    {
-      id: 'basics',
-      title: 'Core Identity',
-      description: 'Answer a few questions and Aura will learn how to speak, protect, and represent you.',
-      content: (
-        <div className="space-y-5">
-          <div>
-            <label className="block text-sm text-slate-400 mb-2">What should Aura call you?</label>
-            <input 
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
-              placeholder="Your name or nickname"
-              value={formData.displayName}
-              onChange={(e) => handleInputChange('displayName', e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-slate-400 mb-2">Age Range</label>
-            <input 
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
-              placeholder="e.g. 20-25"
-              value={formData.ageRange || ''}
-              onChange={(e) => handleInputChange('ageRange', e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-slate-400 mb-2">Country / Region</label>
-            <input 
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
-              placeholder="e.g. Japan"
-              value={formData.country || ''}
-              onChange={(e) => handleInputChange('country', e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-slate-400 mb-2">Profile photo URL (optional)</label>
-            <input 
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
-              placeholder="https://…"
-              value={formData.avatarUrl || ''}
-              onChange={(e) => handleInputChange('avatarUrl', e.target.value)}
-            />
-            <p className="text-xs text-slate-500 mt-2">Aura will use this photo on the main stage when you connect</p>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'social',
-      title: 'Social Energy',
-      description: 'How social do you feel most days? Aura uses this to protect your energy and pace conversations.',
-      content: (
-        <div className="space-y-6">
-          <div>
-            <div className="flex justify-between mb-3">
-              <label className="text-sm text-slate-400">How social do you feel most days?</label>
-              <span className="text-violet-400 font-mono font-medium">{formData.introversionLevel}/10</span>
+  const today = todayISO();
+
+  return (
+    <div className="space-y-6">
+      <header className="space-y-2">
+        <h1 className="text-lg font-semibold text-slate-50">
+          Let&apos;s set up your Aura twin
+        </h1>
+        <p className="text-xs text-slate-400">
+          This is both your dating profile and the brain your Aura will use to
+          protect you and match you.
+        </p>
+      </header>
+
+      <div className="space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar pr-1">
+        {/* BASIC IDENTITY */}
+        <section className="space-y-3">
+          <h2 className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+            Basic Info
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Display name
+              </label>
+              <input
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-sky-400/70 focus:ring-1 focus:ring-sky-400/40"
+                placeholder="What people see on your card"
+              />
             </div>
-            <input 
-              type="range" 
-              min="1" 
-              max="10" 
-              value={formData.introversionLevel}
-              onChange={(e) => handleInputChange('introversionLevel', parseInt(e.target.value))}
-              className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-violet-500"
-            />
-            <div className="flex justify-between text-xs text-slate-500 mt-2">
-              <span>Extroverted</span>
-              <span>Very Introverted</span>
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Date of birth
+              </label>
+              <input
+                type="date"
+                max={today}
+                value={dateOfBirth}
+                onChange={(e) => setDateOfBirth(e.target.value)}
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-sky-400/70 focus:ring-1 focus:ring-sky-400/40"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">Country</label>
+              <input
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-sky-400/70 focus:ring-1 focus:ring-sky-400/40"
+                placeholder="e.g. Hungary"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">City</label>
+              <input
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-sky-400/70 focus:ring-1 focus:ring-sky-400/40"
+                placeholder="Optional"
+              />
             </div>
           </div>
-          
-          <div>
-            <label className="block text-sm text-slate-400 mb-3">Social Speed</label>
-            <div className="flex gap-2">
-              {(['slow', 'normal', 'fast'] as const).map((s) => (
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">Gender</label>
+              <select
+                value={gender}
+                onChange={(e) => setGender(e.target.value as Gender | "")}
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-sky-400/70 focus:ring-1 focus:ring-sky-400/40"
+              >
+                <option value="">Prefer not to say</option>
+                <option value="woman">Woman</option>
+                <option value="man">Man</option>
+                <option value="non_binary">Non-binary</option>
+                <option value="other">Other</option>
+                <option value="prefer_not_say">Prefer not to say</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Orientation
+              </label>
+              <select
+                value={orientation}
+                onChange={(e) =>
+                  setOrientation(e.target.value as SexualOrientation | "")
+                }
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-sky-400/70 focus:ring-1 focus:ring-sky-400/40"
+              >
+                <option value="">Prefer not to say</option>
+                <option value="straight">Straight</option>
+                <option value="gay">Gay</option>
+                <option value="lesbian">Lesbian</option>
+                <option value="bisexual">Bisexual</option>
+                <option value="pansexual">Pansexual</option>
+                <option value="asexual">Asexual</option>
+                <option value="questioning">Questioning</option>
+                <option value="prefer_not_say">Prefer not to say</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        {/* PHOTOS (URL-BASED FOR NOW) */}
+        <section className="space-y-3">
+          <h2 className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+            Photos
+          </h2>
+          <p className="text-[11px] text-slate-400">
+            For now, paste image URLs. Later this will use real uploads.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Main photo URL
+              </label>
+              <input
+                value={primaryPhotoUrl}
+                onChange={(e) => setPrimaryPhotoUrl(e.target.value)}
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-[11px] text-slate-100 focus:outline-none focus:border-violet-400/70 focus:ring-1 focus:ring-violet-400/40"
+                placeholder="https://..."
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Extra photo 2
+              </label>
+              <input
+                value={photo2Url}
+                onChange={(e) => setPhoto2Url(e.target.value)}
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-[11px] text-slate-100 focus:outline-none focus:border-violet-400/70 focus:ring-1 focus:ring-violet-400/40"
+                placeholder="Optional"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Extra photo 3
+              </label>
+              <input
+                value={photo3Url}
+                onChange={(e) => setPhoto3Url(e.target.value)}
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-[11px] text-slate-100 focus:outline-none focus:border-violet-400/70 focus:ring-1 focus:ring-violet-400/40"
+                placeholder="Optional"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* DATING TEXT */}
+        <section className="space-y-3">
+          <h2 className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+            Dating Profile Text
+          </h2>
+          <div className="space-y-1">
+            <label className="text-[11px] text-slate-300 ml-1">Bio</label>
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              rows={3}
+              className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-violet-400/70 focus:ring-1 focus:ring-violet-400/40 resize-none"
+              placeholder="Short description that feels like you."
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Interests (comma separated)
+              </label>
+              <input
+                value={interestsInput}
+                onChange={(e) => setInterestsInput(e.target.value)}
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-violet-400/70 focus:ring-1 focus:ring-violet-400/40"
+                placeholder="travel, anime, fitness..."
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Music taste
+              </label>
+              <input
+                value={musicTaste}
+                onChange={(e) => setMusicTaste(e.target.value)}
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-violet-400/70 focus:ring-1 focus:ring-violet-400/40"
+                placeholder="R&B, techno, Arabic pop..."
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Favorite quote (optional)
+              </label>
+              <input
+                value={favoriteQuote}
+                onChange={(e) => setFavoriteQuote(e.target.value)}
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-violet-400/70 focus:ring-1 focus:ring-violet-400/40"
+                placeholder="“Something that feels like you.”"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Ideal first meet
+              </label>
+              <input
+                value={idealFirstMeeting}
+                onChange={(e) => setIdealFirstMeeting(e.target.value)}
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-violet-400/70 focus:ring-1 focus:ring-violet-400/40"
+                placeholder="coffee, quiet bar, gaming call..."
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[11px] text-slate-300 ml-1">
+              First message that makes you reply
+            </label>
+            <textarea
+              value={idealFirstMessage}
+              onChange={(e) => setIdealFirstMessage(e.target.value)}
+              rows={2}
+              className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-violet-400/70 focus:ring-1 focus:ring-violet-400/40 resize-none"
+              placeholder="For example: something specific about your interests, not just 'hey'."
+            />
+          </div>
+        </section>
+
+        {/* LIFESTYLE */}
+        <section className="space-y-3">
+          <h2 className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+            Lifestyle
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">Smoking</label>
+              <select
+                value={smoking}
+                onChange={(e) => setSmoking(e.target.value as SmokingHabit)}
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-400/70 focus:ring-1 focus:ring-emerald-400/40"
+              >
+                <option value="prefer_not_say">Prefer not to say</option>
+                <option value="no">No</option>
+                <option value="sometimes">Sometimes</option>
+                <option value="yes">Yes</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Drinking
+              </label>
+              <select
+                value={drinking}
+                onChange={(e) => setDrinking(e.target.value as DrinkingHabit)}
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-400/70 focus:ring-1 focus:ring-emerald-400/40"
+              >
+                <option value="prefer_not_say">Prefer not to say</option>
+                <option value="no">No</option>
+                <option value="sometimes">Sometimes</option>
+                <option value="yes">Yes</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">Kids</label>
+              <select
+                value={kids}
+                onChange={(e) => setKids(e.target.value as KidsPreference)}
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-400/70 focus:ring-1 focus:ring-emerald-400/40"
+              >
+                <option value="prefer_not_say">Prefer not to say</option>
+                <option value="dont_want">Don&apos;t want</option>
+                <option value="want_some_day">Want someday</option>
+                <option value="have_and_done">Have & done</option>
+                <option value="have_and_open">Have & open</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Sleep schedule
+              </label>
+              <select
+                value={sleepSchedule}
+                onChange={(e) =>
+                  setSleepSchedule(e.target.value as SleepSchedule)
+                }
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-400/70 focus:ring-1 focus:ring-emerald-400/40"
+              >
+                <option value="prefer_not_say">Prefer not to say</option>
+                <option value="early_bird">Early bird</option>
+                <option value="night_owl">Night owl</option>
+                <option value="flexible">Flexible</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Pets (comma separated)
+              </label>
+              <input
+                value={petsInput}
+                onChange={(e) => setPetsInput(e.target.value)}
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-400/70 focus:ring-1 focus:ring-emerald-400/40"
+                placeholder="dog, cat..."
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Job / study
+              </label>
+              <input
+                value={jobOrStudy}
+                onChange={(e) => setJobOrStudy(e.target.value)}
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-400/70 focus:ring-1 focus:ring-emerald-400/40"
+                placeholder="Optional"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[11px] text-slate-300 ml-1">
+              Religion / values note (optional)
+            </label>
+            <input
+              value={religionNote}
+              onChange={(e) => setReligionNote(e.target.value)}
+              className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-400/70 focus:ring-1 focus:ring-emerald-400/40"
+              placeholder="Only if you want Aura to factor it."
+            />
+          </div>
+        </section>
+
+        {/* AURA PERSONALITY */}
+        <section className="space-y-3">
+          <h2 className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+            Aura Personality
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Introversion (1–10)
+              </label>
+              <input
+                type="range"
+                min={1}
+                max={10}
+                value={introversionLevel}
+                onChange={(e) =>
+                  setIntroversionLevel(parseInt(e.target.value, 10))
+                }
+                className="w-full"
+              />
+              <p className="text-[10px] text-slate-400">
+                You set:{" "}
+                <span className="text-slate-100">{introversionLevel}</span>{" "}
+                (higher = more introvert)
+              </p>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Social speed
+              </label>
+              <div className="flex gap-1.5">
+                {(["slow", "normal", "fast"] as SocialSpeed[]).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setSocialSpeed(s)}
+                    className={`flex-1 px-2 py-1 rounded-full text-[11px] border ${
+                      socialSpeed === s
+                        ? "bg-sky-500/20 border-sky-400/70 text-sky-100"
+                        : "bg-slate-900/70 border-white/10 text-slate-300"
+                    }`}
+                  >
+                    {s === "slow" ? "Slow" : s === "normal" ? "Normal" : "Fast"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Goals (comma separated)
+              </label>
+              <input
+                value={goalsInput}
+                onChange={(e) => setGoalsInput(e.target.value)}
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-violet-400/70 focus:ring-1 focus:ring-violet-400/40"
+                placeholder="friends, practice_talking, dating..."
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Vibe words (comma separated)
+              </label>
+              <input
+                value={vibeWordsInput}
+                onChange={(e) => setVibeWordsInput(e.target.value)}
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-violet-400/70 focus:ring-1 focus:ring-violet-400/40"
+                placeholder="calm, sarcastic, deep..."
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[11px] text-emerald-300 ml-1">
+                Topics you like (comma)
+              </label>
+              <input
+                value={topicsLikeInput}
+                onChange={(e) => setTopicsLikeInput(e.target.value)}
+                className="w-full bg-slate-900/70 border border-emerald-400/60 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-400/80 focus:ring-1 focus:ring-emerald-400/50"
+                placeholder="music, games, late-night walks..."
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-rose-300 ml-1">
+                Topics you avoid (comma)
+              </label>
+              <input
+                value={topicsAvoidInput}
+                onChange={(e) => setTopicsAvoidInput(e.target.value)}
+                className="w-full bg-slate-900/70 border border-rose-400/60 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-rose-400/80 focus:ring-1 focus:ring-rose-400/50"
+                placeholder="politics, heavy drama..."
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[11px] text-emerald-300 ml-1">
+                Green flags (comma)
+              </label>
+              <input
+                value={greenFlagsInput}
+                onChange={(e) => setGreenFlagsInput(e.target.value)}
+                className="w-full bg-slate-900/70 border border-emerald-400/60 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-400/80 focus:ring-1 focus:ring-emerald-400/50"
+                placeholder="kindness, emotional maturity..."
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-rose-300 ml-1">
+                Red flags / hard boundaries (comma)
+              </label>
+              <input
+                value={redFlagsInput}
+                onChange={(e) => setRedFlagsInput(e.target.value)}
+                className="w-full bg-slate-900/70 border border-rose-400/60 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-rose-400/80 focus:ring-1 focus:ring-rose-400/50"
+                placeholder="ghosting, yelling..."
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                What feels safe?
+              </label>
+              <textarea
+                value={whatFeelsSafe}
+                onChange={(e) => setWhatFeelsSafe(e.target.value)}
+                rows={3}
+                className="w-full bg-slate-900/70 border border-sky-400/60 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-sky-400/80 focus:ring-1 focus:ring-sky-400/50 resize-none"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                What should people know before talking to you?
+              </label>
+              <textarea
+                value={whatShouldPeopleKnow}
+                onChange={(e) => setWhatShouldPeopleKnow(e.target.value)}
+                rows={3}
+                className="w-full bg-slate-900/70 border border-white/15 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-white/70 focus:ring-1 focus:ring-white/40 resize-none"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* MATCH PREFERENCES */}
+        <section className="space-y-3">
+          <h2 className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+            Match Preferences
+          </h2>
+          <div className="space-y-1">
+            <p className="text-[11px] text-slate-300 ml-1">
+              Who do you want Aura to match you with?
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {(
+                [
+                  "any",
+                  "women",
+                  "men",
+                  "women_and_men",
+                  "lgbtq_plus",
+                ] as MatchGenderPreference[]
+              ).map((opt) => (
                 <button
-                  key={s}
-                  onClick={() => handleInputChange('socialSpeed', s)}
-                  className={`flex-1 py-3 rounded-xl capitalize text-sm font-medium transition-all ${
-                    formData.socialSpeed === s 
-                      ? 'bg-violet-600/40 border border-violet-500/50 text-violet-200' 
-                      : 'bg-white/5 border border-white/10 text-slate-400 hover:bg-white/10'
+                  key={opt}
+                  type="button"
+                  onClick={() => setPreferredGenders(opt)}
+                  className={`px-2.5 py-1 rounded-full text-[11px] border ${
+                    preferredGenders === opt
+                      ? "bg-pink-500/20 border-pink-400/70 text-pink-100"
+                      : "bg-slate-900/70 border-white/10 text-slate-300"
                   }`}
                 >
-                  {s}
+                  {opt === "any"
+                    ? "Anyone"
+                    : opt === "women"
+                      ? "Women"
+                      : opt === "men"
+                        ? "Men"
+                        : opt === "women_and_men"
+                          ? "Women & Men"
+                          : "LGBTQ+"}
                 </button>
               ))}
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm text-slate-400 mb-2">Three words that describe your vibe</label>
-            <input 
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
-              placeholder="soft, sarcastic, loyal"
-              value={formData.vibeWords}
-              onChange={(e) => handleInputChange('vibeWords', e.target.value)}
-            />
-            <p className="text-xs text-slate-500 mt-2">These become part of Aura's personality when it speaks for you</p>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'interests',
-      title: 'Boundaries & Goals',
-      description: 'What are you open to right now? Friends, practice, dating, safe experiments. Aura respects that.',
-      content: (
-        <div className="space-y-5">
-           <div>
-            <label className="block text-sm text-slate-400 mb-2">What are you open to right now?</label>
-            <textarea 
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all h-24 resize-none"
-              placeholder="Friends, practice, dating, safe experiments…"
-              value={formData.goals}
-              onChange={(e) => handleInputChange('goals', e.target.value)}
-            />
-            <p className="text-xs text-slate-500 mt-2">Aura respects what you're looking for</p>
-          </div>
-          <div>
-            <label className="block text-sm text-slate-400 mb-2">Topics You Love</label>
-            <input 
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
-              placeholder="e.g. Scifi, Coding, Cats"
-              value={formData.topicsLike}
-              onChange={(e) => handleInputChange('topicsLike', e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-slate-400 mb-2">Topics You Avoid</label>
-            <input 
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
-              placeholder="e.g. Politics, Horror"
-              value={formData.topicsAvoid}
-              onChange={(e) => handleInputChange('topicsAvoid', e.target.value)}
-            />
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'boundaries',
-      title: 'Safety & Boundaries',
-      description: 'How can Aura protect you?',
-      content: (
-        <div className="space-y-5">
-          <div className="grid grid-cols-2 gap-4">
-             <div>
-              <label className="block text-sm text-teal-400 mb-2">Green Flags</label>
-              <input 
-                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-600 focus:outline-none focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/30 transition-all"
-                placeholder="Kindness, etc."
-                value={formData.greenFlags}
-                onChange={(e) => handleInputChange('greenFlags', e.target.value)}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Min age you want to see
+              </label>
+              <input
+                type="number"
+                min={18}
+                max={99}
+                value={minAge}
+                onChange={(e) =>
+                  setMinAge(parseInt(e.target.value || "18", 10))
+                }
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-sky-400/70 focus:ring-1 focus:ring-sky-400/40"
               />
             </div>
-            <div>
-              <label className="block text-sm text-rose-400 mb-2">Red Flags</label>
-              <input 
-                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-600 focus:outline-none focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/30 transition-all"
-                placeholder="Rudeness, etc."
-                value={formData.redFlags}
-                onChange={(e) => handleInputChange('redFlags', e.target.value)}
+            <div className="space-y-1">
+              <label className="text-[11px] text-slate-300 ml-1">
+                Max age you want to see
+              </label>
+              <input
+                type="number"
+                min={18}
+                max={99}
+                value={maxAge}
+                onChange={(e) =>
+                  setMaxAge(parseInt(e.target.value || "35", 10))
+                }
+                className="w-full bg-slate-900/70 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-sky-400/70 focus:ring-1 focus:ring-sky-400/40"
               />
             </div>
           </div>
-          <div>
-            <label className="block text-sm text-slate-400 mb-2">Hard boundaries</label>
-            <input 
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
-              placeholder="e.g. no late-night calls, no politics"
-              value={formData.hardBoundaries}
-              onChange={(e) => handleInputChange('hardBoundaries', e.target.value)}
-            />
-            <p className="text-xs text-slate-500 mt-2">Anything Aura should always avoid?</p>
+
+          <div className="space-y-1">
+            <p className="text-[11px] text-slate-300 ml-1">
+              What are you open to?
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {(
+                [
+                  "friends_only",
+                  "casual_dating",
+                  "serious_relationship",
+                  "open_to_see",
+                ] as RelationshipIntent[]
+              ).map((intent) => (
+                <button
+                  key={intent}
+                  type="button"
+                  onClick={() => setRelationshipIntent(intent)}
+                  className={`px-2.5 py-1 rounded-full text-[11px] border ${
+                    relationshipIntent === intent
+                      ? "bg-sky-500/20 border-sky-400/70 text-sky-100"
+                      : "bg-slate-900/70 border-white/10 text-slate-300"
+                  }`}
+                >
+                  {intent === "friends_only"
+                    ? "Friends only"
+                    : intent === "casual_dating"
+                      ? "Casual dating"
+                      : intent === "serious_relationship"
+                        ? "Serious"
+                        : "Open to see"}
+                </button>
+              ))}
+            </div>
           </div>
-          <div>
-            <label className="block text-sm text-slate-400 mb-2">What makes you feel safe?</label>
-             <input 
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
-              placeholder="e.g. Taking things slow"
-              value={formData.whatFeelsSafe}
-              onChange={(e) => handleInputChange('whatFeelsSafe', e.target.value)}
-            />
+
+          <div className="space-y-1">
+            <p className="text-[11px] text-slate-300 ml-1">
+              Filter by intent in Discover? (optional)
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => setFilterByIntent("")}
+                className={`px-2.5 py-1 rounded-full text-[11px] border ${
+                  !filterByIntent
+                    ? "bg-slate-100 text-slate-900 border-slate-100"
+                    : "bg-slate-900/70 border-white/10 text-slate-300"
+                }`}
+              >
+                No filter
+              </button>
+              {(
+                [
+                  "friends_only",
+                  "casual_dating",
+                  "serious_relationship",
+                  "open_to_see",
+                ] as RelationshipIntent[]
+              ).map((intent) => (
+                <button
+                  key={intent}
+                  type="button"
+                  onClick={() => setFilterByIntent(intent)}
+                  className={`px-2.5 py-1 rounded-full text-[11px] border ${
+                    filterByIntent === intent
+                      ? "bg-emerald-500/20 border-emerald-400/70 text-emerald-100"
+                      : "bg-slate-900/70 border-white/10 text-slate-300"
+                  }`}
+                >
+                  {intent === "friends_only"
+                    ? "Friends only"
+                    : intent === "casual_dating"
+                      ? "Casual"
+                      : intent === "serious_relationship"
+                        ? "Serious"
+                        : "Open"}
+                </button>
+              ))}
+            </div>
           </div>
-          <div>
-            <label className="block text-sm text-slate-400 mb-2">What should people know?</label>
-             <input 
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white placeholder-slate-600 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/30 transition-all"
-              placeholder="e.g. I'm shy at first but open up later."
-              value={formData.whatShouldPeopleKnow}
-              onChange={(e) => handleInputChange('whatShouldPeopleKnow', e.target.value)}
-            />
-          </div>
-        </div>
-      )
-    }
-  ];
-
-  const currentStepData = steps[step];
-
-  const handleNext = () => {
-    if (step < steps.length - 1) {
-      setStep(step + 1);
-    } else {
-      finishOnboarding();
-    }
-  };
-
-  const isStepValid = () => {
-    switch(step) {
-      case 0: return !!formData.displayName;
-      case 1: return true;
-      case 2: return !!formData.goals;
-      case 3: return true;
-      default: return true;
-    }
-  };
-
-  if (isGenerating) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen text-center p-8">
-        <div className="relative mb-10">
-          <div className="w-32 h-32 bg-gradient-to-br from-violet-500/40 to-blue-500/30 rounded-full blur-2xl animate-pulse" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-violet-500/60 to-blue-500/40 rounded-full animate-pulse" style={{ animationDelay: '200ms' }} />
-          </div>
-        </div>
-        <h2 className="text-2xl font-semibold text-slate-100 mb-3">Weaving your Aura...</h2>
-        <p className="text-slate-400">Analyzing your social resonance patterns.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="max-w-lg mx-auto h-screen flex flex-col p-6">
-      <div className="flex space-x-2 mb-8 justify-center pt-8">
-        {steps.map((_, idx) => (
-          <div 
-            key={idx} 
-            className={`h-1.5 rounded-full transition-all duration-500 ${
-              idx === step 
-                ? 'w-10 bg-violet-500' 
-                : idx < step 
-                  ? 'w-3 bg-violet-900/60' 
-                  : 'w-3 bg-white/10'
-            }`} 
-          />
-        ))}
-      </div>
-
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-semibold text-slate-100 mb-2">
-          {currentStepData.title}
-        </h1>
-        <p className="text-slate-400">{currentStepData.description}</p>
+        </section>
       </div>
 
-      <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide">
-        {currentStepData.content}
-      </div>
-
-      <div className="flex justify-between mt-8 pt-6 border-t border-white/5">
-        <button 
-          onClick={() => setStep(Math.max(0, step - 1))}
-          disabled={step === 0}
-          className="px-6 py-3 rounded-xl text-slate-400 hover:text-slate-200 disabled:opacity-0 transition-colors"
-        >
-          Back
-        </button>
+      <footer className="flex items-center justify-between pt-2 border-t border-white/10">
+        <p className="text-[10px] text-slate-500 max-w-xs">
+          You can edit this later. Aura never shares your exact date of birth or
+          private notes with other users.
+        </p>
         <button
-          onClick={handleNext}
-          disabled={!isStepValid()}
-          className="bg-violet-600/40 hover:bg-violet-600/60 border border-violet-500/30 text-violet-100 px-8 py-3 rounded-xl font-medium shadow-lg shadow-violet-900/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          type="button"
+          disabled={submitting}
+          onClick={handleSubmit}
+          className="px-4 py-2 rounded-full text-xs font-semibold bg-gradient-to-r from-sky-500 via-violet-500 to-pink-500 text-white shadow-lg shadow-violet-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {step === steps.length - 1 ? 'Create Aura' : 'Next'}
+          {submitting ? "Creating..." : "Create my Aura profile"}
         </button>
-      </div>
+      </footer>
     </div>
   );
 };
