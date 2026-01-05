@@ -44,8 +44,8 @@ export const AuthScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-black text-slate-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden p-8 flex flex-col gap-6">
+    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-black text-slate-100 flex items-center justify-center p-4 relative z-50">
+      <div className="w-full max-w-md bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden p-8 flex flex-col gap-6 relative z-50">
         
         <div className="text-center">
           <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 mx-auto mb-4 animate-pulse shadow-lg shadow-blue-500/30" />

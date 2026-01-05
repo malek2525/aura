@@ -4,12 +4,9 @@ import OnboardingScreen from "../screens/OnboardingScreen";
 import NeuralLinkScreen from "../screens/NeuralLinkScreen";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { AuthScreen } from "../screens/AuthScreen";
-import {
-  loadAuraProfile,
-  persistAuraProfile,
-} from "./storage/profileStorage";
+import { loadAuraProfile, persistAuraProfile } from "./storage/profileStorage";
 import { useAuraVoice } from "../hooks/useAuraVoice";
-import { AuraStage } from "../components/AuraStage";
+
 import SkillsPanel from "./panels/SkillsPanel";
 import TwinsPanel from "./panels/TwinsPanel";
 
@@ -636,13 +633,6 @@ const AppContent: React.FC = () => {
           {/* LEFT: AURA STAGE */}
           <section className="lg:w-[55%] flex">
             <div className="relative flex-1">
-              <AuraStage
-                profile={profile}
-                auraState={auraState}
-                isSpeaking={voice.isSpeaking}
-                isListening={voice.isListening}
-              />
-
               {/* Voice status pill on stage */}
               <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-950/60 backdrop-blur-md rounded-full border border-white/10">
