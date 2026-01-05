@@ -523,7 +523,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-black text-slate-100">
-      <div className="max-w-6xl mx-auto h-screen px-4 py-4 flex flex-col gap-4">
+      <div className="max-w-6xl mx-auto h-screen px-4 py-4 flex flex-col gap-4 relative" style={{ zIndex: 1 }}>
         {/* TOP BAR — GLOBAL */}
         <header className="flex items-center justify-between rounded-2xl bg-slate-950/70 border border-white/10 backdrop-blur-2xl px-4 py-2 shadow-[0_0_40px_rgba(15,23,42,0.9)]">
           {/* LEFT: App title + Me avatar button */}
