@@ -1,18 +1,15 @@
 import React, { useState } from "react";
+
 import {
   AuraProfile,
   TwinChatResult,
   AuraMatchResult,
   TwinIntroResult,
-} from "../../types";
-import { simulateTwinChat } from "../../services/auraLLM";
-import { ProfilePreviewPanel } from "../../components/ProfilePreviewPanel";
-import { buildAuraMatchResult, buildTwinIntro } from "../services/matching";
+} from "../types";
 
-interface TwinsPanelProps {
-  profile: AuraProfile;
-  sampleProfile: AuraProfile;
-}
+import { simulateTwinChat } from "../services/auraLLM";
+import { ProfilePreviewPanel } from "../components/ProfilePreviewPanel";
+import { buildAuraMatchResult, buildTwinIntro } from "../services/matching";
 
 const TwinsPanel: React.FC<TwinsPanelProps> = ({ profile, sampleProfile }) => {
   const [isLoading, setIsLoading] = useState(false);

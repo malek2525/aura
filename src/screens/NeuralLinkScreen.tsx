@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import AuraAvatarCard from '../components/AuraAvatarCard';
-import ChatWindow from '../components/ChatWindow';
+import AuraAvatarCard from '../components/MePanel';
+import ChatWindow from '../components/ProfileChips';
 import { AuraProfile, AuraState, AuraChatMessage } from '../types';
 import { chatWithAura } from '../services/auraLLM';
 import { LiveVoiceMode } from '../components/LiveVoiceMode';
