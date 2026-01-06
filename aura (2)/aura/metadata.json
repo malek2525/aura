@@ -1,0 +1,5 @@
+{
+  "name": "Aura Twin MVP",
+  "description": "A React application featuring an AI Aura Twin that evolves with the user, provides social coaching, and simulates matchmaking with other Auras.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,490 @@
+/* ================================================================
+   AURA TWIN - WARM THEME CSS
+   Just copy this entire file and replace your index.css in Replit
+   ================================================================ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========== COLOR VARIABLES ========== */
+:root {
+  --aura-primary: #FF6B6B;
+  --aura-primary-light: #FFE5E5;
+  --aura-primary-dark: #E55555;
+  --aura-secondary: #FF8E53;
+  --aura-accent: #FFC857;
+  --aura-success: #4ECDC4;
+  --aura-background: #FFF9F5;
+  --aura-card: #FFFFFF;
+  --aura-text: #2D3436;
+  --aura-text-light: #636E72;
+  --aura-text-muted: #B2BEC3;
+  --aura-border: #F0E6E0;
+}
+
+/* ========== GLOBAL STYLES ========== */
+body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, #FFF9F5 0%, #FFF5EE 50%, #FFF9F5 100%);
+  background-attachment: fixed;
+  color: #2D3436;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+}
+
+@keyframes bounce-dots {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes glow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.animate-fade-in { animation: fade-in 0.5s ease-out; }
+.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-breathe { animation: breathe 4s ease-in-out infinite; }
+.animate-pulse-soft { animation: pulse-soft 4s ease-in-out infinite; }
+.animate-glow { animation: glow 4s ease-in-out infinite; }
+
+/* ========== SCROLLBAR ========== */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(240, 230, 224, 0.3);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 107, 107, 0.4);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 107, 107, 0.6);
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ========== GLASS PANELS (WARM VERSION) ========== */
+.glass-panel {
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(240, 230, 224, 0.8);
+  box-shadow: 0 8px 32px rgba(255, 107, 107, 0.08);
+}
+
+.glass-panel-light {
+  backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(240, 230, 224, 0.6);
+  box-shadow: 0 4px 24px rgba(255, 107, 107, 0.05);
+}
+
+/* ========== BUTTONS ========== */
+.pill-button {
+  border-radius: 9999px;
+  border: 1px solid #F0E6E0;
+  transition: all 0.3s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: white;
+  color: #2D3436;
+}
+
+.pill-button:hover {
+  background: #FFE5E5;
+  border-color: #FF6B6B;
+}
+
+.pill-button.active {
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+  border-color: transparent;
+  color: white;
+}
+
+/* Primary gradient button */
+.btn-primary {
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  padding: 12px 24px;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(255, 107, 107, 0.35);
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.45);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Secondary button */
+.btn-secondary {
+  background: white;
+  color: #636E72;
+  border: 2px solid #F0E6E0;
+  border-radius: 9999px;
+  padding: 12px 24px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: #FFF9F5;
+  border-color: #FF6B6B;
+  color: #FF6B6B;
+}
+
+/* Success button */
+.btn-success {
+  background: #4ECDC4;
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  padding: 12px 24px;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(78, 205, 196, 0.35);
+}
+
+/* ========== CARDS ========== */
+.card {
+  background: white;
+  border: 1px solid #F0E6E0;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.card:hover {
+  box-shadow: 0 4px 16px rgba(255, 107, 107, 0.1);
+}
+
+/* ========== INPUTS ========== */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea {
+  background: #FFF9F5;
+  border: 1px solid #F0E6E0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #2D3436;
+  transition: all 0.2s ease;
+}
+
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: #FF6B6B;
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.15);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #B2BEC3;
+}
+
+/* ========== TAGS/CHIPS ========== */
+.tag {
+  background: #FFE5E5;
+  color: #E55555;
+  border-radius: 9999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.tag-outline {
+  background: transparent;
+  border: 1px solid #F0E6E0;
+  color: #636E72;
+  border-radius: 9999px;
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+/* ========== OVERRIDE TAILWIND DARK COLORS ========== */
+
+/* Background overrides */
+.bg-slate-900,
+.bg-slate-950,
+.bg-slate-800 {
+  background-color: #FFFFFF !important;
+}
+
+.bg-slate-900\/70,
+.bg-slate-950\/70,
+.bg-slate-800\/80,
+.bg-slate-900\/80 {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.bg-slate-950\/60,
+.bg-slate-900\/60 {
+  background-color: rgba(255, 249, 245, 0.9) !important;
+}
+
+/* Gradient overrides - purple to coral */
+.bg-gradient-to-r.from-violet-600.to-blue-600,
+.bg-gradient-to-r.from-violet-500.to-blue-500,
+.bg-gradient-to-br.from-violet-600\/90.to-blue-600\/90,
+.from-violet-600,
+.from-violet-500 {
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53) !important;
+}
+
+.bg-gradient-to-r.from-sky-500.via-violet-500.to-pink-500 {
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53) !important;
+}
+
+/* Violet color overrides */
+.bg-violet-400,
+.bg-violet-500,
+.bg-violet-600 {
+  background-color: #FF6B6B !important;
+}
+
+.text-violet-400,
+.text-violet-300,
+.text-violet-500 {
+  color: #FF6B6B !important;
+}
+
+.border-violet-500,
+.border-violet-400,
+.border-violet-500\/50,
+.border-violet-400\/30 {
+  border-color: #FF6B6B !important;
+}
+
+.shadow-violet-500\/20,
+.shadow-violet-500\/30,
+.shadow-pink-500\/40 {
+  --tw-shadow-color: rgba(255, 107, 107, 0.25);
+}
+
+.ring-violet-500\/20 {
+  --tw-ring-color: rgba(255, 107, 107, 0.2);
+}
+
+/* Text color overrides */
+.text-white {
+  color: #2D3436 !important;
+}
+
+.text-slate-100,
+.text-slate-200 {
+  color: #2D3436 !important;
+}
+
+.text-slate-300 {
+  color: #4A5568 !important;
+}
+
+.text-slate-400 {
+  color: #636E72 !important;
+}
+
+.text-slate-500 {
+  color: #B2BEC3 !important;
+}
+
+/* EXCEPTION: Keep white text on gradient buttons */
+.bg-gradient-to-r .text-white,
+.bg-gradient-to-br .text-white,
+.btn-primary,
+[class*="from-violet"] .text-white,
+[class*="bg-gradient"] {
+  color: white !important;
+}
+
+/* Border overrides */
+.border-white\/5,
+.border-white\/10,
+.border-white\/15 {
+  border-color: #F0E6E0 !important;
+}
+
+/* Sky/Blue overrides */
+.bg-sky-500\/10 {
+  background-color: rgba(255, 107, 107, 0.1) !important;
+}
+
+.border-sky-500\/40 {
+  border-color: rgba(255, 107, 107, 0.4) !important;
+}
+
+.text-sky-200,
+.text-sky-300 {
+  color: #FF6B6B !important;
+}
+
+/* Emerald overrides */
+.bg-emerald-500\/10 {
+  background-color: rgba(78, 205, 196, 0.1) !important;
+}
+
+.border-emerald-500\/40 {
+  border-color: rgba(78, 205, 196, 0.4) !important;
+}
+
+.text-emerald-200,
+.text-emerald-300 {
+  color: #4ECDC4 !important;
+}
+
+.bg-emerald-400 {
+  background-color: #4ECDC4 !important;
+}
+
+/* Red status dot */
+.bg-red-400 {
+  background-color: #FF6B6B !important;
+}
+
+.shadow-red-400\/80 {
+  --tw-shadow-color: rgba(255, 107, 107, 0.8);
+}
+
+/* Amber/speaking status */
+.bg-amber-400 {
+  background-color: #FFC857 !important;
+}
+
+.shadow-amber-400\/80 {
+  --tw-shadow-color: rgba(255, 200, 87, 0.8);
+}
+
+/* ========== CHAT MESSAGES ========== */
+
+/* User messages - coral gradient */
+.ml-auto.bg-gradient-to-br,
+.ml-auto[class*="from-violet"] {
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53) !important;
+  color: white !important;
+  border: none !important;
+}
+
+/* Other person's messages - white */
+.mr-auto.bg-slate-800\/80,
+.mr-auto[class*="bg-slate"] {
+  background: white !important;
+  border: 1px solid #F0E6E0 !important;
+  color: #2D3436 !important;
+}
+
+/* ========== LOADING SPINNER ========== */
+.animate-spin {
+  border-top-color: #FF6B6B !important;
+}
+
+/* Thinking dots */
+.animate-bounce {
+  background-color: #FF6B6B !important;
+}
+
+/* ========== SPECIAL PANELS ========== */
+
+/* Aura read panel */
+.aura-read-panel {
+  background: linear-gradient(135deg, #FFE5E5, #FFF5E6);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+/* Success panel */
+.success-panel {
+  background: #E8FFF5;
+  border: 1px solid #4ECDC4;
+  border-radius: 16px;
+  padding: 16px;
+}
+
+/* ========== NAVIGATION ========== */
+nav {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-top: 1px solid #F0E6E0 !important;
+  backdrop-filter: blur(10px);
+}
+
+/* Active nav item */
+nav button.active,
+nav a.active {
+  color: #FF6B6B !important;
+}
+
+/* ========== UTILITY CLASSES ========== */
+.label-tiny {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #636E72;
+  font-weight: 600;
+}
+
+.truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ========== MATCH SCORE BADGE ========== */
+.match-score {
+  background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+  color: white;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+}
+
+/* ========== RESPONSIVE ADJUSTMENTS ========== */
+@media (max-width: 640px) {
+  .glass-panel {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+}

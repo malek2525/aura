@@ -1,0 +1,33 @@
+{
+  "name": "aura-twin-mvp",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx server/index.ts & vite",
+    "server": "tsx server/index.ts",
+    "build": "vite build",
+    "preview": "tsx server/index.ts & vite preview"
+  },
+  "dependencies": {
+    "@google/genai": "^1.30.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.4.2",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "@types/three": "^0.181.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "firebase": "^12.6.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "three": "^0.181.2",
+    "tsx": "^4.20.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.1.1",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}
