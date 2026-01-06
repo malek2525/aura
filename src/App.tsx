@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { AuraProfile, AuraChatMessage, AuraState } from "../types";
+import { AuraProfile, AuraChatMessage, AuraState } from "./types";
 import OnboardingScreen from "../screens/OnboardingScreen";
 import NeuralLinkScreen from "../screens/NeuralLinkScreen";
 import { AuthProvider, useAuth } from "./context/AuthContext";
