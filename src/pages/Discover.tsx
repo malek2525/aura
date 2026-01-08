@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Icons } from '../components/Icons';
 import { UserProfile } from '../types';
+import { TEST_PROFILES } from '../data/testProfiles';
 
 interface DiscoverProps {
   onOpenFilters: () => void;
@@ -9,51 +10,8 @@ interface DiscoverProps {
   onStartAuraChat: (profile: UserProfile) => void;
   onLike: (profile: UserProfile) => void;
   onPass: () => void;
+  userPhoto?: string;
 }
-
-// Mock profiles - Replace with real data from matchService
-const MOCK_PROFILES: UserProfile[] = [
-  {
-    id: '1',
-    name: 'Petra',
-    age: 28,
-    bio: "Nerdy about design, serious about coffee. Looking for player 2.",
-    job: 'Product Designer',
-    location: 'Budapest',
-    distance: 3,
-    verified: true,
-    photos: ['https://picsum.photos/400/600?random=1', 'https://picsum.photos/400/600?random=2'],
-    auraRead: "Petra is a creative introvert. She loves gaming on weekends but needs her quiet time.",
-    vibeTags: ['Gamer', 'Creative', 'Morning person'],
-    verificationScore: 88,
-    verificationTier: 'Gold',
-    stories: [
-      { id: 's1', imageUrl: 'https://picsum.photos/400/800?random=200', timestamp: '2h', isViewed: false },
-    ],
-    interests: ['Gaming', 'Coffee', 'Sci-Fi'],
-    prompts: [{ question: "I geek out on...", answer: "Lore videos about Elden Ring." }],
-    details: { height: '170cm', exercise: 'Active', education: 'Masters', drinking: 'Socially', smoking: 'No', lookingFor: 'Relationship', starSign: 'Leo', languages: ['English'] }
-  },
-  {
-    id: '2',
-    name: 'Hanna',
-    age: 25,
-    bio: "Bookworm by day, wine taster by night. 🍷",
-    job: 'Editor',
-    location: 'Budapest',
-    distance: 5,
-    verified: true,
-    photos: ['https://picsum.photos/400/600?random=3', 'https://picsum.photos/400/600?random=4'],
-    auraRead: "Hanna radiates calm energy. She values deep conversations over loud parties.",
-    vibeTags: ['Bookworm', 'Warm', 'Calm'],
-    verificationScore: 75,
-    verificationTier: 'Silver',
-    stories: [],
-    interests: ['Books', 'Wine', 'Writing'],
-    prompts: [{ question: "My simple pleasure...", answer: "New book smell." }],
-    details: { height: '168cm', exercise: 'Active', education: 'BA', drinking: 'Socially', smoking: 'No', lookingFor: 'Relationship', starSign: 'Pisces', languages: ['English'] }
-  }
-];
 
 export const Discover: React.FC<DiscoverProps> = ({ 
   onOpenFilters, 
@@ -61,21 +19,51 @@ export const Discover: React.FC<DiscoverProps> = ({
   onViewStory, 
   onStartAuraChat,
   onLike,
-  onPass 
+  onPass,
+  userPhoto 
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [mode, setMode] = useState<'stack' | 'picks'>('stack');
+  const [passedIds, setPassedIds] = useState<Set<string>>(new Set());
   
-  const currentProfile = MOCK_PROFILES[currentIndex % MOCK_PROFILES.length];
+  // Filter out passed profiles
+  const availableProfiles = TEST_PROFILES.filter(p => !passedIds.has(p.id));
+  const currentProfile = availableProfiles[currentIndex % Math.max(availableProfiles.length, 1)];
 
   const handleAction = (action: 'pass' | 'like') => {
+    if (!currentProfile) return;
+    
     if (action === 'like') {
       onLike(currentProfile);
     } else {
       onPass();
     }
+    
+    // Move to next profile
+    if (action === 'pass') {
+      setPassedIds(prev => new Set([...prev, currentProfile.id]));
+    }
     setCurrentIndex(prev => prev + 1);
   };
+
+  // No more profiles
+  if (!currentProfile || availableProfiles.length === 0) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center bg-white p-8 text-center">
+        <div className="w-20 h-20 bg-coral-light rounded-full flex items-center justify-center mb-4">
+          <Icons.Heart size={40} className="text-coral" />
+        </div>
+        <h2 className="text-xl font-bold text-text-main mb-2">No more profiles</h2>
+        <p className="text-text-sec text-sm mb-6">Check back later or adjust your preferences</p>
+        <button 
+          onClick={onOpenFilters}
+          className="px-6 py-3 bg-coral text-white rounded-full font-semibold"
+        >
+          Update Preferences
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col bg-white overflow-hidden">
@@ -125,7 +113,7 @@ export const Discover: React.FC<DiscoverProps> = ({
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              {MOCK_PROFILES.map((profile) => (
+              {availableProfiles.map((profile) => (
                 <div 
                   key={profile.id} 
                   onClick={() => onViewProfile(profile)}
@@ -145,15 +133,11 @@ export const Discover: React.FC<DiscoverProps> = ({
                       <Icons.Sparkles size={10} />
                       <span className="text-[10px] font-bold uppercase">{profile.vibeTags[0]}</span>
                     </div>
-                    <h3 className="font-bold text-lg">{profile.name}</h3>
+                    <h3 className="font-bold text-lg">{profile.name}, {profile.age}</h3>
                   </div>
                 </div>
               ))}
             </div>
-            
-            <button className="w-full py-3 bg-warm-white border border-warm-gray text-text-main font-bold rounded-xl text-sm">
-              See More Picks
-            </button>
           </div>
         ) : (
           /* Stack/Swipe Mode */
@@ -161,22 +145,26 @@ export const Discover: React.FC<DiscoverProps> = ({
             {/* Stories Rail */}
             <div className="px-4 mb-4">
               <div className="flex gap-4 overflow-x-auto no-scrollbar py-2">
-                {/* Add Story */}
+                {/* Add Story (User) */}
                 <div className="flex flex-col items-center gap-1 min-w-[70px]">
-                  <div className="w-[68px] h-[68px] rounded-full border-2 border-dashed border-text-muted flex items-center justify-center relative cursor-pointer hover:bg-warm-white">
-                    <Icons.Plus className="text-coral" size={24} />
+                  <div className="w-[68px] h-[68px] rounded-full border-2 border-dashed border-text-muted flex items-center justify-center relative cursor-pointer hover:bg-warm-white overflow-hidden">
+                    {userPhoto ? (
+                      <img src={userPhoto} className="w-full h-full object-cover" alt="You" />
+                    ) : (
+                      <Icons.Plus className="text-coral" size={24} />
+                    )}
                   </div>
                   <span className="text-xs font-medium text-text-sec">You</span>
                 </div>
 
                 {/* User Stories */}
-                {MOCK_PROFILES.filter(p => p.stories.length > 0).map((p) => (
+                {TEST_PROFILES.filter(p => p.stories && p.stories.length > 0).map((p) => (
                   <div 
                     key={p.id} 
                     className="flex flex-col items-center gap-1 min-w-[70px] cursor-pointer" 
                     onClick={() => onViewStory(p)}
                   >
-                    <div className="w-[68px] h-[68px] rounded-full p-[2px] bg-gradient-to-tr from-coral to-gold hover:scale-105 transition-transform">
+                    <div className={`w-[68px] h-[68px] rounded-full p-[2px] ${p.stories[0]?.isViewed ? 'bg-gray-300' : 'bg-gradient-to-tr from-coral to-gold'} hover:scale-105 transition-transform`}>
                       <div className="w-full h-full rounded-full border-2 border-white overflow-hidden">
                         <img src={p.photos[0]} className="w-full h-full object-cover" alt={p.name} />
                       </div>

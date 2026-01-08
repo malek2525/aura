@@ -1,34 +1,78 @@
 import React from 'react';
 import { Icons } from '../components/Icons';
+import { AuraProfile } from '../types';
 
 interface AuraProps {
-  userName?: string;
-  userPhoto?: string;
-  verificationScore?: number;
+  profile: AuraProfile | null;
   onEditProfile: () => void;
   onSettings: () => void;
   onPreviewProfile: () => void;
   onTalkToAura?: () => void;
 }
 
+// Calculate verification score based on profile completeness
+const calculateVerificationScore = (profile: AuraProfile | null): number => {
+  if (!profile) return 0;
+  let score = 0;
+  
+  // Basic info (30 points)
+  if (profile.displayName || profile.dating?.displayName) score += 10;
+  if (profile.dating?.dateOfBirth) score += 10;
+  if (profile.dating?.city || profile.dating?.country) score += 10;
+  
+  // Photos (25 points)
+  const photoCount = profile.dating?.photos?.length || profile.photoUrls?.length || 0;
+  score += Math.min(photoCount * 5, 25);
+  
+  // Bio & interests (20 points)
+  if (profile.dating?.bio || profile.aura?.summary) score += 10;
+  if ((profile.dating?.interests?.length || 0) >= 3) score += 10;
+  
+  // Aura personality (25 points)
+  if (profile.aura?.vibeWords?.length) score += 10;
+  if (profile.aura?.greenFlags?.length) score += 8;
+  if (profile.aura?.whatFeelsSafe) score += 7;
+  
+  return Math.min(score, 100);
+};
+
+// Get tier based on score
+const getTier = (score: number) => {
+  if (score >= 81) return { name: 'Platinum', color: 'bg-purple-100 text-purple-700' };
+  if (score >= 61) return { name: 'Gold', color: 'bg-gold/20 text-yellow-700' };
+  if (score >= 41) return { name: 'Silver', color: 'bg-gray-100 text-gray-700' };
+  return { name: 'Bronze', color: 'bg-orange-100 text-orange-700' };
+};
+
 export const Aura: React.FC<AuraProps> = ({ 
-  userName = 'User',
-  userPhoto = 'https://picsum.photos/200/200?random=100',
-  verificationScore = 67,
+  profile,
   onEditProfile, 
   onSettings, 
   onPreviewProfile,
   onTalkToAura
 }) => {
-  // Determine tier based on score
-  const getTier = (score: number) => {
-    if (score >= 81) return { name: 'Platinum', color: 'bg-purple-100 text-purple-700' };
-    if (score >= 61) return { name: 'Gold', color: 'bg-gold/20 text-yellow-700' };
-    if (score >= 41) return { name: 'Silver', color: 'bg-gray-100 text-gray-700' };
-    return { name: 'Bronze', color: 'bg-orange-100 text-orange-700' };
-  };
-
+  // Get actual data from profile
+  const userName = profile?.dating?.displayName || profile?.displayName || 'User';
+  const userPhoto = profile?.dating?.photos?.[0]?.url || 
+                    profile?.avatarUrl || 
+                    (profile?.photoUrls && profile.photoUrls[0]) || 
+                    '';
+  
+  const verificationScore = calculateVerificationScore(profile);
   const tier = getTier(verificationScore);
+  
+  // Get aura summary - use real data
+  const auraSummary = profile?.aura?.summary || 
+                      profile?.summary || 
+                      "Complete your profile to let Aura learn about you and find your perfect matches.";
+  
+  // Get vibe tags - use real data
+  const vibeTags = profile?.aura?.vibeWords || 
+                   profile?.vibeWords || 
+                   ['Add your vibe'];
+  
+  // Get bio
+  const bio = profile?.dating?.bio || '';
 
   return (
     <div className="h-full bg-white flex flex-col pt-4 pb-24 px-4 overflow-y-auto no-scrollbar">
@@ -50,15 +94,23 @@ export const Aura: React.FC<AuraProps> = ({
       <div className="bg-white rounded-3xl border border-warm-gray shadow-soft p-4 mb-6 flex items-center gap-4 relative overflow-hidden">
         <div className="relative">
           <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-coral to-orange">
-            <img 
-              src={userPhoto} 
-              alt="Me" 
-              className="w-full h-full rounded-full object-cover border-2 border-white" 
-            />
+            {userPhoto ? (
+              <img 
+                src={userPhoto} 
+                alt="Me" 
+                className="w-full h-full rounded-full object-cover border-2 border-white" 
+              />
+            ) : (
+              <div className="w-full h-full rounded-full bg-warm-gray border-2 border-white flex items-center justify-center">
+                <Icons.User size={24} className="text-text-muted" />
+              </div>
+            )}
           </div>
-          <div className="absolute -bottom-1 -right-1 bg-white p-0.5 rounded-full">
-            <Icons.ShieldCheck size={16} className="text-success fill-success/20" />
-          </div>
+          {verificationScore >= 50 && (
+            <div className="absolute -bottom-1 -right-1 bg-white p-0.5 rounded-full">
+              <Icons.ShieldCheck size={16} className="text-success fill-success/20" />
+            </div>
+          )}
         </div>
         
         <div className="flex-1">
@@ -90,11 +142,11 @@ export const Aura: React.FC<AuraProps> = ({
         </div>
         
         <p className="text-text-main font-medium italic text-lg leading-relaxed mb-4">
-          "You're a thoughtful introvert who values authentic connections over small talk. You take time to open up but form deep bonds."
+          "{auraSummary}"
         </p>
 
         <div className="flex flex-wrap gap-2 mb-6">
-          {['Thoughtful', 'Calm', 'Creative'].map((tag, i) => (
+          {vibeTags.slice(0, 4).map((tag, i) => (
             <span 
               key={i} 
               className="px-3 py-1 bg-white/60 border border-white/50 rounded-full text-xs text-text-sec font-medium"
@@ -138,16 +190,34 @@ export const Aura: React.FC<AuraProps> = ({
 
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm text-text-sec">
-            <Icons.Check size={16} className="text-success" /> Verified photo
+            {(profile?.dating?.photos?.length || 0) > 0 ? (
+              <Icons.Check size={16} className="text-success" />
+            ) : (
+              <div className="w-4 h-4 rounded-full border border-text-muted" />
+            )}
+            <span className={!(profile?.dating?.photos?.length) ? 'opacity-50' : ''}>
+              Verified photo
+            </span>
           </div>
           <div className="flex items-center gap-2 text-sm text-text-sec">
-            <Icons.Check size={16} className="text-success" /> Responds within hours
+            {bio ? (
+              <Icons.Check size={16} className="text-success" />
+            ) : (
+              <div className="w-4 h-4 rounded-full border border-text-muted" />
+            )}
+            <span className={!bio ? 'opacity-50' : ''}>
+              Bio completed
+            </span>
           </div>
           <div className="flex items-center gap-2 text-sm text-text-sec">
-            <div className="w-4 h-4 rounded-full border border-text-muted flex items-center justify-center">
-              <div className="w-1.5 h-1.5 bg-transparent rounded-full" />
-            </div>
-            <span className="opacity-50">5 positive date reviews</span>
+            {vibeTags.length >= 3 ? (
+              <Icons.Check size={16} className="text-success" />
+            ) : (
+              <div className="w-4 h-4 rounded-full border border-text-muted" />
+            )}
+            <span className={vibeTags.length < 3 ? 'opacity-50' : ''}>
+              Personality defined
+            </span>
           </div>
         </div>
       </div>

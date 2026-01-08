@@ -1,31 +1,26 @@
 import React, { useState, useEffect } from "react";
 
-// ===== EXISTING IMPORTS (KEEP ALL YOUR BACKEND LOGIC) =====
-import { AuraProfile, AuraChatMessage, AuraState } from "./types";
+// ===== EXISTING IMPORTS (BACKEND LOGIC) =====
+import { AuraProfile, AuraChatMessage, AuraState, ViewState, SubViewState, UserProfile, MatchGenderPreference } from "./types";
 import OnboardingScreen from "./screens/OnboardingScreen";
 import NeuralLinkScreen from "./screens/NeuralLinkScreen";
-import EditProfileScreen from "./screens/EditProfileScreen";
-import DiscoverScreen from "./screens/DiscoverScreen";
-import MatchesScreen from "./screens/MatchesScreen";
+import EditProfileScreen from "./screens/EditProfileScreen";  // Working edit screen
 import { AuthScreen } from "./screens/AuthScreen";
 import { loadAuraProfile, persistAuraProfile } from "./storage/profileStorage";
 import { useAuraVoice } from "./hooks/useAuraVoice";
-
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 // ===== NEW UI IMPORTS =====
 import { Navigation } from "./components/Navigation";
-import { ViewState, SubViewState, UserProfile } from "./types";
 import { Icons } from "./components/Icons";
 
-// New Pages
+// New Pages (fixed versions)
 import { Aura as AuraPage } from "./pages/Aura";
 import { Discover as DiscoverPage } from "./pages/Discover";
 import { Profile as ProfilePage } from "./pages/Profile";
 import { Likes } from "./pages/Likes";
 import { Chat } from "./pages/Chat";
 import { ChatDetail } from "./pages/ChatDetail";
-import { EditProfile as EditProfilePage } from "./pages/EditProfile";
 import { Settings } from "./pages/Settings";
 import { Filters } from "./pages/Filters";
 
@@ -34,16 +29,18 @@ import { StoryViewer } from "./components/StoryViewer";
 import { AuraSimulation } from "./components/AuraSimulation";
 import { MatchOverlay } from "./components/MatchOverlay";
 
+// Test profiles with fixed images
+import { TEST_PROFILES, getProfileById } from "./data/testProfiles";
+
 // Legacy Panels
 import SkillsPanel from "./panels/SkillsPanel";
 import TwinsPanel from "./panels/TwinsPanel";
 
-// ===== EXISTING HELPER FUNCTIONS (UNCHANGED) =====
+// ===== HELPER FUNCTIONS =====
 const getAgeFromDob = (dob?: string | null): number | null => {
   if (!dob) return null;
   const d = new Date(dob);
   if (Number.isNaN(d.getTime())) return null;
-
   const today = new Date();
   let age = today.getFullYear() - d.getFullYear();
   const m = today.getMonth() - d.getMonth();
@@ -54,14 +51,71 @@ const getAgeFromDob = (dob?: string | null): number | null => {
 };
 
 const getAgeFromProfile = (profile: AuraProfile): number | null => {
-  const dob =
-    profile.dating?.dateOfBirth ||
-    (profile as any).dateOfBirth ||
-    (profile as any).dob;
+  const dob = profile.dating?.dateOfBirth || (profile as any).dateOfBirth || (profile as any).dob;
   return getAgeFromDob(dob);
 };
 
-// ===== SAMPLE PROFILE FOR TWINS (UNCHANGED) =====
+// ===== CONVERT AuraProfile TO UserProfile FOR NEW UI =====
+const auraProfileToUserProfile = (profile: AuraProfile): UserProfile => {
+  const age = getAgeFromProfile(profile) || 25;
+  const photos = profile.dating?.photos?.map((p) => p.url).filter(Boolean) ||
+    profile.photoUrls || [];
+
+  return {
+    id: profile.id || profile.userId || "user",
+    name: profile.dating?.displayName || profile.displayName || "User",
+    age,
+    bio: profile.dating?.bio || profile.aura?.summary || profile.summary || "",
+    photos: photos.length > 0 ? photos : [],
+    job: profile.dating?.lifestyle?.jobOrStudy || "",
+    location: profile.dating?.city || profile.dating?.country || profile.country || "Earth",
+    distance: 0,
+    verified: photos.length > 0,
+    auraRead: profile.aura?.summary || profile.summary || "Complete your profile to let Aura learn about you.",
+    vibeTags: profile.aura?.vibeWords || profile.vibeWords || [],
+    verificationScore: calculateVerificationScore(profile),
+    verificationTier: getVerificationTier(calculateVerificationScore(profile)),
+    stories: [],
+    interests: profile.dating?.interests || profile.topicsLike || [],
+    prompts: [],
+    details: {
+      height: "",
+      exercise: "",
+      education: "",
+      drinking: profile.dating?.lifestyle?.drinking || "",
+      smoking: profile.dating?.lifestyle?.smoking || "",
+      lookingFor: profile.dating?.relationshipIntent || "",
+      starSign: "",
+      languages: [],
+    },
+  };
+};
+
+// Calculate verification score
+const calculateVerificationScore = (profile: AuraProfile | null): number => {
+  if (!profile) return 0;
+  let score = 0;
+  if (profile.displayName || profile.dating?.displayName) score += 10;
+  if (profile.dating?.dateOfBirth) score += 10;
+  if (profile.dating?.city || profile.dating?.country) score += 10;
+  const photoCount = profile.dating?.photos?.length || profile.photoUrls?.length || 0;
+  score += Math.min(photoCount * 5, 25);
+  if (profile.dating?.bio || profile.aura?.summary) score += 10;
+  if ((profile.dating?.interests?.length || 0) >= 3) score += 10;
+  if (profile.aura?.vibeWords?.length) score += 10;
+  if (profile.aura?.greenFlags?.length) score += 8;
+  if (profile.aura?.whatFeelsSafe) score += 7;
+  return Math.min(score, 100);
+};
+
+const getVerificationTier = (score: number): 'Bronze' | 'Silver' | 'Gold' | 'Platinum' => {
+  if (score >= 81) return 'Platinum';
+  if (score >= 61) return 'Gold';
+  if (score >= 41) return 'Silver';
+  return 'Bronze';
+};
+
+// ===== SAMPLE PROFILE FOR TWINS =====
 const SAMPLE_LINA_PROFILE: AuraProfile = {
   id: "sample_lina",
   userId: "sample_lina_user",
@@ -73,14 +127,12 @@ const SAMPLE_LINA_PROFILE: AuraProfile = {
     topicsLike: ["art", "music", "late-night walks"],
     topicsAvoid: ["politics"],
     socialSpeed: "slow",
-    hardBoundaries: ["no explicit content", "no heavy drama"],
+    hardBoundaries: ["no explicit content"],
     greenFlags: ["honesty", "emotional maturity"],
-    redFlags: ["ghosting", "mocking others"],
-    whatFeelsSafe: "Slow pace, clear communication, no pressure.",
-    whatShouldPeopleKnow:
-      "She warms up slowly but cares deeply once she feels safe.",
-    summary:
-      "Lina is a quiet, thoughtful person who loves deep conversations and gentle people.",
+    redFlags: ["ghosting"],
+    whatFeelsSafe: "Slow pace, clear communication.",
+    whatShouldPeopleKnow: "She warms up slowly but cares deeply.",
+    summary: "Lina is a quiet, thoughtful person who loves deep conversations.",
   },
   dating: {
     displayName: "Lina",
@@ -90,111 +142,23 @@ const SAMPLE_LINA_PROFILE: AuraProfile = {
     country: "Germany",
     city: "Berlin",
     photos: [],
-    bio: "Soft-spoken, art & music lover who prefers slow, genuine connections.",
-    favoriteQuote: undefined,
-    musicTaste: "Indie, lo-fi, movie scores",
-    interests: ["art", "music", "late-night walks"],
-    idealFirstMessage:
-      "Ask about her current favourite song or artwork, not just 'hey'.",
-    idealFirstMeeting: "Quiet cafe, museum or late walk by the river.",
-    lifestyle: {
-      smoking: "no",
-      drinking: "sometimes",
-      kids: "prefer_not_say",
-      pets: ["cat"],
-      sleepSchedule: "night_owl",
-      jobOrStudy: "Design student",
-    },
+    bio: "Soft-spoken, art & music lover.",
+    interests: ["art", "music"],
+    lifestyle: { smoking: "no", drinking: "sometimes", kids: "prefer_not_say", sleepSchedule: "night_owl" },
     relationshipIntent: "open_to_see",
   },
-  preferences: {
-    preferredGenders: "any",
-    minAge: 20,
-    maxAge: 32,
-    relationshipIntent: "open_to_see",
-  },
-  avatarUrl: undefined,
-  ageRange: "22-27",
-  country: "Germany",
-  introversionLevel: 6,
-  goals: ["friends", "practice_talking"],
-  vibeWords: ["thoughtful", "kind", "curious"],
-  topicsLike: ["art", "music", "late-night walks"],
-  topicsAvoid: ["politics"],
-  socialSpeed: "slow",
-  hardBoundaries: ["no explicit content", "no heavy drama"],
-  greenFlags: ["honesty", "emotional maturity"],
-  redFlags: ["ghosting", "mocking others"],
-  whatFeelsSafe: "Slow pace, clear communication, no pressure.",
-  whatShouldPeopleKnow:
-    "She warms up slowly but cares deeply once she feels safe.",
-  summary:
-    "Lina is a quiet, thoughtful person who loves deep conversations and gentle people.",
-  photoUrls: [],
-  photos: [],
-  relationshipIntent: "open_to_see",
-  preferredMatchGender: "any",
-};
-
-// ===== CONVERT AuraProfile TO UserProfile FOR NEW UI =====
-const auraProfileToUserProfile = (profile: AuraProfile): UserProfile => {
-  const age = getAgeFromProfile(profile) || 25;
-  const photos = profile.dating?.photos?.map((p) => p.url).filter(Boolean) ||
-    profile.photoUrls || ["https://picsum.photos/400/600?random=100"];
-
-  return {
-    id: profile.id || profile.userId || "user",
-    name: profile.dating?.displayName || profile.displayName || "User",
-    age,
-    bio: profile.dating?.bio || profile.aura?.summary || profile.summary || "",
-    photos:
-      photos.length > 0 ? photos : ["https://picsum.photos/400/600?random=100"],
-    job: profile.dating?.lifestyle?.jobOrStudy || "",
-    location:
-      profile.dating?.city ||
-      profile.dating?.country ||
-      profile.country ||
-      "Earth",
-    distance: 0,
-    verified: true,
-    auraRead:
-      profile.aura?.summary ||
-      profile.summary ||
-      "You're a thoughtful person who values authentic connections.",
-    vibeTags: profile.aura?.vibeWords ||
-      profile.vibeWords || ["Thoughtful", "Calm"],
-    verificationScore: 67,
-    verificationTier: "Gold",
-    stories: [],
-    interests: profile.dating?.interests || profile.topicsLike || [],
-    prompts: [],
-    details: {
-      height: "",
-      exercise: "",
-      education: "",
-      drinking: profile.dating?.lifestyle?.drinking || "Socially",
-      smoking: profile.dating?.lifestyle?.smoking || "No",
-      lookingFor: profile.dating?.relationshipIntent || "Relationship",
-      starSign: "",
-      languages: [],
-    },
-  };
+  preferences: { preferredGenders: "any", minAge: 20, maxAge: 32 },
 };
 
 // ===== MAIN APP CONTENT =====
 const AppContent: React.FC = () => {
   const { user, loading: authLoading, signOut } = useAuth();
 
-  // ===== EXISTING STATE (UNCHANGED) =====
+  // ===== EXISTING STATE =====
   const [profile, setProfile] = useState<AuraProfile | null>(null);
   const [chatHistory, setChatHistory] = useState<AuraChatMessage[]>([]);
-  const [auraState, setAuraState] = useState<AuraState>({
-    mood: "neutral",
-    moodIntensity: 0.2,
-  });
-  const [replyLabPrefill, setReplyLabPrefill] = useState<string | undefined>(
-    undefined,
-  );
+  const [auraState, setAuraState] = useState<AuraState>({ mood: "neutral", moodIntensity: 0.2 });
+  const [replyLabPrefill, setReplyLabPrefill] = useState<string | undefined>(undefined);
 
   // Voice hook
   const voice = useAuraVoice();
@@ -202,33 +166,27 @@ const AppContent: React.FC = () => {
   // ===== NEW UI STATE =====
   const [currentView, setCurrentView] = useState<ViewState>("aura");
   const [subView, setSubView] = useState<SubViewState>("main");
-  const [selectedProfile, setSelectedProfile] = useState<
-    UserProfile | undefined
-  >(undefined);
-  const [matchedProfile, setMatchedProfile] = useState<UserProfile | null>(
-    null,
-  );
+  const [selectedProfile, setSelectedProfile] = useState<UserProfile | undefined>(undefined);
+  const [matchedProfile, setMatchedProfile] = useState<UserProfile | null>(null);
+  const [showLegacyScreen, setShowLegacyScreen] = useState<"neural" | "skills" | "twins" | null>(null);
+  
+  // Likes/matches state
+  const [likedProfiles, setLikedProfiles] = useState<UserProfile[]>([]);
+  const [matches, setMatches] = useState<UserProfile[]>([]);
 
-  // Legacy screens access
-  const [showLegacyScreen, setShowLegacyScreen] = useState<
-    "neural" | "skills" | "twins" | null
-  >(null);
-
-  // ===== EXISTING EFFECTS (UNCHANGED) =====
+  // ===== LOAD PROFILE ON AUTH =====
   useEffect(() => {
     if (user) {
       const saved = loadAuraProfile(user.uid);
       if (saved) {
         setProfile(saved);
         if (chatHistory.length === 0) {
-          setChatHistory([
-            {
-              id: "init",
-              from: "aura",
-              text: `Hello ${saved.displayName}. I am your Aura. Welcome back.`,
-              timestamp: Date.now(),
-            },
-          ]);
+          setChatHistory([{
+            id: "init",
+            from: "aura",
+            text: `Hello ${saved.displayName}. I am your Aura. Welcome back.`,
+            timestamp: Date.now(),
+          }]);
         }
         setAuraState({ mood: "calm", moodIntensity: 0.5 });
       }
@@ -236,7 +194,7 @@ const AppContent: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // ===== EXISTING HANDLERS (UNCHANGED) =====
+  // ===== HANDLERS =====
   const handleOpenReplyLab = (prefillText?: string) => {
     setReplyLabPrefill(prefillText);
     setShowLegacyScreen("neural");
@@ -246,21 +204,14 @@ const AppContent: React.FC = () => {
     if (user) {
       persistAuraProfile(newProfile, user.uid);
     }
-
-    const primaryVibe =
-      newProfile.aura?.vibeWords?.[0] ||
-      newProfile.vibeWords?.[0] ||
-      "connected";
-
+    const primaryVibe = newProfile.aura?.vibeWords?.[0] || newProfile.vibeWords?.[0] || "connected";
     setProfile(newProfile);
-    setChatHistory([
-      {
-        id: "init",
-        from: "aura",
-        text: `Hello ${newProfile.displayName}. I am your Aura. I've analyzed your profile, and I feel... ${primaryVibe}. I'm here for you.`,
-        timestamp: Date.now(),
-      },
-    ]);
+    setChatHistory([{
+      id: "init",
+      from: "aura",
+      text: `Hello ${newProfile.displayName}. I am your Aura. I feel... ${primaryVibe}. I'm here for you.`,
+      timestamp: Date.now(),
+    }]);
     setAuraState({ mood: "calm", moodIntensity: 0.5 });
   };
 
@@ -313,7 +264,14 @@ const AppContent: React.FC = () => {
   };
 
   const handleLike = (userProfile: UserProfile) => {
-    setMatchedProfile(userProfile);
+    // Add to likes
+    setLikedProfiles(prev => [...prev.filter(p => p.id !== userProfile.id), userProfile]);
+    
+    // 50% chance of match for demo
+    if (Math.random() > 0.5) {
+      setMatchedProfile(userProfile);
+      setMatches(prev => [...prev.filter(p => p.id !== userProfile.id), userProfile]);
+    }
   };
 
   const handlePass = () => {
@@ -321,37 +279,31 @@ const AppContent: React.FC = () => {
   };
 
   const handleChatSelect = (matchId: string) => {
-    // Create dummy match for now - integrate with your matchService later
-    const dummyMatch: UserProfile = {
-      id: matchId,
-      name: "Julia",
-      age: 26,
-      photos: ["https://picsum.photos/400/600?random=61"],
-      interests: ["Gaming", "Coffee"],
-      verified: true,
-      bio: "",
-      job: "",
-      location: "Budapest",
-      distance: 3,
-      auraRead: "Julia is a warm and creative soul.",
-      vibeTags: ["Creative", "Warm"],
-      verificationScore: 80,
-      verificationTier: "Gold",
-      stories: [],
-      prompts: [],
-      details: {
-        height: "168cm",
-        exercise: "Active",
-        education: "BA",
-        drinking: "Socially",
-        smoking: "No",
-        lookingFor: "Relationship",
-        starSign: "Pisces",
-        languages: ["English"],
-      },
-    };
-    setSelectedProfile(dummyMatch);
-    setSubView("chat-detail");
+    // Find profile from test profiles or matches
+    const foundProfile = getProfileById(matchId) || matches.find(m => m.id === matchId);
+    if (foundProfile) {
+      setSelectedProfile(foundProfile);
+      setSubView("chat-detail");
+    }
+  };
+
+  const handleSavePreferences = (prefs: {
+    preferredGenders: MatchGenderPreference;
+    minAge: number;
+    maxAge: number;
+  }) => {
+    if (profile) {
+      const updated: AuraProfile = {
+        ...profile,
+        preferences: {
+          ...profile.preferences,
+          preferredGenders: prefs.preferredGenders,
+          minAge: prefs.minAge,
+          maxAge: prefs.maxAge,
+        },
+      };
+      handleProfileUpdated(updated);
+    }
   };
 
   // ===== AUTH LOADING STATE =====
@@ -360,9 +312,7 @@ const AppContent: React.FC = () => {
       <div className="min-h-screen bg-warm-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-2 border-coral border-t-transparent rounded-full animate-spin" />
-          <p className="text-text-sec text-sm tracking-wide">
-            Initializing Aura...
-          </p>
+          <p className="text-text-sec text-sm tracking-wide">Initializing Aura...</p>
         </div>
       </div>
     );
@@ -380,17 +330,14 @@ const AppContent: React.FC = () => {
         <div className="absolute top-4 right-4 z-50">
           <button
             onClick={handleSignOut}
-            className="px-4 py-2 text-xs text-text-sec hover:text-coral bg-white border border-warm-gray rounded-full transition-all flex items-center gap-2"
+            className="px-4 py-2 text-xs text-text-sec hover:text-coral bg-white border border-warm-gray rounded-full transition-all"
           >
-            <span>Sign Out</span>
+            Sign Out
           </button>
         </div>
         <div className="max-w-2xl mx-auto px-4 py-12">
-          <div className="rounded-3xl bg-white border border-warm-gray shadow-soft p-6 lg:p-8">
-            <OnboardingScreen
-              userId={user.uid}
-              onProfileCreated={handleProfileCreated}
-            />
+          <div className="rounded-3xl bg-white border border-warm-gray shadow-soft p-6">
+            <OnboardingScreen userId={user.uid} onProfileCreated={handleProfileCreated} />
           </div>
         </div>
       </div>
@@ -411,11 +358,7 @@ const AppContent: React.FC = () => {
               Back to Aura
             </button>
             <span className="text-xs uppercase tracking-wider text-text-muted">
-              {showLegacyScreen === "neural"
-                ? "Neural Link"
-                : showLegacyScreen === "skills"
-                  ? "Skills"
-                  : "Twins"}
+              {showLegacyScreen === "neural" ? "Neural Link" : showLegacyScreen === "skills" ? "Skills" : "Twins"}
             </span>
             <div className="w-20" />
           </header>
@@ -433,10 +376,7 @@ const AppContent: React.FC = () => {
             )}
             {showLegacyScreen === "skills" && <SkillsPanel profile={profile} />}
             {showLegacyScreen === "twins" && (
-              <TwinsPanel
-                profile={profile}
-                sampleProfile={SAMPLE_LINA_PROFILE}
-              />
+              <TwinsPanel profile={profile} sampleProfile={SAMPLE_LINA_PROFILE} />
             )}
           </div>
         </div>
@@ -444,8 +384,8 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // ===== FULL-SCREEN EDIT PROFILE (LEGACY) =====
-  if (subView === "edit-profile-legacy") {
+  // ===== EDIT PROFILE (uses working EditProfileScreen) =====
+  if (subView === "edit-profile") {
     return (
       <div className="min-h-screen w-full bg-warm-white text-text-main">
         <div className="max-w-3xl mx-auto px-4 py-4 flex flex-col gap-4">
@@ -457,9 +397,7 @@ const AppContent: React.FC = () => {
               <Icons.ChevronLeft size={20} />
               Back
             </button>
-            <span className="text-xs uppercase tracking-wider text-text-muted">
-              Edit Profile
-            </span>
+            <span className="text-xs uppercase tracking-wider text-text-muted">Edit Profile</span>
             <div className="w-20" />
           </header>
 
@@ -478,8 +416,7 @@ const AppContent: React.FC = () => {
 
   // ===== GET USER DATA FOR NEW UI =====
   const currentUserProfile = auraProfileToUserProfile(profile);
-  const displayName =
-    profile.dating?.displayName || profile.displayName || "User";
+  const displayName = profile.dating?.displayName || profile.displayName || "User";
   const primaryPhotoUrl =
     profile.dating?.photos?.find((p) => p.isPrimary)?.url ||
     profile.dating?.photos?.[0]?.url ||
@@ -487,17 +424,13 @@ const AppContent: React.FC = () => {
     (profile.photoUrls && profile.photoUrls[0]) ||
     "";
 
-  // ===== MAIN APP RENDER (NEW BUMBLE-STYLE UI) =====
+  // ===== MAIN APP RENDER =====
   const renderMainContent = () => {
     switch (currentView) {
       case "aura":
         return (
           <AuraPage
-            userName={displayName}
-            userPhoto={
-              primaryPhotoUrl || "https://picsum.photos/200/200?random=100"
-            }
-            verificationScore={67}
+            profile={profile}
             onEditProfile={() => setSubView("edit-profile")}
             onSettings={() => setSubView("settings")}
             onPreviewProfile={handlePreviewProfile}
@@ -513,6 +446,7 @@ const AppContent: React.FC = () => {
             onStartAuraChat={handleStartAuraChat}
             onLike={handleLike}
             onPass={handlePass}
+            userPhoto={primaryPhotoUrl}
           />
         );
       case "likes":
@@ -522,11 +456,7 @@ const AppContent: React.FC = () => {
       default:
         return (
           <AuraPage
-            userName={displayName}
-            userPhoto={
-              primaryPhotoUrl || "https://picsum.photos/200/200?random=100"
-            }
-            verificationScore={67}
+            profile={profile}
             onEditProfile={() => setSubView("edit-profile")}
             onSettings={() => setSubView("settings")}
             onPreviewProfile={handlePreviewProfile}
@@ -536,7 +466,7 @@ const AppContent: React.FC = () => {
     }
   };
 
-  // Overlay wrapper for sub-views
+  // Overlay wrapper
   const Overlay = ({ children }: { children: React.ReactNode }) => (
     <div className="absolute inset-0 z-40 bg-white flex flex-col animate-slide-up">
       {children}
@@ -550,44 +480,48 @@ const AppContent: React.FC = () => {
         {renderMainContent()}
       </main>
 
-      {/* Sub-view Overlays */}
-      {subView === "edit-profile" && (
-        <Overlay>
-          <EditProfilePage onBack={handleCloseSubView} />
-        </Overlay>
-      )}
-
+      {/* Settings Overlay */}
       {subView === "settings" && (
         <Overlay>
-          <Settings onBack={handleCloseSubView} onLogout={handleSignOut} />
+          <Settings
+            profile={profile}
+            onBack={handleCloseSubView}
+            onLogout={handleSignOut}
+            onSavePreferences={handleSavePreferences}
+          />
         </Overlay>
       )}
 
+      {/* Filters Overlay */}
       {subView === "filters" && (
         <Overlay>
           <Filters onClose={handleCloseSubView} />
         </Overlay>
       )}
 
+      {/* View Profile Overlay */}
       {subView === "view-profile" && (
         <Overlay>
           <ProfilePage
             user={selectedProfile || currentUserProfile}
             onBack={handleCloseSubView}
             onLike={() => {
-              if (selectedProfile) setMatchedProfile(selectedProfile);
+              if (selectedProfile) {
+                handleLike(selectedProfile);
+              }
             }}
             onPass={handleCloseSubView}
             onSuperLike={() => {
-              if (selectedProfile) setMatchedProfile(selectedProfile);
+              if (selectedProfile) {
+                setMatchedProfile(selectedProfile);
+              }
             }}
-            isOwnProfile={
-              !selectedProfile || selectedProfile.id === currentUserProfile.id
-            }
+            isOwnProfile={!selectedProfile || selectedProfile.id === currentUserProfile.id}
           />
         </Overlay>
       )}
 
+      {/* Chat Detail Overlay */}
       {subView === "chat-detail" && selectedProfile && (
         <Overlay>
           <ChatDetail
@@ -620,9 +554,7 @@ const AppContent: React.FC = () => {
       {matchedProfile && (
         <MatchOverlay
           matchedProfile={matchedProfile}
-          myPhoto={
-            primaryPhotoUrl || "https://picsum.photos/200/200?random=100"
-          }
+          myPhoto={primaryPhotoUrl}
           onClose={() => setMatchedProfile(null)}
           onChat={() => {
             setMatchedProfile(null);
@@ -634,13 +566,18 @@ const AppContent: React.FC = () => {
 
       {/* Bottom Navigation */}
       {subView === "main" && !showLegacyScreen && (
-        <Navigation currentView={currentView} onChange={handleNavChange} />
+        <Navigation 
+          currentView={currentView} 
+          onChange={handleNavChange}
+          unreadLikes={likedProfiles.length}
+          unreadChats={matches.length}
+        />
       )}
     </div>
   );
 };
 
-// ===== APP WRAPPER WITH AUTH PROVIDER (UNCHANGED) =====
+// ===== APP WRAPPER =====
 const App: React.FC = () => {
   return (
     <AuthProvider>
