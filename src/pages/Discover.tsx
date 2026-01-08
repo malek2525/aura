@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Icons } from '../components/Icons';
 import { UserProfile } from '../types';
-import { TEST_PROFILES } from '../data/testProfiles';
+import { fetchDiscoverProfiles, likeProfile, PublicProfileSummary } from '../services/matchService';
 
 interface DiscoverProps {
   onOpenFilters: () => void;
   onViewProfile: (profile: UserProfile) => void;
   onViewStory: (profile: UserProfile) => void;
   onStartAuraChat: (profile: UserProfile) => void;
-  onLike: (profile: UserProfile) => void;
+  onLike: () => void;
   onPass: () => void;
-  userPhoto?: string;
 }
 
 export const Discover: React.FC<DiscoverProps> = ({ 
@@ -19,268 +19,165 @@ export const Discover: React.FC<DiscoverProps> = ({
   onViewStory, 
   onStartAuraChat,
   onLike,
-  onPass,
-  userPhoto 
+  onPass 
 }) => {
+  const [profiles, setProfiles] = useState<PublicProfileSummary[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [mode, setMode] = useState<'stack' | 'picks'>('stack');
-  const [passedIds, setPassedIds] = useState<Set<string>>(new Set());
-  
-  // Filter out passed profiles
-  const availableProfiles = TEST_PROFILES.filter(p => !passedIds.has(p.id));
-  const currentProfile = availableProfiles[currentIndex % Math.max(availableProfiles.length, 1)];
+  const [loading, setLoading] = useState(true);
 
-  const handleAction = (action: 'pass' | 'like') => {
+  useEffect(() => {
+    const load = async () => {
+       const data = await fetchDiscoverProfiles("me");
+       setProfiles(data);
+       setLoading(false);
+    };
+    load();
+  }, []);
+
+  const currentProfileData = profiles[currentIndex % profiles.length];
+  // Cast AuraProfile to UserProfile for UI compatibility
+  const currentProfile = currentProfileData?.auraProfile as UserProfile;
+
+  const handleAction = async (action: 'pass' | 'like') => {
     if (!currentProfile) return;
     
     if (action === 'like') {
-      onLike(currentProfile);
+      await likeProfile("me", currentProfile.id);
+      onLike();
     } else {
       onPass();
     }
     
-    // Move to next profile
-    if (action === 'pass') {
-      setPassedIds(prev => new Set([...prev, currentProfile.id]));
-    }
-    setCurrentIndex(prev => prev + 1);
+    // Simple loop for demo
+    setCurrentIndex(prev => (prev + 1) % profiles.length);
   };
 
-  // No more profiles
-  if (!currentProfile || availableProfiles.length === 0) {
+  if (loading || !currentProfile) {
     return (
-      <div className="h-full flex flex-col items-center justify-center bg-white p-8 text-center">
-        <div className="w-20 h-20 bg-coral-light rounded-full flex items-center justify-center mb-4">
-          <Icons.Heart size={40} className="text-coral" />
-        </div>
-        <h2 className="text-xl font-bold text-text-main mb-2">No more profiles</h2>
-        <p className="text-text-sec text-sm mb-6">Check back later or adjust your preferences</p>
-        <button 
-          onClick={onOpenFilters}
-          className="px-6 py-3 bg-coral text-white rounded-full font-semibold"
-        >
-          Update Preferences
-        </button>
+      <div className="h-full flex items-center justify-center bg-warm-white">
+         <Icons.Loader2 className="animate-spin text-coral" size={32} />
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col bg-white overflow-hidden">
+    <div className="h-full flex flex-col bg-warm-white overflow-hidden">
       
       {/* Top Bar */}
-      <div className="pt-4 pb-2 px-4 flex items-center justify-between bg-white z-30">
-        <h1 className="text-2xl font-bold text-coral flex items-center gap-1">
-          <Icons.Sparkles size={20} className="fill-coral" /> Aura
-        </h1>
-        
-        {/* Toggle Switch */}
-        <div className="flex bg-warm-gray/50 p-1 rounded-full">
-          <button 
-            onClick={() => setMode('stack')}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-              mode === 'stack' ? 'bg-white shadow-sm text-text-main' : 'text-text-sec'
-            }`}
-          >
-            Discover
-          </button>
-          <button 
-            onClick={() => setMode('picks')}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-              mode === 'picks' ? 'bg-white shadow-sm text-text-main' : 'text-text-sec'
-            }`}
-          >
-            Today's Picks
-          </button>
+      <div className="pt-6 pb-2 px-6 flex items-center justify-between z-30">
+        <div className="flex flex-col">
+           <h1 className="text-2xl font-extrabold text-text-main">Discover</h1>
+           <p className="text-xs text-text-sec font-medium flex items-center gap-1">
+             <Icons.MapPin size={10} /> {currentProfile.location || "Nearby"}
+           </p>
         </div>
-
         <button 
           onClick={onOpenFilters}
-          className="p-2 bg-warm-white rounded-full text-text-main hover:bg-warm-gray transition-colors border border-warm-gray"
+          className="p-3 bg-white rounded-2xl text-text-main hover:text-coral shadow-sm border border-warm-gray transition-colors"
         >
           <Icons.SlidersHorizontal size={20} />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar">
-        
-        {mode === 'picks' ? (
-          /* Today's Picks Mode */
-          <div className="p-4 pb-24 space-y-6 animate-slide-in">
-            <div className="text-center mb-4">
-              <h2 className="text-xl font-bold text-text-main">Curated for you</h2>
-              <p className="text-sm text-text-sec">Based on your shared interests</p>
-            </div>
+      {/* Main Discover Stack */}
+      <div className="flex-1 px-4 pb-28 flex flex-col relative">
+          <div className="flex-1 relative mt-4">
             
-            <div className="grid grid-cols-2 gap-4">
-              {availableProfiles.map((profile) => (
-                <div 
-                  key={profile.id} 
-                  onClick={() => onViewProfile(profile)}
-                  className="aspect-[3/4] rounded-2xl relative overflow-hidden shadow-md cursor-pointer group"
-                >
-                  <img 
-                    src={profile.photos[0]} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                    alt={profile.name}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                  <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-md p-1.5 rounded-full">
-                    <Icons.Heart className="text-white w-4 h-4" />
-                  </div>
-                  <div className="absolute bottom-3 left-3 text-white">
-                    <div className="flex items-center gap-1 mb-1 bg-gold/90 text-black px-2 py-0.5 rounded-md w-fit">
-                      <Icons.Sparkles size={10} />
-                      <span className="text-[10px] font-bold uppercase">{profile.vibeTags[0]}</span>
-                    </div>
-                    <h3 className="font-bold text-lg">{profile.name}, {profile.age}</h3>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          /* Stack/Swipe Mode */
-          <div className="animate-slide-in">
-            {/* Stories Rail */}
-            <div className="px-4 mb-4">
-              <div className="flex gap-4 overflow-x-auto no-scrollbar py-2">
-                {/* Add Story (User) */}
-                <div className="flex flex-col items-center gap-1 min-w-[70px]">
-                  <div className="w-[68px] h-[68px] rounded-full border-2 border-dashed border-text-muted flex items-center justify-center relative cursor-pointer hover:bg-warm-white overflow-hidden">
-                    {userPhoto ? (
-                      <img src={userPhoto} className="w-full h-full object-cover" alt="You" />
-                    ) : (
-                      <Icons.Plus className="text-coral" size={24} />
-                    )}
-                  </div>
-                  <span className="text-xs font-medium text-text-sec">You</span>
-                </div>
+            {/* Background Card */}
+            <div className="absolute inset-x-4 top-4 bottom-0 bg-white rounded-[32px] border border-warm-gray shadow-sm transform scale-95 translate-y-2 opacity-60 z-0"></div>
 
-                {/* User Stories */}
-                {TEST_PROFILES.filter(p => p.stories && p.stories.length > 0).map((p) => (
-                  <div 
-                    key={p.id} 
-                    className="flex flex-col items-center gap-1 min-w-[70px] cursor-pointer" 
-                    onClick={() => onViewStory(p)}
-                  >
-                    <div className={`w-[68px] h-[68px] rounded-full p-[2px] ${p.stories[0]?.isViewed ? 'bg-gray-300' : 'bg-gradient-to-tr from-coral to-gold'} hover:scale-105 transition-transform`}>
-                      <div className="w-full h-full rounded-full border-2 border-white overflow-hidden">
-                        <img src={p.photos[0]} className="w-full h-full object-cover" alt={p.name} />
-                      </div>
-                    </div>
-                    <span className="text-xs font-medium text-text-main">{p.name}</span>
-                  </div>
-                ))}
+            {/* Active Card */}
+            <div 
+              onClick={() => onViewProfile(currentProfile)}
+              className="absolute inset-0 bg-white rounded-[36px] overflow-hidden shadow-float border border-warm-gray cursor-pointer z-10 group"
+            >
+              {/* Main Photo */}
+              <img 
+                src={currentProfile.photos[0]} 
+                alt={currentProfile.name} 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              />
+              
+              {/* Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90"></div>
+
+              {/* Compatibility Badge (Dynamic Logic in real app) */}
+              <div className="absolute top-5 left-5 right-5 flex justify-between items-start">
+                 <div className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 flex items-center gap-1.5 shadow-sm">
+                    <div className="w-2 h-2 bg-sage rounded-full animate-pulse"></div>
+                    <span className="text-[10px] font-bold text-white uppercase tracking-wide">
+                        {currentProfile.verificationScore > 70 ? 'High Compatibility' : 'New Match'}
+                    </span>
+                 </div>
               </div>
-            </div>
 
-            {/* Main Card */}
-            <div className="px-4 pb-24">
-              <div 
-                onClick={() => onViewProfile(currentProfile)}
-                className="relative w-full aspect-[3/4] rounded-3xl overflow-hidden shadow-lg border border-warm-gray cursor-pointer group"
-              >
-                <img 
-                  src={currentProfile.photos[0]} 
-                  alt={currentProfile.name} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                
-                {/* Top Badges */}
-                <div className="absolute top-4 left-4 flex gap-2">
-                  <div className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
-                    <span className="text-xs font-bold text-white">New here</span>
-                  </div>
-                </div>
-
-                <div className="absolute top-4 right-4">
-                  {currentProfile.verificationTier !== 'Bronze' && (
-                    <div className="bg-white/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                      <Icons.Star size={12} className="text-gold fill-gold" />
-                      <span className="text-xs font-bold text-text-main">{currentProfile.verificationTier}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Bottom Info */}
-                <div className="absolute bottom-0 left-0 right-0 pt-24 pb-6 px-5 bg-gradient-to-t from-black/90 via-black/50 to-transparent text-white">
-                  
-                  <div className="flex items-end justify-between mb-2">
+              {/* Bottom Elements */}
+              <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                 <div className="flex items-end justify-between mb-4">
                     <div>
-                      <h2 className="text-3xl font-bold flex items-center gap-2">
-                        {currentProfile.name}, {currentProfile.age} 
-                        {currentProfile.verified && <Icons.ShieldCheck className="text-success fill-success/20" size={24} />}
-                      </h2>
-                      <div className="flex items-center gap-2 text-white/80 text-sm">
-                        <Icons.MapPin size={14} />
-                        <span>{currentProfile.location} • {currentProfile.distance}km</span>
-                      </div>
+                        <h2 className="text-3xl font-extrabold tracking-tight mb-1 shadow-black/10 drop-shadow-lg">
+                          {currentProfile.name}, {currentProfile.age} 
+                        </h2>
+                        <div className="flex items-center gap-2 text-white/90 text-sm font-medium">
+                          <Icons.Briefcase size={14} className="text-coral" />
+                          <span>{currentProfile.job}</span>
+                        </div>
                     </div>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); onViewProfile(currentProfile); }} 
-                      className="p-2 bg-white/20 rounded-full hover:bg-white/30 backdrop-blur-md"
-                    >
-                      <Icons.ChevronRight className="text-white" />
+                    <button onClick={(e) => { e.stopPropagation(); onViewProfile(currentProfile); }} className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 backdrop-blur-md transition-colors border border-white/30">
+                      <Icons.ChevronRight className="text-white" size={20} />
                     </button>
-                  </div>
+                 </div>
 
-                  {/* Aura Read */}
-                  <div className="bg-white/10 backdrop-blur-md border border-white/10 p-3 rounded-xl mb-3">
-                    <div className="flex items-center gap-1.5 mb-1 text-gold">
-                      <Icons.Sparkles size={12} className="fill-gold" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider">Aura says</span>
+                 {/* Aura Read Pill */}
+                 <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-4 rounded-2xl mb-4 shadow-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Icons.Sparkles size={14} className="text-gold" />
+                      <span className="text-[10px] font-bold text-gold uppercase tracking-widest">Aura Insight</span>
                     </div>
-                    <p className="text-sm text-white/90 leading-snug line-clamp-2 italic">
-                      "{currentProfile.auraRead}"
+                    <p className="text-sm text-white/95 leading-relaxed font-medium line-clamp-2">
+                      "{currentProfile.summary || currentProfile.bio}"
                     </p>
-                  </div>
+                 </div>
 
-                  {/* Interests */}
-                  <div className="flex flex-wrap gap-2">
+                 {/* Tags */}
+                 <div className="flex flex-wrap gap-2">
                     {currentProfile.interests.slice(0, 3).map((tag, i) => (
-                      <span 
-                        key={i} 
-                        className="px-3 py-1 bg-black/40 backdrop-blur-md rounded-full text-xs font-medium border border-white/10"
-                      >
+                      <span key={i} className="px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-full text-xs font-bold border border-white/10">
                         {tag}
                       </span>
                     ))}
                   </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-center items-center gap-6 mt-6">
-                <button 
-                  onClick={(e) => { e.stopPropagation(); handleAction('pass'); }}
-                  className="w-16 h-16 rounded-full bg-white shadow-xl flex items-center justify-center text-text-muted border border-warm-gray hover:text-coral hover:border-coral transition-all hover:scale-105 active:scale-95"
-                >
-                  <Icons.X size={32} strokeWidth={2.5} />
-                </button>
-                
-                {/* Aura Chat Button */}
-                <button 
-                  onClick={(e) => { e.stopPropagation(); onStartAuraChat(currentProfile); }}
-                  className="h-12 px-6 rounded-full bg-gradient-to-r from-coral-light to-white shadow-lg border border-coral/20 flex items-center gap-2 text-coral font-bold text-sm hover:scale-105 transition-transform active:scale-95"
-                >
-                  <Icons.Sparkles size={18} className="animate-pulse" />
-                  Let Auras Chat
-                </button>
-
-                <button 
-                  onClick={(e) => { e.stopPropagation(); handleAction('like'); }}
-                  className="w-16 h-16 rounded-full bg-coral shadow-xl shadow-coral/30 flex items-center justify-center text-white hover:scale-105 transition-transform hover:bg-coral-dark active:scale-95"
-                >
-                  <Icons.Heart size={32} fill="currentColor" strokeWidth={0} />
-                </button>
               </div>
             </div>
           </div>
-        )}
+
+          {/* Action Buttons */}
+          <div className="h-24 flex items-center justify-center gap-6 mt-4 z-20">
+             <button 
+               onClick={(e) => { e.stopPropagation(); handleAction('pass'); }}
+               className="w-16 h-16 rounded-full bg-warm-white border border-warm-gray text-text-muted flex items-center justify-center hover:bg-red-50 hover:border-red-100 hover:text-red-400 transition-all active:scale-95 shadow-sm"
+             >
+               <Icons.X size={28} strokeWidth={2.5} />
+             </button>
+             
+             {/* Center Primary Action - Aura Chat */}
+             <button 
+                onClick={(e) => { e.stopPropagation(); onStartAuraChat(currentProfile); }}
+                className="h-14 px-8 bg-text-main rounded-full flex items-center gap-2 text-white font-bold shadow-lg shadow-black/10 hover:bg-black transition-all active:scale-95 border border-white/10"
+             >
+                <Icons.Sparkles size={18} className="text-coral" />
+                <span className="text-sm">Aura Chat</span>
+             </button>
+
+             <button 
+               onClick={(e) => { e.stopPropagation(); handleAction('like'); }}
+               className="w-16 h-16 rounded-full bg-coral text-white flex items-center justify-center shadow-lg shadow-coral/30 hover:bg-coral-dark transition-all active:scale-95 border-4 border-coral-light"
+             >
+               <Icons.Heart size={28} fill="currentColor" />
+             </button>
+          </div>
+
       </div>
     </div>
   );
 };
-
-export default Discover;

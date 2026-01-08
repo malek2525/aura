@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import {
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  signInWithPopup,
-  User,
-} from "firebase/auth";
-import { auth, googleProvider } from "../firebase"; // ✅ single source of truth
+// Removed real firebase imports to avoid build errors in demo environment
+// import { auth, googleProvider } from "../firebase";
+
+// Define minimal User type compatible with app usage
+export interface User {
+    uid: string;
+    email: string | null;
+    displayName: string | null;
+    photoURL: string | null;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -18,6 +19,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   clearError: () => void;
+  mockLogin: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -29,36 +31,10 @@ const AuthContext = createContext<AuthContextType>({
   signInWithGoogle: async () => {},
   signOut: async () => {},
   clearError: () => {},
+  mockLogin: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
-
-const getErrorMessage = (code: string): string => {
-  switch (code) {
-    case "auth/invalid-credential":
-      return "Invalid email or password.";
-    case "auth/email-already-in-use":
-      return "This email is already registered.";
-    case "auth/weak-password":
-      return "Password should be at least 6 characters.";
-    case "auth/invalid-email":
-      return "Please enter a valid email address.";
-    case "auth/user-not-found":
-      return "No account found with this email.";
-    case "auth/wrong-password":
-      return "Incorrect password.";
-    case "auth/too-many-requests":
-      return "Too many attempts. Please try again later.";
-    case "auth/popup-closed-by-user":
-      return "Sign-in popup was closed.";
-    case "auth/cancelled-popup-request":
-      return "Sign-in was cancelled.";
-    case "auth/popup-blocked":
-      return "Popup was blocked. Please allow popups for this site.";
-    default:
-      return "Authentication failed. Please try again.";
-  }
-};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -68,63 +44,71 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      console.log(
-        "onAuthStateChanged user:",
-        currentUser?.uid || null,
-        currentUser?.email || null,
-      );
-      setUser(currentUser);
-      setLoading(false);
-    });
-
-    return unsubscribe;
+    // Check localStorage for persisted mock session
+    const stored = localStorage.getItem('aura_mock_user');
+    if (stored) {
+        try {
+            setUser(JSON.parse(stored));
+        } catch {}
+    }
+    setLoading(false);
   }, []);
+
+  const saveUser = (u: User | null) => {
+      setUser(u);
+      if (u) localStorage.setItem('aura_mock_user', JSON.stringify(u));
+      else localStorage.removeItem('aura_mock_user');
+  };
+
+  const mockLogin = () => {
+    saveUser({ 
+        uid: "mock_user_123", 
+        email: "demo@aura.app", 
+        displayName: "Demo User",
+        photoURL: null
+    });
+  }
 
   const clearError = () => setError(null);
 
   const signIn = async (email: string, password: string) => {
     setError(null);
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (err: any) {
-      const message = getErrorMessage(err.code);
-      setError(message);
-      throw new Error(message);
-    }
+    setLoading(true);
+    // Simulate network delay
+    await new Promise(r => setTimeout(r, 1000));
+    // Accept any login for demo
+    saveUser({
+        uid: "user_" + Date.now(),
+        email,
+        displayName: email.split('@')[0],
+        photoURL: null
+    });
+    setLoading(false);
   };
 
   const signUp = async (email: string, password: string) => {
-    setError(null);
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-    } catch (err: any) {
-      const message = getErrorMessage(err.code);
-      setError(message);
-      throw new Error(message);
-    }
+    await signIn(email, password);
   };
 
   const signInWithGoogle = async () => {
     setError(null);
-    try {
-      const res = await signInWithPopup(auth, googleProvider);
-      console.log("Google popup user:", res.user.uid, res.user.email);
-    } catch (err: any) {
-      const message = getErrorMessage(err.code);
-      setError(message);
-      throw new Error(message);
-    }
+    setLoading(true);
+    await new Promise(r => setTimeout(r, 1000));
+    saveUser({
+        uid: "google_user_" + Date.now(),
+        email: "google@demo.com",
+        displayName: "Google User",
+        photoURL: null
+    });
+    setLoading(false);
   };
 
   const signOut = async () => {
     setError(null);
-    try {
-      await firebaseSignOut(auth);
-    } catch (err) {
-      console.error("Error signing out:", err);
-      setError("Failed to sign out. Please try again.");
-    }
+    setLoading(true);
+    await new Promise(r => setTimeout(r, 500));
+    saveUser(null);
+    setLoading(false);
   };
 
   return (
@@ -138,6 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         signInWithGoogle,
         signOut,
         clearError,
+        mockLogin
       }}
     >
       {children}

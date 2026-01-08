@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Icons } from '../components/Icons';
-import { UserProfile, createEmptyUserProfile } from '../types';
+import { UserProfile } from '../types';
 
 interface ProfileProps {
   user?: UserProfile;
@@ -8,296 +8,196 @@ interface ProfileProps {
   onLike?: () => void;
   onPass?: () => void;
   onSuperLike?: () => void;
-  isOwnProfile?: boolean;
 }
 
+const MOCK_SELF_PREVIEW: UserProfile = {
+    id: 'me',
+    name: 'Abdulmalek',
+    age: 28,
+    bio: "Big fan of football, travel, and a good cup of coffee. Let's find the best brunch spot in the city.",
+    job: 'Founder',
+    location: 'Budapest',
+    distance: 0,
+    verified: true,
+    photos: ['https://picsum.photos/400/600?random=100', 'https://picsum.photos/400/600?random=101'],
+    auraRead: "You're a thoughtful introvert who values authentic connections over small talk.",
+    vibeTags: ['Thoughtful', 'Calm', 'Creative'],
+    verificationScore: 82,
+    verificationTier: 'Gold',
+    stories: [],
+    interests: ['Gym', 'Design', 'Travel'],
+    prompts: [{ question: "The quickest way to my heart is...", answer: "Remembering the small things I mention." }],
+    details: { height: '185cm', exercise: 'Active', education: 'Masters', drinking: 'Socially', smoking: 'No', lookingFor: 'Relationship', starSign: 'Leo', languages: ['English', 'Hungarian'] }
+};
+
 export const Profile: React.FC<ProfileProps> = ({ 
-  user, 
+  user = MOCK_SELF_PREVIEW, 
   onBack,
   onLike,
   onPass,
-  onSuperLike,
-  isOwnProfile = false
+  onSuperLike
 }) => {
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-  
-  // Use provided user or empty profile
-  const profile = user || createEmptyUserProfile();
-  
-  // Navigate photos
-  const nextPhoto = () => {
-    if (profile.photos.length > 1) {
-      setCurrentPhotoIndex((prev) => (prev + 1) % profile.photos.length);
-    }
-  };
-  
-  const prevPhoto = () => {
-    if (profile.photos.length > 1) {
-      setCurrentPhotoIndex((prev) => (prev - 1 + profile.photos.length) % profile.photos.length);
-    }
-  };
-
-  // No profile to show
-  if (!user) {
-    return (
-      <div className="h-full bg-white flex flex-col items-center justify-center p-8">
-        <Icons.User size={48} className="text-text-muted mb-4" />
-        <p className="text-text-sec">No profile to display</p>
-        <button onClick={onBack} className="mt-4 text-coral font-medium">Go Back</button>
-      </div>
-    );
-  }
-
   return (
-    <div className="h-full bg-white flex flex-col relative overflow-hidden">
+    <div className="h-full bg-warm-white flex flex-col relative overflow-hidden">
       
-      {/* Header Overlay */}
-      <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-center text-white drop-shadow-md pointer-events-none">
-        <button 
-          onClick={onBack} 
-          className="p-2 bg-black/20 backdrop-blur-md rounded-full hover:bg-black/30 transition-colors pointer-events-auto"
-        >
-          <Icons.ChevronLeft size={24} />
-        </button>
-        <button className="p-2 bg-black/20 backdrop-blur-md rounded-full hover:bg-black/30 transition-colors pointer-events-auto">
-          <Icons.Share size={20} />
-        </button>
+      {/* Navbar overlay */}
+      <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-center pointer-events-none">
+         <button onClick={onBack} className="p-3 bg-white/80 backdrop-blur-md rounded-2xl text-text-main shadow-sm border border-white/50 pointer-events-auto hover:bg-white transition-colors">
+           <Icons.ChevronLeft size={22} />
+         </button>
+         <button className="p-3 bg-white/80 backdrop-blur-md rounded-2xl text-text-main shadow-sm border border-white/50 pointer-events-auto hover:bg-white transition-colors">
+           <Icons.MoreHorizontal size={22} />
+         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar bg-white pb-24">
-        {/* Cover Photo with navigation */}
-        <div className="h-[550px] w-full relative bg-warm-gray">
-          {profile.photos.length > 0 ? (
-            <>
-              <img 
-                src={profile.photos[currentPhotoIndex]} 
-                className="w-full h-full object-cover" 
-                alt={profile.name} 
-              />
-              
-              {/* Photo navigation areas */}
-              {profile.photos.length > 1 && (
-                <>
-                  <div 
-                    className="absolute left-0 top-0 w-1/3 h-full cursor-pointer"
-                    onClick={prevPhoto}
-                  />
-                  <div 
-                    className="absolute right-0 top-0 w-1/3 h-full cursor-pointer"
-                    onClick={nextPhoto}
-                  />
-                  
-                  {/* Photo indicators */}
-                  <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-1">
-                    {profile.photos.map((_, i) => (
-                      <div 
-                        key={i} 
-                        className={`h-1 rounded-full transition-all ${
-                          i === currentPhotoIndex ? 'w-6 bg-white' : 'w-1 bg-white/50'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-            </>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Icons.User size={64} className="text-text-muted" />
-            </div>
-          )}
-          
-          <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-24 text-white">
-            <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-bold">{profile.name}, {profile.age}</h1>
-              {profile.verified && <Icons.ShieldCheck className="text-success fill-success/20" size={24} />}
-            </div>
-            <p className="text-sm text-gray-200 mt-1 flex items-center gap-1">
-              <Icons.MapPin size={14} /> {profile.location} {profile.distance > 0 && `• ${profile.distance} km away`}
-            </p>
-          </div>
+      <div className="flex-1 overflow-y-auto no-scrollbar bg-warm-white pb-28">
+        {/* Main Photo (Cover) */}
+        <div className="h-[500px] w-full relative">
+           <img src={user.photos[0]} className="w-full h-full object-cover" alt={user.name} />
+           <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-warm-white"></div>
         </div>
 
-        <div className="p-6 space-y-8">
-          
-          {/* Aura's Read */}
-          {profile.auraRead && (
-            <section className="bg-gradient-to-br from-coral-light to-warm-white p-5 rounded-2xl border border-coral/20 shadow-sm transform -translate-y-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Icons.Sparkles size={16} className="text-coral" />
-                <h3 className="text-xs font-bold text-coral uppercase tracking-widest">Aura's Read</h3>
-              </div>
-              <p className="text-text-main italic text-lg leading-relaxed mb-4">
-                "{profile.auraRead}"
-              </p>
-              {profile.vibeTags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {profile.vibeTags.map((tag, i) => (
-                    <span 
-                      key={i} 
-                      className="px-3 py-1 bg-white border border-warm-gray rounded-full text-xs text-text-sec font-medium"
-                    >
-                      {tag}
-                    </span>
-                  ))}
+        {/* Content Container - overlapping the image */}
+        <div className="-mt-12 relative px-5">
+            
+            {/* Title Block */}
+            <div className="mb-6">
+                <div className="flex justify-between items-end mb-2">
+                    <h1 className="text-4xl font-extrabold text-text-main tracking-tight">{user.name}, {user.age}</h1>
+                    {user.verified && (
+                        <div className="bg-sage text-white p-1 rounded-full mb-2 border-2 border-white shadow-sm">
+                            <Icons.Check size={14} strokeWidth={3} />
+                        </div>
+                    )}
                 </div>
-              )}
-            </section>
-          )}
-
-          {/* Verification Score */}
-          <section className="bg-white border border-warm-gray p-5 rounded-2xl">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-text-main">Verification Score</h3>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-black text-text-main">{profile.verificationScore}</span>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                  profile.verificationTier === 'Platinum' ? 'bg-purple-100 text-purple-700' :
-                  profile.verificationTier === 'Gold' ? 'bg-gold/20 text-yellow-800' :
-                  profile.verificationTier === 'Silver' ? 'bg-gray-100 text-gray-700' :
-                  'bg-orange-100 text-orange-700'
-                }`}>
-                  {profile.verificationTier}
-                </span>
-              </div>
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm text-text-sec font-medium flex items-center gap-1.5">
+                      <Icons.Briefcase size={14} className="text-coral" /> {user.job}
+                  </p>
+                  <p className="text-sm text-text-sec font-medium flex items-center gap-1.5">
+                      <Icons.MapPin size={14} className="text-coral" /> {user.location} • {user.distance} km away
+                  </p>
+                </div>
             </div>
-            <div className="h-2 w-full bg-warm-gray rounded-full mb-3 overflow-hidden">
-              <div 
-                className={`h-full rounded-full ${
-                  profile.verificationTier === 'Platinum' ? 'bg-purple-500' :
-                  profile.verificationTier === 'Gold' ? 'bg-gold' :
-                  profile.verificationTier === 'Silver' ? 'bg-gray-400' :
-                  'bg-orange-400'
-                }`}
-                style={{ width: `${profile.verificationScore}%` }}
-              />
-            </div>
-            <div className="flex items-center gap-2 text-sm text-text-sec">
-              <Icons.Check size={16} className="text-success" /> Verified photo
-            </div>
-          </section>
 
-          {/* Bio */}
-          {profile.bio && (
-            <section>
-              <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-2">Bio</h3>
-              <p className="text-text-main leading-relaxed text-lg">{profile.bio}</p>
-            </section>
-          )}
+            <div className="space-y-6">
+                
+                {/* Aura Read Card */}
+                <section className="bg-white rounded-[24px] p-6 shadow-sm border border-warm-gray relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-coral-light rounded-bl-[100px] opacity-50"></div>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-3">
+                            <Icons.Sparkles size={16} className="text-coral" />
+                            <h3 className="text-xs font-bold text-coral uppercase tracking-widest">Aura Read</h3>
+                        </div>
+                        <p className="text-text-main font-medium italic text-lg leading-relaxed mb-4">
+                            "{user.auraRead}"
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {user.vibeTags.map((tag, i) => (
+                                <span key={i} className="px-3 py-1 bg-warm-white border border-warm-gray rounded-xl text-xs text-text-main font-bold">
+                                {tag}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                </section>
 
-          {/* Photo 2 */}
-          {profile.photos[1] && (
-            <div className="w-full aspect-[4/5] rounded-3xl overflow-hidden shadow-sm">
-              <img src={profile.photos[1]} className="w-full h-full object-cover" alt="Photo 2" />
-            </div>
-          )}
+                {/* Bio */}
+                <section>
+                    <h3 className="text-sm font-extrabold text-text-muted uppercase tracking-wider mb-2 ml-1">Bio</h3>
+                    <p className="text-text-main text-lg leading-relaxed font-medium">
+                        {user.bio}
+                    </p>
+                </section>
 
-          {/* Interests */}
-          {profile.interests.length > 0 && (
-            <section>
-              <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-3">Interests</h3>
-              <div className="flex flex-wrap gap-2">
-                {profile.interests.map((interest, i) => (
-                  <span 
-                    key={i}
-                    className="px-4 py-2 bg-coral-light text-coral-dark rounded-full text-sm font-medium"
-                  >
-                    {interest}
-                  </span>
+                {/* Essentials Grid */}
+                <section>
+                    <h3 className="text-sm font-extrabold text-text-muted uppercase tracking-wider mb-3 ml-1">Essentials</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                        {[
+                            { icon: Icons.Ruler, val: user.details.height, label: 'Height' },
+                            { icon: Icons.GraduationCap, val: user.details.education, label: 'Education' },
+                            { icon: Icons.Wine, val: user.details.drinking, label: 'Drinking' },
+                            { icon: Icons.Cigarette, val: user.details.smoking, label: 'Smoking' },
+                            { icon: Icons.Search, val: user.details.lookingFor, label: 'Looking for' },
+                            { icon: Icons.Star, val: user.details.starSign, label: 'Sign' },
+                        ].map((item, i) => (
+                            <div key={i} className="flex items-start gap-3 p-4 bg-white rounded-2xl border border-warm-gray">
+                                <item.icon size={18} className="text-coral mt-0.5" />
+                                <div>
+                                    <span className="block text-[10px] text-text-muted font-bold uppercase">{item.label}</span>
+                                    <span className="text-sm text-text-main font-bold">{item.val}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+                {/* Photo 2 */}
+                {user.photos[1] && (
+                    <div className="w-full aspect-[4/5] rounded-[32px] overflow-hidden shadow-sm border border-warm-gray">
+                        <img src={user.photos[1]} className="w-full h-full object-cover" alt="Photo 2" />
+                    </div>
+                )}
+
+                {/* Prompts */}
+                {user.prompts.map((prompt, i) => (
+                    <section key={i} className="bg-coral-light/20 p-6 rounded-[24px] border border-coral/10">
+                        <p className="text-xs font-bold text-coral uppercase mb-2">
+                            {prompt.question}
+                        </p>
+                        <p className="text-xl font-bold text-text-main">
+                            "{prompt.answer}"
+                        </p>
+                    </section>
                 ))}
-              </div>
-            </section>
-          )}
 
-          {/* About */}
-          <section>
-            <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-3">About {profile.name}</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {profile.details.height && (
-                <div className="flex items-center gap-2 p-3 bg-warm-white rounded-xl border border-warm-gray">
-                  <Icons.Ruler size={16} className="text-text-muted" />
-                  <span className="text-sm text-text-main font-medium">{profile.details.height}</span>
-                </div>
-              )}
-              {profile.job && (
-                <div className="flex items-center gap-2 p-3 bg-warm-white rounded-xl border border-warm-gray">
-                  <Icons.Briefcase size={16} className="text-text-muted" />
-                  <span className="text-sm text-text-main font-medium">{profile.job}</span>
-                </div>
-              )}
-              {profile.details.education && (
-                <div className="flex items-center gap-2 p-3 bg-warm-white rounded-xl border border-warm-gray">
-                  <Icons.GraduationCap size={16} className="text-text-muted" />
-                  <span className="text-sm text-text-main font-medium">{profile.details.education}</span>
-                </div>
-              )}
-              {profile.details.drinking && (
-                <div className="flex items-center gap-2 p-3 bg-warm-white rounded-xl border border-warm-gray">
-                  <Icons.Wine size={16} className="text-text-muted" />
-                  <span className="text-sm text-text-main font-medium">{profile.details.drinking}</span>
-                </div>
-              )}
+                {/* Interests */}
+                <section>
+                    <h3 className="text-sm font-extrabold text-text-muted uppercase tracking-wider mb-3 ml-1">Passions</h3>
+                    <div className="flex flex-wrap gap-2">
+                        {user.interests.map((tag, i) => (
+                        <span key={i} className="px-4 py-2 bg-white border border-warm-gray rounded-full text-sm text-text-main font-bold shadow-sm">
+                            {tag}
+                        </span>
+                        ))}
+                    </div>
+                </section>
+
+                {/* Bottom Spacer */}
+                <div className="h-8"></div>
             </div>
-          </section>
-
-          {/* Prompts */}
-          {profile.prompts.map((prompt, i) => (
-            <section key={i} className="bg-warm-white p-6 rounded-3xl border border-warm-gray relative">
-              <div className="absolute -top-3 left-6 bg-white px-2 text-xs font-bold text-coral">
-                {prompt.question}
-              </div>
-              <p className="text-lg font-medium text-text-main">{prompt.answer}</p>
-            </section>
-          ))}
-
-          {/* Languages */}
-          {profile.details.languages.length > 0 && (
-            <section>
-              <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-2">Languages</h3>
-              <div className="flex flex-wrap gap-2">
-                {profile.details.languages.map((l, i) => (
-                  <span 
-                    key={i} 
-                    className="text-sm text-text-sec px-3 py-1 bg-warm-white rounded-lg border border-warm-gray"
-                  >
-                    💬 {l}
-                  </span>
-                ))}
-              </div>
-            </section>
-          )}
-
-          <div className="h-12" />
         </div>
       </div>
       
-      {/* Action Bar (only for other profiles) */}
-      {!isOwnProfile && (
-        <div className="absolute bottom-6 left-0 right-0 px-8 flex justify-center items-center gap-6 z-20 pointer-events-none">
+      {/* Floating Action Bar */}
+      <div className="absolute bottom-6 left-0 right-0 px-8 flex justify-center items-center gap-6 z-20 pointer-events-none">
+          {/* Pass */}
           <button 
-            onClick={onPass}
-            className="w-16 h-16 pointer-events-auto bg-white rounded-full shadow-xl border border-warm-gray text-text-muted flex items-center justify-center hover:text-coral hover:border-coral transition-all active:scale-95"
+             onClick={onPass}
+             className="w-16 h-16 pointer-events-auto bg-white rounded-full shadow-float border border-warm-gray text-text-muted flex items-center justify-center hover:text-red-400 hover:border-red-100 transition-all active:scale-95"
           >
-            <Icons.X size={32} />
+             <Icons.X size={32} />
           </button>
           
+          {/* Super Like */}
           <button 
-            onClick={onSuperLike}
-            className="w-12 h-12 pointer-events-auto bg-white rounded-full shadow-xl border border-blue-100 text-blue-400 flex items-center justify-center hover:bg-blue-50 transition-all active:scale-95"
+             onClick={onSuperLike}
+             className="w-12 h-12 pointer-events-auto bg-white rounded-full shadow-float border border-blue-100 text-blue-400 flex items-center justify-center hover:bg-blue-50 transition-all active:scale-95"
           >
-            <Icons.Star size={24} fill="currentColor" />
+             <Icons.Star size={24} fill="currentColor" />
           </button>
 
+          {/* Like */}
           <button 
-            onClick={onLike}
-            className="w-16 h-16 pointer-events-auto bg-coral rounded-full shadow-xl shadow-coral/30 text-white flex items-center justify-center hover:scale-105 transition-all active:scale-95"
+             onClick={onLike}
+             className="w-16 h-16 pointer-events-auto bg-coral rounded-full shadow-glow text-white flex items-center justify-center hover:bg-coral-dark transition-all active:scale-95"
           >
-            <Icons.Heart size={32} fill="currentColor" />
+             <Icons.Heart size={32} fill="currentColor" />
           </button>
-        </div>
-      )}
+      </div>
+
     </div>
   );
 };
-
-export default Profile;

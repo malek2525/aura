@@ -1,12 +1,11 @@
-// src/components/ProfileChips.tsx
 import React from "react";
 
-type ChipTone = "primary" | "intent" | "soft" | "danger";
+type ChipTone = "primary" | "intent" | "soft" | "danger" | "secondary";
 
 interface ProfileChipsProps {
   items: string[];
   tone?: ChipTone;
-  max?: number; // optional: limit number of chips shown
+  max?: number;
 }
 
 export const ProfileChips: React.FC<ProfileChipsProps> = ({
@@ -20,61 +19,38 @@ export const ProfileChips: React.FC<ProfileChipsProps> = ({
   const hasMore = typeof max === "number" && items.length > max;
 
   const baseChip =
-    "inline-flex items-center gap-1 rounded-full border text-[10px] font-medium px-2.5 py-1 " +
-    "backdrop-blur-md whitespace-nowrap";
+    "inline-flex items-center gap-1 rounded-full border text-[10px] font-bold px-2.5 py-1.5 " +
+    "whitespace-nowrap transition-colors";
 
   const toneClasses = (() => {
     switch (tone) {
       case "intent":
-        return (
-          "border-pink-400/40 text-pink-50 " +
-          "bg-gradient-to-r from-pink-500/15 via-violet-500/10 to-sky-500/15 " +
-          "shadow-[0_0_18px_rgba(244,114,182,0.45)]"
-        );
+        return "border-pink-200 text-pink-600 bg-pink-50";
       case "danger":
-        return (
-          "border-rose-400/50 text-rose-50 " +
-          "bg-gradient-to-r from-rose-500/15 via-orange-500/10 to-amber-500/10 " +
-          "shadow-[0_0_16px_rgba(248,113,113,0.5)]"
-        );
+        return "border-red-200 text-red-600 bg-red-50";
       case "soft":
-        return (
-          "border-white/15 text-slate-100 " +
-          "bg-slate-900/50 shadow-[0_0_14px_rgba(15,23,42,0.7)]"
-        );
+        return "border-warm-gray text-text-sec bg-warm-white";
+      case "secondary":
+        return "border-sage-light text-sage-dark bg-sage-light/30";
       case "primary":
       default:
-        return (
-          "border-violet-400/50 text-slate-50 " +
-          "bg-gradient-to-r from-violet-500/15 via-indigo-500/10 to-sky-500/15 " +
-          "shadow-[0_0_18px_rgba(129,140,248,0.7)]"
-        );
+        return "border-coral/20 text-coral bg-coral-light/40";
     }
   })();
 
-  const containerClasses = "flex flex-wrap gap-1.5 mt-0.5 -mb-0.5 max-w-full";
-
   return (
-    <div className={containerClasses}>
+    <div className="flex flex-wrap gap-1.5 mt-0.5">
       {visibleItems.map((item, idx) => (
-        <span key={`${item}-${idx}`} className={baseChip + " " + toneClasses}>
+        <span key={`${item}-${idx}`} className={`${baseChip} ${toneClasses}`}>
           <span className="truncate max-w-[130px]">{item}</span>
         </span>
       ))}
 
       {hasMore && (
-        <span
-          className={
-            baseChip +
-            " " +
-            "border-white/15 text-slate-200 bg-slate-900/60 shadow-[0_0_12px_rgba(15,23,42,0.8)]"
-          }
-        >
+        <span className={`${baseChip} border-warm-gray text-text-muted bg-white`}>
           +{items.length - (max ?? 0)}
         </span>
       )}
     </div>
   );
 };
-
-export default ProfileChips;

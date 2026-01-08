@@ -1,5 +1,8 @@
 {
-  "name": "Aura Twin MVP",
-  "description": "A React application featuring an AI Aura Twin that evolves with the user, provides social coaching, and simulates matchmaking with other Auras.",
-  "requestFramePermissions": []
+  "name": "Aura Twin",
+  "description": "An AI-powered dating app for introverts. Your AI companion learns your vibe and finds your people.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
 }
