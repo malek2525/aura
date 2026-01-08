@@ -8,11 +8,12 @@ interface LiveVoiceModeProps {
   auraState: AuraState;
   setAuraState: (state: AuraState) => void;
   onExit: () => void;
+  voice: any;
 }
 
 const LIVE_MODEL = "gemini-2.5-flash-native-audio-preview-09-2025";
 
-export const LiveVoiceMode: React.FC<LiveVoiceModeProps> = ({ profile, auraState, setAuraState, onExit }) => {
+export const LiveVoiceMode: React.FC<LiveVoiceModeProps> = ({ profile, auraState, setAuraState, onExit, voice }) => {
   const [isActive, setIsActive] = useState(false);
   const [status, setStatus] = useState("Connecting...");
   const [volume, setVolume] = useState(0);

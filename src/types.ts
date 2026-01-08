@@ -1,10 +1,10 @@
-// types.ts
+// types.ts - MERGED VERSION
+// Contains both AuraProfile (backend) and UserProfile (new UI) types
 
 /* ------------------------------------------------------- */
 /* BASIC ENUMS                                             */
 /* ------------------------------------------------------- */
 
-// Biological gender / presentation (simple for now)
 export type Gender =
   | "woman"
   | "man"
@@ -58,20 +58,20 @@ export type SocialSpeed = "slow" | "normal" | "fast";
 /* ------------------------------------------------------- */
 
 export interface ProfilePhoto {
-  id: string; // uuid or generated string
-  url: string; // for now: URL or data URL; later: storage path
+  id: string;
+  url: string;
   isPrimary: boolean;
-  position: number; // 0,1,2,... for ordering
+  position: number;
 }
 
 export interface LifestyleInfo {
   smoking?: SmokingHabit;
   drinking?: DrinkingHabit;
   kids?: KidsPreference;
-  pets?: string[]; // ["dog", "cat"]
+  pets?: string[];
   sleepSchedule?: SleepSchedule;
-  religionNote?: string; // optional free text
-  jobOrStudy?: string; // "Software engineer", "Medical student", etc.
+  religionNote?: string;
+  jobOrStudy?: string;
 }
 
 /* ------------------------------------------------------- */
@@ -79,11 +79,10 @@ export interface LifestyleInfo {
 /* ------------------------------------------------------- */
 
 export interface MatchPreferences {
-  preferredGenders: MatchGenderPreference; // for now a single value
-  minAge: number; // inclusive
-  maxAge: number; // inclusive
-  relationshipIntent?: RelationshipIntent; // optional filter
-  // later: distance, lifestyle filters, etc.
+  preferredGenders: MatchGenderPreference;
+  minAge: number;
+  maxAge: number;
+  relationshipIntent?: RelationshipIntent;
 }
 
 /* ------------------------------------------------------- */
@@ -91,31 +90,20 @@ export interface MatchPreferences {
 /* ------------------------------------------------------- */
 
 export interface DatingProfile {
-  // Identity & basics
   displayName: string;
-  dateOfBirth: string; // ISO "YYYY-MM-DD"
+  dateOfBirth: string;
   gender?: Gender;
   orientation?: SexualOrientation;
   country?: string | null;
   city?: string | null;
-
-  // Media
-  photos: ProfilePhoto[]; // at least 1 if profile is "complete"
-
-  // Text content
+  photos: ProfilePhoto[];
   bio?: string;
   favoriteQuote?: string;
   musicTaste?: string;
   interests?: string[];
-
-  // First contact
   idealFirstMessage?: string;
   idealFirstMeeting?: string;
-
-  // Lifestyle
   lifestyle?: LifestyleInfo;
-
-  // Primary relationship intent for card hints
   relationshipIntent?: RelationshipIntent;
 }
 
@@ -124,52 +112,36 @@ export interface DatingProfile {
 /* ------------------------------------------------------- */
 
 export interface AuraPersonality {
-  introversionLevel: number; // 1–10
-  goals: string[]; // ["friends", "dating", "practice_talking"]
-  vibeWords: string[]; // ["calm", "sarcastic", "deep"]
+  introversionLevel: number;
+  goals: string[];
+  vibeWords: string[];
   topicsLike: string[];
   topicsAvoid: string[];
-
   socialSpeed: SocialSpeed;
   hardBoundaries: string[];
   greenFlags: string[];
   redFlags: string[];
-
   whatFeelsSafe?: string;
   whatShouldPeopleKnow?: string;
-
-  summary: string; // Aura's synthesized summary of the person
+  summary: string;
 }
 
 /* ------------------------------------------------------- */
-/* FINAL AURAPROFILE STRUCTURE                             */
+/* AURAPROFILE (BACKEND - YOUR EXISTING TYPE)              */
 /* ------------------------------------------------------- */
 
 export interface AuraProfile {
-  id: string; // profile id (per user)
-  userId: string; // auth user uid
-
-  // Convenience
+  id: string;
+  userId: string;
   displayName: string;
-
-  // New layered model
   aura: AuraPersonality;
   dating: DatingProfile;
   preferences: MatchPreferences;
-
-  // Transitional / convenience avatar (e.g. top-left bubble)
   avatarUrl?: string;
 
-  /* ----------------- LEGACY FIELDS (OPTIONAL) ------------------
-   * These keep the existing app working while we migrate.
-   * Onboarding & editors should fill them from the new sub-objects.
-   */
-
-  // Old "flat" identity
+  // Legacy fields
   ageRange?: string | null;
   country?: string | null;
-
-  // Aura-like fields at root (mirrors of aura.*)
   introversionLevel?: number;
   goals?: string[];
   vibeWords?: string[];
@@ -182,23 +154,16 @@ export interface AuraProfile {
   whatFeelsSafe?: string;
   whatShouldPeopleKnow?: string;
   summary?: string;
-
-  // Old media fields
   photoUrls?: string[];
   photos?: { id: string; url: string }[];
-
-  // Old relationship / preferences
   relationshipIntent?: RelationshipIntent;
   preferredMatchGender?: MatchGenderPreference;
-
-  // Old text prompts
   idealFirstMessage?: string;
   idealFirstMeeting?: string;
   lifestyleNotes?: string;
   musicTaste?: string;
   favoriteQuote?: string;
   interests?: string[];
-
   prompts?: {
     idealFirstMessage?: string;
     idealFirstMeeting?: string;
@@ -209,19 +174,12 @@ export interface AuraProfile {
 }
 
 /* ------------------------------------------------------- */
-/* CHAT / STATE TYPES (USED BY UI + LLM SERVICE)           */
+/* CHAT / STATE TYPES                                      */
 /* ------------------------------------------------------- */
 
 export interface AuraState {
-  mood:
-    | "neutral"
-    | "happy"
-    | "curious"
-    | "calm"
-    | "anxious"
-    | "sad"
-    | "excited";
-  moodIntensity: number; // 0–1
+  mood: "neutral" | "happy" | "curious" | "calm" | "anxious" | "sad" | "excited";
+  moodIntensity: number;
 }
 
 export interface AuraChatMessage {
@@ -231,7 +189,9 @@ export interface AuraChatMessage {
   timestamp: number;
 }
 
-/* ----------------- MATCHING & TWIN TYPES ---------------- */
+/* ------------------------------------------------------- */
+/* MATCHING & TWIN TYPES                                   */
+/* ------------------------------------------------------- */
 
 export interface MatchResult {
   compatibilityScore: number;
@@ -277,3 +237,136 @@ export interface TwinChatResult {
   transcript: TwinChatMessage[];
   summary: string;
 }
+
+/* ======================================================= */
+/* NEW UI TYPES (FOR BUMBLE-STYLE INTERFACE)               */
+/* ======================================================= */
+
+// Story type for Instagram-style stories
+export interface Story {
+  id: string;
+  imageUrl: string;
+  timestamp: string;
+  isViewed: boolean;
+}
+
+// UserProfile - simplified profile for new UI cards
+export interface UserProfile {
+  id: string;
+  name: string;
+  age: number;
+  bio: string;
+  photos: string[];
+  job: string;
+  location: string;
+  distance: number;
+  verified: boolean;
+  
+  // Aura AI Features
+  auraRead: string;
+  vibeTags: string[];
+  
+  // Trust/Verification Score
+  verificationScore: number;
+  verificationTier: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
+  
+  // Stories
+  stories: Story[];
+  
+  // Profile Details
+  interests: string[];
+  prompts: { question: string; answer: string }[];
+  details: {
+    height: string;
+    exercise: string;
+    education: string;
+    drinking: string;
+    smoking: string;
+    lookingFor: string;
+    starSign: string;
+    languages: string[];
+  };
+}
+
+// Navigation types
+export type ViewState = 'aura' | 'discover' | 'likes' | 'chat';
+export type SubViewState = 
+  | 'main' 
+  | 'settings' 
+  | 'edit-profile' 
+  | 'edit-profile-legacy'
+  | 'filters' 
+  | 'view-profile' 
+  | 'chat-detail' 
+  | 'story-viewer' 
+  | 'aura-simulation'
+  | 'auth'
+  | 'onboarding';
+
+// Filter types
+export interface FilterState {
+  ageRange: [number, number];
+  distance: number;
+  gender: 'men' | 'women' | 'everyone';
+  verifiedOnly: boolean;
+  interests: string[];
+}
+
+// Chat message for new UI
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  text: string;
+  timestamp: Date;
+  read: boolean;
+  type: 'text' | 'image' | 'aura-intro';
+}
+
+// Match type for new UI
+export interface Match {
+  id: string;
+  user: UserProfile;
+  lastMessage?: string;
+  timestamp?: string;
+  unread: boolean;
+  isLike?: boolean;
+  hasAuraChat?: boolean;
+}
+
+// Verification tier info
+export const VERIFICATION_TIERS = {
+  Bronze: { min: 0, max: 40, label: 'New member', color: '#B2BEC3' },
+  Silver: { min: 41, max: 60, label: 'Active member', color: '#A8A8A8' },
+  Gold: { min: 61, max: 80, label: 'Trusted member', color: '#FFC857' },
+  Platinum: { min: 81, max: 100, label: 'Verified member', color: '#9B59B6' },
+};
+
+// Helper to create empty UserProfile
+export const createEmptyUserProfile = (): UserProfile => ({
+  id: '',
+  name: '',
+  age: 0,
+  bio: '',
+  photos: [],
+  job: '',
+  location: '',
+  distance: 0,
+  verified: false,
+  auraRead: '',
+  vibeTags: [],
+  verificationScore: 0,
+  verificationTier: 'Bronze',
+  stories: [],
+  interests: [],
+  prompts: [],
+  details: {
+    height: '',
+    exercise: '',
+    education: '',
+    drinking: '',
+    smoking: '',
+    lookingFor: '',
+    starSign: '',
+    languages: [],
+  },
+});
