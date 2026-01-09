@@ -25,3 +25,4 @@ setPersistence(auth, browserLocalPersistence); // ✅ helps in Replit / refreshe
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: "select_account" });
+export const isFirebaseInitialized = !!auth && !!db;

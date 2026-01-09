@@ -289,7 +289,7 @@ export interface UserProfile {
 }
 
 // Navigation types
-export type ViewState = 'aura' | 'discover' | 'likes' | 'chat';
+export type ViewState = 'aura' | 'discover' | 'likes' | 'chat' | 'auth' | 'onboarding';
 export type SubViewState = 
   | 'main' 
   | 'settings' 
@@ -301,7 +301,9 @@ export type SubViewState =
   | 'story-viewer' 
   | 'aura-simulation'
   | 'auth'
-  | 'onboarding';
+  | 'onboarding'
+  | 'app-icons'
+  | 'code-merger';
 
 // Filter types
 export interface FilterState {
