@@ -11,7 +11,7 @@ import {
   auth,
   googleProvider,
   isFirebaseInitialized,
-} from "@/services/firebase";
+} from "../services/firebase";
 
 export interface User {
   uid: string;
