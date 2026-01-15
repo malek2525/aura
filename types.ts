@@ -1,4 +1,4 @@
-
+// --- Core Story Type ---
 export interface Story {
   id: string;
   imageUrl: string;
@@ -6,6 +6,7 @@ export interface Story {
   isViewed: boolean;
 }
 
+// --- Enum Types ---
 export type RelationshipIntent = 
   | 'friends_only' 
   | 'casual_dating' 
@@ -21,6 +22,7 @@ export type SleepSchedule = 'early_bird' | 'night_owl' | 'flexible' | 'prefer_no
 export type SocialSpeed = 'slow' | 'normal' | 'fast';
 export type MatchGenderPreference = 'any' | 'women' | 'men' | 'women_and_men' | 'lgbtq_plus';
 
+// --- Photo Management ---
 export interface ProfilePhoto {
   id: string;
   url: string;
@@ -28,6 +30,7 @@ export interface ProfilePhoto {
   position?: number;
 }
 
+// --- Lifestyle Info ---
 export interface LifestyleInfo {
   smoking?: SmokingHabit;
   drinking?: DrinkingHabit;
@@ -38,17 +41,22 @@ export interface LifestyleInfo {
   jobOrStudy?: string;
 }
 
+// --- Match Preferences ---
 export interface MatchPreferences {
   preferredGenders?: MatchGenderPreference;
   minAge?: number;
   maxAge?: number;
   relationshipIntent?: RelationshipIntent;
-  intent?: RelationshipIntent;      // Alias for compatibility
-  preferredGender?: MatchGenderPreference; // Alias for compatibility
+  intent?: RelationshipIntent;
+  preferredGender?: MatchGenderPreference;
+  maxDistance?: number;
+  minMatchScore?: number; // Minimum Aura compatibility score (0-100)
+  strictDealbreakers?: boolean;
 }
 
+// --- Aura Personality (AI Twin Config) ---
 export interface AuraPersonality {
-  introversionLevel: number;
+  introversionLevel: number; // 1-10
   socialSpeed: SocialSpeed;
   goals: string[];
   vibeWords: string[];
@@ -60,8 +68,11 @@ export interface AuraPersonality {
   whatFeelsSafe?: string;
   whatShouldPeopleKnow?: string;
   summary: string;
+  writingStyle: 'casual_emoji' | 'lowercase_aesthetic' | 'formal_proper' | 'short_direct' | 'long_thoughtful';
+  humorStyle?: string;
 }
 
+// --- Dating Profile ---
 export interface DatingProfile {
   displayName: string;
   dateOfBirth: string; // YYYY-MM-DD
@@ -80,6 +91,7 @@ export interface DatingProfile {
   relationshipIntent?: RelationshipIntent;
 }
 
+// --- Aura Chat (User <-> Their Aura) ---
 export interface AuraChatMessage {
   id: string;
   text: string;
@@ -100,6 +112,7 @@ export interface AuraInsight {
   createdAt: number;
 }
 
+// --- Main User Profile ---
 export interface UserProfile {
   id: string;
   userId?: string; 
@@ -108,18 +121,16 @@ export interface UserProfile {
   avatarUrl?: string; 
   age: number;
   bio: string;
-  photos: string[]; // Simple array for UI display
+  photos: string[];
   
-  // Complex Data Structures (v2)
+  // Complex Data Structures
   dating?: DatingProfile;
   aura?: AuraPersonality;
   preferences?: MatchPreferences;
-
-  // AI & Matching Specifics
-  matchPreferences?: MatchPreferences; // Alias
+  matchPreferences?: MatchPreferences;
   auraInsights?: AuraInsight[];
   
-  // Legacy/Flat fields for simple UI compatibility
+  // Core Profile Fields
   job: string;
   location: string;
   distance: number;
@@ -142,7 +153,7 @@ export interface UserProfile {
     languages: string[];
   };
 
-  // Optional overrides / Flat fields for Service compatibility
+  // Optional fields
   ageRange?: string | null;
   country?: string | null;
   summary?: string;
@@ -151,6 +162,7 @@ export interface UserProfile {
   photo3Url?: string | null;
   photoUrls?: string[];
   
+  // Aura/Matching fields (flat for service compatibility)
   goals?: string[];
   vibeWords?: string[];
   topicsLike?: string[];
@@ -173,9 +185,25 @@ export interface UserProfile {
   loveLanguages?: string[];
 }
 
-// Renaming alias for compatibility with service files
+// Alias for matching service
 export type AuraProfile = UserProfile;
 
+// --- Twin Chat (Aura <-> Aura Conversation) ---
+export interface TwinChatMessage {
+  from: "auraA" | "auraB";
+  senderName: string;
+  text: string;
+  timestamp?: number;
+}
+
+export interface TwinChatResult {
+  transcript: TwinChatMessage[];
+  summary: string;
+  suggestedOpener?: string;      // Added: AI-generated icebreaker
+  compatibilityScore?: number;   // Added: Match score
+}
+
+// --- Match Types ---
 export interface Match {
   id: string;
   user: UserProfile;
@@ -184,9 +212,9 @@ export interface Match {
   unread: boolean;
   isLike?: boolean;
   hasAuraChat?: boolean;
+  twinTranscript?: TwinChatMessage[];
+  icebreaker?: string;           // Added: Suggested first message
 }
-
-// --- Matching Service Types ---
 
 export interface MatchResult {
   compatibilityScore: number;
@@ -223,24 +251,176 @@ export interface ReplyOptions {
   playful: string;
 }
 
-export interface TwinChatMessage {
-  from: "auraA" | "auraB";
-  text: string;
+// --- Like & Match Pair ---
+export interface MatchLike {
+  fromUid: string;
+  toUid: string;
+  createdAt: number;
+  superLike?: boolean;           // Added: Premium feature
 }
 
-export interface TwinChatResult {
-  transcript: TwinChatMessage[];
-  summary: string;
+export interface MatchPair {
+  id: string;
+  userA: string;
+  userB: string;
+  createdAt: number;
+  compatibilityScore?: number;
+  isAuraMatch?: boolean;
+  twinTranscript?: TwinChatMessage[];
+  icebreaker?: string;           // Added: AI-suggested opener
+  matchReasons?: string[];       // Added: Why they matched
 }
+
+export interface PublicProfileSummary {
+  uid: string;
+  auraProfile: UserProfile;
+  lastActiveAt?: number;
+}
+
+export interface MatchWithProfile {
+  match: MatchPair;
+  other: PublicProfileSummary;
+}
+
+// --- Messaging ---
+export type MessageType = 'text' | 'image' | 'gif' | 'voice' | 'date_plan';
 
 export interface MatchMessage {
   id: string;
   matchId: string;
   fromUid: string;
   text: string;
+  type: MessageType;
+  mediaUrl?: string;
+  createdAt: number;
+  isRead?: boolean;              // Added: Read receipts
+  isDatePlan?: boolean; 
+  dateDetails?: DateIdea;
+  replyTo?: string;              // Added: Reply to message ID
+}
+
+// --- Date Planner ---
+export interface DateIdea {
+  id: string;
+  title: string;
+  description: string;
+  locationName: string;
+  locationAddress?: string;      // Added: Full address
+  locationCoords?: {             // Added: For maps
+    lat: number;
+    lng: number;
+  };
+  vibe: string;
+  estimatedCost?: string;        // Added: $, $$, $$$
+  duration?: string;             // Added: "2-3 hours"
+  whyItWorks: string;
+  imageUrl?: string;             // Added: Location image
+}
+
+export interface DatePlan {
+  id: string;
+  matchId: string;
+  proposedBy: string;
+  idea: DateIdea;
+  proposedDate?: string;         // ISO date string
+  proposedTime?: string;
+  status: 'pending' | 'accepted' | 'declined' | 'completed';
   createdAt: number;
 }
 
-// --- App State Types ---
-export type ViewState = 'auth' | 'onboarding' | 'aura' | 'discover' | 'likes' | 'chat';
-export type SubViewState = 'main' | 'settings' | 'edit-profile' | 'filters' | 'view-profile' | 'chat-detail' | 'story-viewer' | 'aura-simulation' | 'app-icons' | 'code-merger' | 'live-voice' | 'me-panel';
+// --- Moments (Social Feature) ---
+export interface Moment {
+  id: string;
+  matchId?: string;              // Added: Link to match
+  userIds: string[];             // Added: Both users' IDs
+  userNames: string[];
+  userAvatars: string[];
+  location: string;
+  locationCoords?: {
+    lat: number;
+    lng: number;
+  };
+  imageUrl: string;
+  caption: string;
+  likes: number;
+  comments?: MomentComment[];    // Added: Comments
+  timestamp: string;
+  vibeTag: string;
+  isPublic: boolean;             // Added: Privacy control
+}
+
+export interface MomentComment {
+  id: string;
+  momentId: string;
+  userId: string;
+  userName: string;
+  text: string;
+  createdAt: number;
+}
+
+// --- App Navigation State ---
+export type ViewState = 'auth' | 'onboarding' | 'aura' | 'discover' | 'likes' | 'chat' | 'moments';
+
+export type SubViewState = 
+  | 'main' 
+  | 'settings' 
+  | 'edit-profile' 
+  | 'filters' 
+  | 'view-profile' 
+  | 'chat-detail' 
+  | 'story-viewer' 
+  | 'aura-simulation' 
+  | 'app-icons' 
+  | 'code-merger' 
+  | 'live-voice' 
+  | 'me-panel'
+  | 'date-planner'               // Added
+  | 'create-moment';             // Added
+
+// --- Settings & Preferences ---
+export interface AppSettings {
+  notifications: {
+    matches: boolean;
+    messages: boolean;
+    likes: boolean;
+    moments: boolean;
+  };
+  privacy: {
+    showOnlineStatus: boolean;
+    showDistance: boolean;
+    showLastActive: boolean;
+  };
+  auraSettings: {
+    minMatchScore: number;       // 0-100
+    strictDealbreakers: boolean;
+    autoAuraMatch: boolean;      // Auto-trigger Aura convos
+  };
+}
+
+// --- Conversation Patterns (Learning) ---
+export interface ConversationPattern {
+  id: string;
+  pattern: string;
+  example: string;
+  successRate: number;
+  usageCount: number;
+  lastUpdated: number;
+}
+
+// --- API Response Types ---
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+// --- Notification Types ---
+export interface AppNotification {
+  id: string;
+  type: 'match' | 'message' | 'like' | 'moment' | 'aura_match' | 'date_plan';
+  title: string;
+  body: string;
+  data?: Record<string, any>;
+  createdAt: number;
+  isRead: boolean;
+}

@@ -5,8 +5,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
     <title>Aura Twin</title>
-    <link rel="icon" type="image/svg+xml" href="/public/icon.svg" />
-    <link rel="manifest" href="/public/manifest.json" />
+    <!-- Updated Favicon Links to use icon-1.svg -->
+    <link rel="icon" type="image/svg+xml" href="/public/icon-1.svg" />
+    <link rel="alternate icon" href="/icon-1.svg" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -14,20 +15,20 @@
           extend: {
             colors: {
               coral: {
-                DEFAULT: '#FF6B6B', // Updated to catchy warm red
-                light: '#FFF0F0',   
+                DEFAULT: '#FF6B6B', // Warm, catchy red-pink
+                light: '#FF8E8E',
                 dark: '#EE5253',
+              },
+              gold: {
+                DEFAULT: '#FFA502', // Catchy warm yellow/orange
               },
               sage: {
                  DEFAULT: '#2ED573', 
                  light: '#DCFCE7',
                  dark: '#26AF61',
               },
-              gold: {
-                DEFAULT: '#FFA502', // Warm Gold
-              },
               warm: {
-                white: '#FFF9F5',   // Updated background warm tint
+                white: '#FFF9F5',   // Cozy background
                 gray: '#F2EAE0',
                 dark: '#DCD6CC',
               },
@@ -48,18 +49,23 @@
             animation: {
               'float': 'float 6s ease-in-out infinite',
               'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'in': 'fadeIn 0.3s ease-out',
             },
             keyframes: {
               float: {
                 '0%, 100%': { transform: 'translateY(0)' },
                 '50%': { transform: 'translateY(-10px)' },
+              },
+              fadeIn: {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
               }
             }
           },
         },
       }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
       body { 
         font-family: 'Plus Jakarta Sans', sans-serif; 
@@ -67,9 +73,15 @@
         background-color: #FFF9F5; 
         color: #2D3436; 
       }
-      img { transition: opacity 0.3s ease-in-out; }
-      .no-scrollbar::-webkit-scrollbar { display: none; }
-      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      /* Hide scrollbar for IE, Edge and Firefox */
+      .no-scrollbar {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+      }
     </style>
   <script type="importmap">
 {
@@ -78,7 +90,12 @@
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
     "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0"
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "firebase/": "https://esm.sh/firebase@^12.7.0/",
+    "vite": "https://esm.sh/vite@^7.3.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "path": "https://esm.sh/path@^0.12.7",
+    "url": "https://esm.sh/url@^0.11.4"
   }
 }
 </script>
