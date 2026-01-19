@@ -1,544 +1,902 @@
+// src/services/matchService.ts
+// Complete match service with ALL required exports + aliases
+
 import {
   UserProfile,
-  MatchPair,
-  PublicProfileSummary,
-  MatchWithProfile,
-  MatchLike
+  TwinChatMessage,
+  Match,
+  MatchResult,
+  AuraMatchResult,
+  TwinIntroResult,
+  TwinChatResult,
 } from "../types";
-import { simulateTwinChat, calculateCompatibility } from "./matching";
 
-const MATCH_STORAGE_KEY = 'aura_matches';
-const LIKES_STORAGE_KEY = 'aura_likes';
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+// ============================================
+// MOCK PROFILES
+// ============================================
 
-// --- EXPANDED MOCK PROFILE DATABASE ---
-// 10 diverse profiles for better testing
-
-const PROFILES_DB: Record<string, UserProfile> = {
-  "demo_lina": {
-    id: "demo_lina",
-    name: "Lina",
-    age: 24,
-    job: "Illustrator",
-    location: "Berlin",
-    distance: 4,
-    verified: true,
-    bio: "Quiet mornings, loud music, and getting lost in sketches. Looking for someone who understands creative chaos.",
-    photos: [
-      "https://images.unsplash.com/photo-1485230405346-71acb9518d9c?w=600&h=900&fit=crop", 
-      "https://images.unsplash.com/photo-1605252579477-96a84d241853?w=600&h=900&fit=crop"
-    ],
-    auraRead: "Deeply creative and slightly guarded. Needs time to open up.",
-    vibeTags: ["Artistic", "Dreamy", "Introvert"],
-    verificationScore: 92,
-    verificationTier: "Platinum",
-    stories: [
-      { id: 's1', imageUrl: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=600&h=900&fit=crop', timestamp: '2h', isViewed: false }
-    ],
-    interests: ["Art", "Indie Music", "Coffee", "Journaling", "Museums"],
-    prompts: [{ question: "My simple pleasure", answer: "The smell of old bookstores." }],
-    details: { height: "168cm", exercise: "Yoga", education: "Arts", drinking: "Wine", smoking: "No", lookingFor: "Relationship", starSign: "Cancer", languages: ["German", "English"] },
-    introversionLevel: 8,
-    socialSpeed: "slow",
-    goals: ["serious_relationship"],
-    vibeWords: ["creative", "gentle", "thoughtful"]
-  },
-  
-  "demo_sarah": {
-    id: "demo_sarah",
-    name: "Sarah",
-    age: 26,
-    job: "Architect",
-    location: "Munich",
-    distance: 12,
-    verified: true,
-    bio: "Designing spaces and finding places. Big fan of brutalism and brutal honesty.",
-    photos: [
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=600&h=900&fit=crop",
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&h=900&fit=crop"
-    ],
-    auraRead: "Structured thinker with a wild heart.",
-    vibeTags: ["Ambitious", "Direct", "Witty"],
-    verificationScore: 85,
-    verificationTier: "Gold",
-    stories: [],
-    interests: ["Architecture", "Tennis", "Design", "Travel", "Wine"],
-    prompts: [{ question: "I geek out on", answer: "Sustainable building materials." }],
-    details: { height: "172cm", exercise: "Active", education: "Masters", drinking: "Socially", smoking: "No", lookingFor: "Relationship", starSign: "Virgo", languages: ["German", "English", "French"] },
-    introversionLevel: 4,
-    socialSpeed: "normal",
-    goals: ["serious_relationship"],
-    vibeWords: ["sharp", "energetic", "driven"]
-  },
-  
-  "demo_julia": {
-    id: "demo_julia",
+export const MOCK_PROFILES: UserProfile[] = [
+  {
+    id: "profile_1",
+    oderId: "profile_1",
+    userId: "user_1",
     name: "Julia",
-    age: 25,
-    job: "Software Engineer",
-    location: "Hamburg",
-    distance: 40,
-    verified: true,
-    bio: "I speak Python better than French. Looking for a player 2.",
-    photos: [
-      "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&h=900&fit=crop",
-      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&h=900&fit=crop"
-    ],
-    auraRead: "Logical but loves a good fantasy world.",
-    vibeTags: ["Nerdy", "Chill", "Smart"],
-    verificationScore: 95,
-    verificationTier: "Platinum",
-    stories: [],
-    interests: ["Gaming", "Coding", "Sci-Fi", "Board Games", "Anime"],
-    prompts: [{ question: "A non-negotiable", answer: "Must like dogs." }],
-    details: { height: "165cm", exercise: "Sometimes", education: "Bachelors", drinking: "No", smoking: "No", lookingFor: "Relationship", starSign: "Gemini", languages: ["English"] },
-    introversionLevel: 9,
-    socialSpeed: "slow",
-    goals: ["serious_relationship"],
-    vibeWords: ["geeky", "quiet", "loyal"]
-  },
-  
-  "demo_marcus": {
-    id: "demo_marcus",
-    name: "Marcus",
-    age: 28,
-    job: "Chef",
-    location: "Berlin",
-    distance: 2,
-    verified: true,
-    bio: "Way to my heart is literally through my stomach. I'll cook, you pick the movie.",
-    photos: [
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=600&h=900&fit=crop"
-    ],
-    auraRead: "Warm energy, acts of service lover.",
-    vibeTags: ["Passionate", "Warm", "Foodie"],
-    verificationScore: 80,
-    verificationTier: "Gold",
-    stories: [],
-    interests: ["Cooking", "Movies", "Jazz", "Wine", "Travel"],
-    prompts: [{ question: "Best travel story", answer: "Got lost in Tokyo and found the best ramen of my life." }],
-    details: { height: "180cm", exercise: "Active", education: "Culinary School", drinking: "Yes", smoking: "Sometimes", lookingFor: "Relationship", starSign: "Taurus", languages: ["English", "Italian"] },
-    introversionLevel: 3,
-    socialSpeed: "fast",
-    goals: ["serious_relationship"],
-    vibeWords: ["warm", "generous", "adventurous"]
-  },
-
-  "demo_emma": {
-    id: "demo_emma",
-    name: "Emma",
-    age: 27,
-    job: "Psychologist",
-    location: "Frankfurt",
-    distance: 25,
-    verified: true,
-    bio: "Professional listener, amateur plant mom. I'll analyze your dreams for free.",
-    photos: [
-      "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=600&h=900&fit=crop",
-      "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=600&h=900&fit=crop"
-    ],
-    auraRead: "Empathetic soul with hidden depth. Genuinely curious about people.",
-    vibeTags: ["Empathetic", "Curious", "Calm"],
-    verificationScore: 88,
-    verificationTier: "Gold",
-    stories: [
-      { id: 's2', imageUrl: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=600&h=900&fit=crop', timestamp: '5h', isViewed: false }
-    ],
-    interests: ["Psychology", "Plants", "Podcasts", "Hiking", "Reading"],
-    prompts: [{ question: "I'm looking for", answer: "Deep conversations at 2am." }],
-    details: { height: "170cm", exercise: "Yoga", education: "PhD", drinking: "Occasionally", smoking: "No", lookingFor: "Relationship", starSign: "Pisces", languages: ["German", "English"] },
-    introversionLevel: 6,
-    socialSpeed: "slow",
-    goals: ["serious_relationship"],
-    vibeWords: ["thoughtful", "nurturing", "wise"]
-  },
-
-  "demo_alex": {
-    id: "demo_alex",
-    name: "Alex",
-    age: 29,
-    job: "Photographer",
-    location: "Berlin",
-    distance: 5,
-    verified: true,
-    bio: "Chasing golden hour and good stories. Let me capture your best angle.",
-    photos: [
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=900&fit=crop",
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&h=900&fit=crop"
-    ],
-    auraRead: "Creative eye with wanderlust. Lives in the moment.",
-    vibeTags: ["Creative", "Adventurous", "Laid-back"],
-    verificationScore: 78,
-    verificationTier: "Silver",
-    stories: [],
-    interests: ["Photography", "Travel", "Coffee", "Vinyl", "Street Art"],
-    prompts: [{ question: "Perfect Sunday", answer: "Flea markets, film camera, and finding hidden cafes." }],
-    details: { height: "182cm", exercise: "Cycling", education: "Self-taught", drinking: "Socially", smoking: "No", lookingFor: "Open to see", starSign: "Sagittarius", languages: ["English", "Spanish"] },
-    introversionLevel: 5,
-    socialSpeed: "normal",
-    goals: ["open_to_see"],
-    vibeWords: ["artistic", "spontaneous", "chill"]
-  },
-
-  "demo_nina": {
-    id: "demo_nina",
-    name: "Nina",
-    age: 23,
-    job: "Medical Student",
-    location: "Heidelberg",
-    distance: 35,
-    verified: true,
-    bio: "Future doctor who can't keep plants alive. The irony isn't lost on me.",
-    photos: [
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=600&h=900&fit=crop"
-    ],
-    auraRead: "Ambitious dreamer balancing chaos and care.",
-    vibeTags: ["Driven", "Funny", "Caring"],
-    verificationScore: 70,
-    verificationTier: "Silver",
-    stories: [],
-    interests: ["Medicine", "Gym", "True Crime", "Baking", "Dogs"],
-    prompts: [{ question: "Unpopular opinion", answer: "Pineapple absolutely belongs on pizza." }],
-    details: { height: "164cm", exercise: "Gym rat", education: "Med School", drinking: "Weekends", smoking: "No", lookingFor: "Relationship", starSign: "Aries", languages: ["German", "English"] },
-    introversionLevel: 4,
-    socialSpeed: "normal",
-    goals: ["serious_relationship"],
-    vibeWords: ["determined", "witty", "warm"]
-  },
-
-  "demo_tom": {
-    id: "demo_tom",
-    name: "Tom",
-    age: 31,
-    job: "Music Producer",
+    displayName: "Julia",
+    age: 26,
+    job: "UX Designer",
     location: "Berlin",
     distance: 3,
     verified: true,
-    bio: "Making beats by day, finding good food by night. Looking for my duet partner.",
-    photos: [
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&h=900&fit=crop",
-      "https://images.unsplash.com/photo-1463453091185-61582044d556?w=600&h=900&fit=crop"
-    ],
-    auraRead: "Creative soul with depth. Values authenticity over everything.",
-    vibeTags: ["Creative", "Chill", "Deep"],
-    verificationScore: 82,
+    verificationScore: 85,
     verificationTier: "Gold",
+    bio: "coffee addict ☕ design nerd 🎨",
+    photos: [
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&fit=crop",
+      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&fit=crop",
+    ],
+    interests: ["Coffee", "Art", "Design", "Travel", "Photography"],
+    vibeTags: ["Creative", "Chill", "Curious"],
+    vibeWords: ["Creative", "Chill", "Curious"],
+    auraRead: "warm creative energy",
     stories: [],
-    interests: ["Music", "Vinyl", "Cooking", "Philosophy", "Late nights"],
-    prompts: [{ question: "My love language", answer: "Making you a playlist." }],
-    details: { height: "178cm", exercise: "Sometimes", education: "Bachelors", drinking: "Socially", smoking: "No", lookingFor: "Relationship", starSign: "Aquarius", languages: ["English", "German"] },
-    introversionLevel: 7,
+    prompts: [
+      {
+        id: "p1",
+        question: "A perfect Sunday",
+        answer: "Coffee → museum → cozy dinner",
+      },
+    ],
+    details: {
+      height: "5'6\"",
+      education: "Masters",
+      drinking: "socially",
+      smoking: "no",
+      lookingFor: "Relationship",
+    },
+    introversionLevel: 6,
+    socialSpeed: "normal",
+    goals: ["serious_relationship"],
+  },
+  {
+    id: "profile_2",
+    oderId: "profile_2",
+    userId: "user_2",
+    name: "Marcus",
+    displayName: "Marcus",
+    age: 29,
+    job: "Software Engineer",
+    location: "Berlin",
+    distance: 5,
+    verified: true,
+    verificationScore: 80,
+    verificationTier: "Silver",
+    bio: "building apps by day, guitar by night 🎸",
+    photos: [
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&fit=crop",
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&fit=crop",
+    ],
+    interests: ["Music", "Coding", "Gaming", "Books", "Hiking"],
+    vibeTags: ["Nerdy", "Laid-back", "Deep"],
+    vibeWords: ["Nerdy", "Laid-back", "Deep"],
+    auraRead: "thoughtful introvert",
+    stories: [],
+    prompts: [
+      {
+        id: "p1",
+        question: "I geek out on",
+        answer: "keyboards, music, sci-fi",
+      },
+    ],
+    details: {
+      height: "5'11\"",
+      education: "Bachelors",
+      drinking: "sometimes",
+      smoking: "no",
+      lookingFor: "Relationship",
+    },
+    introversionLevel: 8,
     socialSpeed: "slow",
     goals: ["serious_relationship"],
-    vibeWords: ["soulful", "creative", "genuine"]
   },
-
-  "demo_maya": {
-    id: "demo_maya",
-    name: "Maya",
-    age: 26,
-    job: "UX Designer",
-    location: "Munich",
-    distance: 15,
+  {
+    id: "profile_3",
+    oderId: "profile_3",
+    userId: "user_3",
+    name: "Emma",
+    displayName: "Emma",
+    age: 24,
+    job: "Marketing Manager",
+    location: "Berlin",
+    distance: 2,
     verified: true,
-    bio: "Designing experiences, collecting stamps in my passport. Let's create something beautiful.",
-    photos: [
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&h=900&fit=crop",
-      "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&h=900&fit=crop"
-    ],
-    auraRead: "Balances logic and creativity beautifully. Quietly confident.",
-    vibeTags: ["Creative", "Balanced", "Curious"],
     verificationScore: 90,
-    verificationTier: "Platinum",
-    stories: [
-      { id: 's3', imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&h=900&fit=crop', timestamp: '1d', isViewed: false }
+    verificationTier: "Gold",
+    bio: "bookworm 📚 plant mom 🌱",
+    photos: [
+      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800&fit=crop",
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&fit=crop",
     ],
-    interests: ["Design", "Travel", "Yoga", "Photography", "Cafes"],
-    prompts: [{ question: "Green flag I look for", answer: "You remember the little things I mention." }],
-    details: { height: "167cm", exercise: "Yoga", education: "Masters", drinking: "Wine lover", smoking: "No", lookingFor: "Relationship", starSign: "Libra", languages: ["English", "Hindi", "German"] },
+    interests: ["Reading", "Plants", "Cooking", "Yoga", "Wine"],
+    vibeTags: ["Cozy", "Nurturing", "Adventurous"],
+    vibeWords: ["Cozy", "Nurturing", "Adventurous"],
+    auraRead: "warm homebody",
+    stories: [],
+    prompts: [
+      {
+        id: "p1",
+        question: "My love language",
+        answer: "quality time (and snacks)",
+      },
+    ],
+    details: {
+      height: "5'4\"",
+      education: "Bachelors",
+      drinking: "socially",
+      smoking: "no",
+      lookingFor: "Relationship",
+    },
     introversionLevel: 5,
     socialSpeed: "normal",
     goals: ["serious_relationship"],
-    vibeWords: ["elegant", "thoughtful", "adventurous"]
   },
-
-  "demo_leo": {
-    id: "demo_leo",
-    name: "Leo",
+  {
+    id: "profile_4",
+    oderId: "profile_4",
+    userId: "user_4",
+    name: "Alex",
+    displayName: "Alex",
     age: 27,
-    job: "Startup Founder",
+    job: "Photographer",
+    location: "Berlin",
+    distance: 4,
+    verified: false,
+    verificationScore: 70,
+    verificationTier: "Silver",
+    bio: "capturing moments ✨ chasing golden hour 🌅",
+    photos: [
+      "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800&fit=crop",
+      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&fit=crop",
+    ],
+    interests: ["Photography", "Travel", "Coffee", "Art", "Music"],
+    vibeTags: ["Artistic", "Spontaneous", "Romantic"],
+    vibeWords: ["Artistic", "Spontaneous", "Romantic"],
+    auraRead: "free spirit",
+    stories: [],
+    prompts: [
+      { id: "p1", question: "My ideal date", answer: "exploring with cameras" },
+    ],
+    details: {
+      height: "5'10\"",
+      education: "Self-taught",
+      drinking: "sometimes",
+      smoking: "no",
+      lookingFor: "Relationship",
+    },
+    introversionLevel: 4,
+    socialSpeed: "normal",
+    goals: ["serious_relationship"],
+  },
+  {
+    id: "profile_5",
+    oderId: "profile_5",
+    userId: "user_5",
+    name: "Sophie",
+    displayName: "Sophie",
+    age: 25,
+    job: "Architect",
+    location: "Berlin",
+    distance: 6,
+    verified: true,
+    verificationScore: 88,
+    verificationTier: "Gold",
+    bio: "designing spaces by day, gaming by night 🎮",
+    photos: [
+      "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&fit=crop",
+      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&fit=crop",
+    ],
+    interests: ["Gaming", "Architecture", "Anime", "Cooking", "Board Games"],
+    vibeTags: ["Nerdy", "Creative", "Playful"],
+    vibeWords: ["Nerdy", "Creative", "Playful"],
+    auraRead: "logical dreamer",
+    stories: [],
+    prompts: [
+      {
+        id: "p1",
+        question: "Currently obsessed with",
+        answer: "Zelda and ramen recipes",
+      },
+    ],
+    details: {
+      height: "5'7\"",
+      education: "Masters",
+      drinking: "socially",
+      smoking: "no",
+      lookingFor: "Relationship",
+    },
+    introversionLevel: 7,
+    socialSpeed: "slow",
+    goals: ["serious_relationship"],
+  },
+  {
+    id: "profile_6",
+    oderId: "profile_6",
+    userId: "user_6",
+    name: "Daniel",
+    displayName: "Daniel",
+    age: 30,
+    job: "Chef",
+    location: "Berlin",
+    distance: 3,
+    verified: true,
+    verificationScore: 82,
+    verificationTier: "Silver",
+    bio: "cooking is my love language 🍳",
+    photos: [
+      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=800&fit=crop",
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&fit=crop",
+    ],
+    interests: ["Cooking", "Food", "Wine", "Travel", "Markets"],
+    vibeTags: ["Foodie", "Warm", "Passionate"],
+    vibeWords: ["Foodie", "Warm", "Passionate"],
+    auraRead: "nurturing soul",
+    stories: [],
+    prompts: [
+      {
+        id: "p1",
+        question: "The way to my heart",
+        answer: "is through your stomach",
+      },
+    ],
+    details: {
+      height: "6'0\"",
+      education: "Culinary School",
+      drinking: "socially",
+      smoking: "no",
+      lookingFor: "Relationship",
+    },
+    introversionLevel: 4,
+    socialSpeed: "normal",
+    goals: ["serious_relationship"],
+  },
+  {
+    id: "profile_7",
+    oderId: "profile_7",
+    userId: "user_7",
+    name: "Mia",
+    displayName: "Mia",
+    age: 23,
+    job: "Psychology Student",
     location: "Berlin",
     distance: 8,
-    verified: true,
-    bio: "Building things and breaking comfort zones. Looking for a co-pilot, not a passenger.",
+    verified: false,
+    verificationScore: 65,
+    verificationTier: "Bronze",
+    bio: "studying minds, collecting vinyl 🎵",
     photos: [
-      "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&h=900&fit=crop"
+      "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&fit=crop",
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&fit=crop",
     ],
-    auraRead: "High energy with hidden depth. Craves real connection.",
-    vibeTags: ["Ambitious", "Energetic", "Genuine"],
-    verificationScore: 75,
-    verificationTier: "Silver",
+    interests: ["Psychology", "Music", "Writing", "Coffee", "Art Films"],
+    vibeTags: ["Deep", "Thoughtful", "Creative"],
+    vibeWords: ["Deep", "Thoughtful", "Creative"],
+    auraRead: "old soul",
     stories: [],
-    interests: ["Startups", "Fitness", "Books", "Podcasts", "Networking"],
-    prompts: [{ question: "Biggest risk I took", answer: "Quit my job to start a company. Still figuring it out." }],
-    details: { height: "185cm", exercise: "Daily", education: "MBA", drinking: "Rarely", smoking: "No", lookingFor: "Relationship", starSign: "Leo", languages: ["English", "German"] },
-    introversionLevel: 3,
-    socialSpeed: "fast",
+    prompts: [
+      {
+        id: "p1",
+        question: "Let's debate about",
+        answer: "whether free will exists",
+      },
+    ],
+    details: {
+      height: "5'5\"",
+      education: "Student",
+      drinking: "socially",
+      smoking: "no",
+      lookingFor: "Connection",
+    },
+    introversionLevel: 8,
+    socialSpeed: "slow",
     goals: ["serious_relationship"],
-    vibeWords: ["driven", "authentic", "bold"]
-  }
-};
+  },
+  {
+    id: "profile_8",
+    oderId: "profile_8",
+    userId: "user_8",
+    name: "Leo",
+    displayName: "Leo",
+    age: 28,
+    job: "Product Manager",
+    location: "Berlin",
+    distance: 4,
+    verified: true,
+    verificationScore: 78,
+    verificationTier: "Silver",
+    bio: "tech nerd who actually touches grass 🌿",
+    photos: [
+      "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=800&fit=crop",
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&fit=crop",
+    ],
+    interests: ["Hiking", "Tech", "Podcasts", "Board Games", "Cooking"],
+    vibeTags: ["Active", "Nerdy", "Balanced"],
+    vibeWords: ["Active", "Nerdy", "Balanced"],
+    auraRead: "grounded techie",
+    stories: [],
+    prompts: [
+      {
+        id: "p1",
+        question: "Perfect weekend",
+        answer: "hike, gaming, cooking",
+      },
+    ],
+    details: {
+      height: "5'9\"",
+      education: "Bachelors",
+      drinking: "socially",
+      smoking: "no",
+      lookingFor: "Relationship",
+    },
+    introversionLevel: 6,
+    socialSpeed: "normal",
+    goals: ["serious_relationship"],
+  },
+  {
+    id: "profile_9",
+    oderId: "profile_9",
+    userId: "user_9",
+    name: "Nina",
+    displayName: "Nina",
+    age: 26,
+    job: "Illustrator",
+    location: "Berlin",
+    distance: 5,
+    verified: true,
+    verificationScore: 85,
+    verificationTier: "Gold",
+    bio: "drawing my way through life ✏️ cat mom 🐱",
+    photos: [
+      "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800&fit=crop",
+      "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&fit=crop",
+    ],
+    interests: ["Art", "Cats", "Anime", "Coffee", "Museums"],
+    vibeTags: ["Creative", "Cozy", "Quirky"],
+    vibeWords: ["Creative", "Cozy", "Quirky"],
+    auraRead: "artistic dreamer",
+    stories: [],
+    prompts: [
+      {
+        id: "p1",
+        question: "I'll fall for you if",
+        answer: "you like my cats",
+      },
+    ],
+    details: {
+      height: "5'3\"",
+      education: "Art School",
+      drinking: "socially",
+      smoking: "no",
+      lookingFor: "Relationship",
+    },
+    introversionLevel: 7,
+    socialSpeed: "slow",
+    goals: ["serious_relationship"],
+  },
+  {
+    id: "profile_10",
+    oderId: "profile_10",
+    userId: "user_10",
+    name: "Sarah",
+    displayName: "Sarah",
+    age: 25,
+    job: "Data Scientist",
+    location: "Berlin",
+    distance: 7,
+    verified: true,
+    verificationScore: 88,
+    verificationTier: "Gold",
+    bio: "data by day, dance by night 💃",
+    photos: [
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&fit=crop",
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&fit=crop",
+    ],
+    interests: ["Dancing", "Data", "Music", "Wine", "Salsa"],
+    vibeTags: ["Analytical", "Passionate", "Hidden depths"],
+    vibeWords: ["Analytical", "Passionate", "Hidden depths"],
+    auraRead: "logical mind, fiery soul",
+    stories: [],
+    prompts: [
+      {
+        id: "p1",
+        question: "Surprised to learn",
+        answer: "I've won salsa competitions",
+      },
+    ],
+    details: {
+      height: "5'6\"",
+      education: "Masters",
+      drinking: "socially",
+      smoking: "no",
+      lookingFor: "Relationship",
+    },
+    introversionLevel: 6,
+    socialSpeed: "normal",
+    goals: ["serious_relationship"],
+  },
+];
 
-// --- STORAGE HELPERS ---
+// ============================================
+// PROFILE FUNCTIONS
+// ============================================
 
-const loadMatches = (): MatchPair[] => {
-  try {
-    const data = localStorage.getItem(MATCH_STORAGE_KEY);
-    return data ? JSON.parse(data) : [
-      // Initial seed match for demo
-      { id: "m_julia", userA: "me", userB: "demo_julia", createdAt: Date.now() - 86400000, compatibilityScore: 92 }
-    ];
-  } catch {
-    return [];
-  }
-};
-
-const saveMatches = (matches: MatchPair[]) => {
-  try {
-    localStorage.setItem(MATCH_STORAGE_KEY, JSON.stringify(matches));
-  } catch (e) {
-    console.warn("Failed to save matches", e);
-  }
-};
-
-const loadLikes = (): MatchLike[] => {
-  try {
-    const data = localStorage.getItem(LIKES_STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-};
-
-const saveLikes = (likes: MatchLike[]) => {
-  try {
-    localStorage.setItem(LIKES_STORAGE_KEY, JSON.stringify(likes));
-  } catch (e) {
-    console.warn("Failed to save likes", e);
-  }
-};
-
-let MATCHES: MatchPair[] = loadMatches();
-let LIKES: MatchLike[] = loadLikes();
-
-// --- PUBLIC API ---
-
-export async function fetchDiscoverProfiles(
-  currentUid: string,
-): Promise<PublicProfileSummary[]> {
-  await delay(150);
-  MATCHES = loadMatches();
-  
-  // Get IDs of already matched profiles
-  const matchedIds = MATCHES
-    .filter(m => m.userA === currentUid || m.userB === currentUid)
-    .map(m => m.userA === currentUid ? m.userB : m.userA);
-  
-  // Return profiles not yet matched, shuffled for variety
-  const available = Object.values(PROFILES_DB)
-    .filter(p => p.id !== currentUid && !matchedIds.includes(p.id))
-    .sort(() => Math.random() - 0.5); // Shuffle
-  
-  return available.map(p => ({ uid: p.id, auraProfile: p }));
+export function getProfileById(profileId: string): UserProfile | undefined {
+  return MOCK_PROFILES.find(
+    (p) =>
+      p.id === profileId || p.oderId === profileId || p.userId === profileId,
+  );
 }
 
-export async function fetchDailyPicks(currentUid: string): Promise<UserProfile[]> {
-  await delay(200);
-  // Return 2-3 high compatibility profiles as "Daily Picks"
-  // In production, this would use AI to select best matches
-  const picks = ["demo_lina", "demo_marcus", "demo_maya"]
-    .map(id => PROFILES_DB[id])
-    .filter(Boolean);
-  return picks;
+export async function fetchDailyPicks(
+  currentUserId?: string,
+): Promise<UserProfile[]> {
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  const profiles = currentUserId
+    ? MOCK_PROFILES.filter((p) => p.userId !== currentUserId)
+    : MOCK_PROFILES;
+  return [...profiles].sort(() => Math.random() - 0.5);
+}
+
+export async function fetchDiscoverProfiles(
+  currentUserId?: string,
+): Promise<UserProfile[]> {
+  return fetchDailyPicks(currentUserId);
+}
+
+export async function getAllProfiles(): Promise<UserProfile[]> {
+  return MOCK_PROFILES;
+}
+export async function getNearbyProfiles(
+  maxDistance: number = 10,
+): Promise<UserProfile[]> {
+  return MOCK_PROFILES.filter((p) => p.distance <= maxDistance);
+}
+
+// ============================================
+// MATCHING FUNCTIONS
+// ============================================
+
+export async function triggerBackgroundAuraMatch(
+  userProfile: UserProfile,
+  targetProfile: UserProfile,
+): Promise<AuraMatchResult> {
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  const sharedInterests = userProfile.interests.filter((i) =>
+    targetProfile.interests.includes(i),
+  ).length;
+  const introvertDiff = Math.abs(
+    (userProfile.introversionLevel || 5) -
+      (targetProfile.introversionLevel || 5),
+  );
+  const score = Math.min(100, 50 + sharedInterests * 10 - introvertDiff * 5);
+  const isMatch = score >= 60;
+  return {
+    isMatch,
+    score,
+    reasons:
+      sharedInterests > 0
+        ? [
+            `You both love ${userProfile.interests
+              .filter((i) => targetProfile.interests.includes(i))
+              .slice(0, 2)
+              .join(" and ")}`,
+          ]
+        : ["Your vibes could complement each other"],
+    suggestedOpener: isMatch
+      ? `hey! i noticed we both like ${userProfile.interests.filter((i) => targetProfile.interests.includes(i))[0] || "similar things"}... `
+      : undefined,
+  };
+}
+
+export async function fetchMatches(userId?: string): Promise<Match[]> {
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  try {
+    const stored = localStorage.getItem("aura_matches");
+    if (stored) return JSON.parse(stored);
+  } catch (e) {
+    console.error("Failed to load matches", e);
+  }
+  return [
+    {
+      matchId: "match_demo",
+      oderId: "profile_1",
+      name: "Julia",
+      photo: MOCK_PROFILES[0].photos[0],
+      preview: "Say hello! 👋",
+      time: "1d",
+      unread: true,
+      isAuraMatch: true,
+      transcript: generateDemoTranscript("You", "Julia"),
+      profile: MOCK_PROFILES[0],
+    },
+  ];
 }
 
 export async function likeProfile(
-  currentUid: string,
-  targetUid: string,
-): Promise<{ isNewMatch: boolean; matchId?: string }> {
-  await delay(150);
-
-  // Record the like
-  LIKES = loadLikes();
-  LIKES.push({
-    fromUid: currentUid,
-    toUid: targetUid,
-    createdAt: Date.now(),
-  });
-  saveLikes(LIKES);
-
-  // Check if they already liked us (mutual like = match!)
-  const mutualLike = LIKES.find(l => l.fromUid === targetUid && l.toUid === currentUid);
-  
-  if (mutualLike) {
-    // It's a match!
-    const matchId = `match_${Date.now()}`;
-    const newMatch: MatchPair = {
-      id: matchId,
-      userA: currentUid,
-      userB: targetUid,
-      createdAt: Date.now(),
-      compatibilityScore: 85 + Math.floor(Math.random() * 15), // 85-100
+  fromUserId: string,
+  toProfile: UserProfile,
+): Promise<MatchResult> {
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  const matched = Math.random() < 0.4;
+  if (matched) {
+    const transcript = generateDemoTranscript("You", toProfile.name);
+    const newMatch: Match = {
+      matchId: `match_${Date.now()}`,
+      oderId: toProfile.id,
+      name: toProfile.name,
+      photo: toProfile.photos[0],
+      preview: "Your auras connected! ✨",
+      time: "Just now",
+      unread: true,
+      isAuraMatch: true,
+      transcript,
+      profile: toProfile,
     };
-    
-    MATCHES = loadMatches();
-    MATCHES.unshift(newMatch);
-    saveMatches(MATCHES);
-    
-    return { isNewMatch: true, matchId };
-  }
-
-  // For demo: Sarah always matches instantly
-  if (targetUid === 'demo_sarah') {
-    const matchId = `match_sarah_${Date.now()}`;
-    const newMatch: MatchPair = {
-      id: matchId,
-      userA: currentUid,
-      userB: targetUid,
-      createdAt: Date.now(),
-      compatibilityScore: 88,
-    };
-    
-    MATCHES = loadMatches();
-    MATCHES.unshift(newMatch);
-    saveMatches(MATCHES);
-    
-    return { isNewMatch: true, matchId };
-  }
-
-  return { isNewMatch: false };
-}
-
-// Core feature: Aura-to-Aura background matching
-export async function triggerBackgroundAuraMatch(
-  myProfile: UserProfile,
-  targetProfile: UserProfile
-): Promise<{ success: boolean; compatibilityScore: number; transcript?: any[] }> {
-  await delay(1500); // Simulate AI processing time
-  
-  // Check if match already exists
-  MATCHES = loadMatches();
-  const existing = MATCHES.find(m => 
-    (m.userA === myProfile.id && m.userB === targetProfile.id) || 
-    (m.userA === targetProfile.id && m.userB === myProfile.id)
-  );
-
-  if (existing) {
-    return { success: false, compatibilityScore: existing.compatibilityScore || 0 };
-  }
-
-  // Simulate the twin conversation
-  const chatResult = simulateTwinChat(myProfile, targetProfile);
-  
-  // Calculate real compatibility (this could use Gemini in production)
-  const compatibilityScore = calculateCompatibility(myProfile, targetProfile);
-
-  // Create the match with Aura metadata
-  const matchId = `aura_${Date.now()}`;
-  const newMatch: MatchPair = {
-    id: matchId,
-    userA: myProfile.id,
-    userB: targetProfile.id,
-    createdAt: Date.now(),
-    compatibilityScore,
-    isAuraMatch: true,
-    twinTranscript: chatResult.transcript,
-    icebreaker: chatResult.suggestedOpener
-  };
-  
-  MATCHES.unshift(newMatch);
-  saveMatches(MATCHES);
-  
-  console.log(`[Aura Match] ${myProfile.name} ↔ ${targetProfile.name} | Score: ${compatibilityScore}%`);
-  
-  return { 
-    success: true, 
-    compatibilityScore, 
-    transcript: chatResult.transcript 
-  };
-}
-
-export async function fetchMatches(currentUid: string): Promise<MatchWithProfile[]> {
-  await delay(100);
-  MATCHES = loadMatches();
-  
-  const relevant = MATCHES.filter(
-    m => m.userA === currentUid || m.userB === currentUid
-  );
-
-  const result: MatchWithProfile[] = [];
-  for (const match of relevant) {
-    const otherUid = match.userA === currentUid ? match.userB : match.userA;
-    const otherProfile = PROFILES_DB[otherUid];
-    if (otherProfile) {
-      result.push({ 
-        match, 
-        other: { uid: otherUid, auraProfile: otherProfile } 
-      });
+    try {
+      const stored = localStorage.getItem("aura_matches");
+      const matches = stored ? JSON.parse(stored) : [];
+      matches.unshift(newMatch);
+      localStorage.setItem("aura_matches", JSON.stringify(matches));
+    } catch (e) {
+      console.error("Failed to save match", e);
     }
+    return {
+      matched: true,
+      matchId: newMatch.matchId,
+      compatibilityScore: 75 + Math.floor(Math.random() * 20),
+      transcript,
+      icebreaker: `hey ${toProfile.name}! our auras vibed... what made u swipe? 👀`,
+    };
   }
-  
-  // Sort by newest first
-  return result.sort((a, b) => b.match.createdAt - a.match.createdAt);
+  return { matched: false };
 }
 
-export async function fetchLikesReceived(currentUid: string): Promise<UserProfile[]> {
-  await delay(100);
-  LIKES = loadLikes();
-  
-  // Find profiles who liked the current user
-  const likerIds = LIKES
-    .filter(l => l.toUid === currentUid)
-    .map(l => l.fromUid);
-  
-  return likerIds
-    .map(id => PROFILES_DB[id])
-    .filter(Boolean);
+export async function superLikeProfile(
+  fromUserId: string,
+  toProfile: UserProfile,
+): Promise<MatchResult> {
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  const matched = Math.random() < 0.7;
+  if (matched) {
+    const transcript = generateDemoTranscript("You", toProfile.name);
+    const newMatch: Match = {
+      matchId: `match_${Date.now()}`,
+      oderId: toProfile.id,
+      name: toProfile.name,
+      photo: toProfile.photos[0],
+      preview: "⭐ Super Like!",
+      time: "Just now",
+      unread: true,
+      isAuraMatch: true,
+      transcript,
+      profile: toProfile,
+    };
+    try {
+      const stored = localStorage.getItem("aura_matches");
+      const matches = stored ? JSON.parse(stored) : [];
+      matches.unshift(newMatch);
+      localStorage.setItem("aura_matches", JSON.stringify(matches));
+    } catch (e) {
+      console.error("Failed to save match", e);
+    }
+    return {
+      matched: true,
+      matchId: newMatch.matchId,
+      compatibilityScore: 85 + Math.floor(Math.random() * 15),
+      transcript,
+      icebreaker: `hey ${toProfile.name}! i super liked u 💫`,
+    };
+  }
+  return { matched: false };
 }
 
-export async function unmatchProfile(currentUid: string, targetUid: string): Promise<void> {
-  await delay(300);
-  MATCHES = loadMatches();
-  MATCHES = MATCHES.filter(m => 
-    !((m.userA === currentUid && m.userB === targetUid) || 
-      (m.userA === targetUid && m.userB === currentUid))
+export async function passProfile(
+  fromUserId: string,
+  toProfileId: string,
+): Promise<void> {
+  console.log(`User ${fromUserId} passed on ${toProfileId}`);
+}
+
+// Unmatch functions - BOTH names for compatibility
+export async function unmatchUser(matchId: string): Promise<boolean> {
+  try {
+    const stored = localStorage.getItem("aura_matches");
+    if (stored) {
+      const matches = JSON.parse(stored);
+      const filtered = matches.filter(
+        (m: Match) => m.matchId !== matchId && m.oderId !== matchId,
+      );
+      localStorage.setItem("aura_matches", JSON.stringify(filtered));
+    }
+    return true;
+  } catch (e) {
+    console.error("Failed to unmatch", e);
+    return false;
+  }
+}
+export async function unmatchProfile(matchId: string): Promise<boolean> {
+  return unmatchUser(matchId);
+} // Alias
+
+// ============================================
+// SAFETY & REPORTING FUNCTIONS
+// ============================================
+
+export async function reportUser(
+  reporterId: string,
+  reportedUserId: string,
+  reason: string,
+  details?: string,
+): Promise<{ success: boolean; reportId?: string }> {
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  const report = {
+    id: `report_${Date.now()}`,
+    reporterId,
+    reportedUserId,
+    reason,
+    details,
+    createdAt: new Date().toISOString(),
+    status: "pending",
+  };
+  try {
+    const stored = localStorage.getItem("aura_reports") || "[]";
+    const reports = JSON.parse(stored);
+    reports.push(report);
+    localStorage.setItem("aura_reports", JSON.stringify(reports));
+  } catch (e) {
+    console.error("Failed to save report", e);
+  }
+  console.log("Report submitted:", report);
+  return { success: true, reportId: report.id };
+}
+export async function reportProfile(
+  reporterId: string,
+  reportedUserId: string,
+  reason: string,
+  details?: string,
+): Promise<{ success: boolean; reportId?: string }> {
+  return reportUser(reporterId, reportedUserId, reason, details);
+} // Alias
+
+export async function blockUser(
+  userId: string,
+  blockedUserId: string,
+): Promise<boolean> {
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  try {
+    const stored = localStorage.getItem("aura_blocked") || "[]";
+    const blocked = JSON.parse(stored);
+    if (!blocked.includes(blockedUserId)) {
+      blocked.push(blockedUserId);
+      localStorage.setItem("aura_blocked", JSON.stringify(blocked));
+    }
+    await unmatchUser(blockedUserId);
+    console.log(`User ${userId} blocked ${blockedUserId}`);
+    return true;
+  } catch (e) {
+    console.error("Failed to block user", e);
+    return false;
+  }
+}
+export async function blockProfile(
+  userId: string,
+  blockedUserId: string,
+): Promise<boolean> {
+  return blockUser(userId, blockedUserId);
+} // Alias
+
+export async function unblockUser(
+  userId: string,
+  blockedUserId: string,
+): Promise<boolean> {
+  try {
+    const stored = localStorage.getItem("aura_blocked") || "[]";
+    const blocked = JSON.parse(stored);
+    const filtered = blocked.filter((id: string) => id !== blockedUserId);
+    localStorage.setItem("aura_blocked", JSON.stringify(filtered));
+    return true;
+  } catch (e) {
+    console.error("Failed to unblock user", e);
+    return false;
+  }
+}
+export async function unblockProfile(
+  userId: string,
+  blockedUserId: string,
+): Promise<boolean> {
+  return unblockUser(userId, blockedUserId);
+} // Alias
+
+export async function getBlockedUsers(userId: string): Promise<string[]> {
+  try {
+    const stored = localStorage.getItem("aura_blocked") || "[]";
+    return JSON.parse(stored);
+  } catch (e) {
+    return [];
+  }
+}
+export async function getBlockedProfiles(userId: string): Promise<string[]> {
+  return getBlockedUsers(userId);
+} // Alias
+
+// ============================================
+// TWIN/AI CONVERSATION FUNCTIONS
+// ============================================
+
+export async function getTwinIntro(
+  userProfile: UserProfile,
+  targetProfile: UserProfile,
+): Promise<TwinIntroResult> {
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  return {
+    greeting: `hey! im ${targetProfile.name}'s aura twin 👋`,
+    topics: targetProfile.interests.slice(0, 3),
+    tone: targetProfile.socialSpeed === "slow" ? "chill" : "friendly",
+  };
+}
+
+export async function processTwinChat(
+  message: string,
+  userProfile: UserProfile,
+  targetProfile: UserProfile,
+  conversationHistory: TwinChatMessage[],
+): Promise<TwinChatResult> {
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  const responses = [
+    `ooh interesting! ${targetProfile.name} would def vibe with that`,
+    `haha okay noted! they're into ${targetProfile.interests[0]} too`,
+    `love that energy. ${targetProfile.name} is similar`,
+    `okay we're onto something here 👀`,
+    `that's perfect bc they mentioned wanting someone like that`,
+  ];
+  return {
+    response: responses[Math.floor(Math.random() * responses.length)],
+    sentiment: "positive",
+    shouldContinue: conversationHistory.length < 6,
+    suggestedFollowUp:
+      conversationHistory.length >= 5
+        ? `think its time for u two to meet! ready to match?`
+        : undefined,
+  };
+}
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+export function calculateCompatibility(
+  profileA: UserProfile,
+  profileB: UserProfile,
+): number {
+  const sharedInterests = profileA.interests.filter((i) =>
+    profileB.interests.includes(i),
+  ).length;
+  const introvertDiff = Math.abs(
+    (profileA.introversionLevel || 5) - (profileB.introversionLevel || 5),
   );
-  saveMatches(MATCHES);
+  return Math.min(
+    100,
+    Math.max(0, 50 + sharedInterests * 10 - introvertDiff * 5),
+  );
 }
 
-export function getProfileById(id: string): UserProfile | undefined {
-  return PROFILES_DB[id];
+export function getCompatibilityBreakdown(
+  profileA: UserProfile,
+  profileB: UserProfile,
+) {
+  const sharedInterests = profileA.interests.filter((i) =>
+    profileB.interests.includes(i),
+  );
+  const introvertDiff = Math.abs(
+    (profileA.introversionLevel || 5) - (profileB.introversionLevel || 5),
+  );
+  return {
+    overall: calculateCompatibility(profileA, profileB),
+    interests: Math.min(100, sharedInterests.length * 20),
+    introversion: Math.max(0, 100 - introvertDiff * 15),
+    sharedInterests,
+    introvertMatch:
+      introvertDiff <= 2 ? "great" : introvertDiff <= 4 ? "good" : "different",
+  };
 }
 
-export function getAllProfiles(): UserProfile[] {
-  return Object.values(PROFILES_DB);
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+function generateDemoTranscript(
+  userName: string,
+  matchName: string,
+): TwinChatMessage[] {
+  return [
+    {
+      from: "auraB" as const,
+      text: `hey! im ${matchName}'s aura. saw u like coffee too? ☕`,
+      senderName: matchName,
+      id: "msg_0",
+      timestamp: Date.now(),
+    },
+    {
+      from: "auraA" as const,
+      text: `omg yes!! literally cant function without it lol`,
+      senderName: userName,
+      id: "msg_1",
+      timestamp: Date.now() + 2000,
+    },
+    {
+      from: "auraB" as const,
+      text: `same tbh. ${matchName} said they need someone who gets that`,
+      senderName: matchName,
+      id: "msg_2",
+      timestamp: Date.now() + 4000,
+    },
+    {
+      from: "auraA" as const,
+      text: `tell them i have strong opinions about oat milk 👀`,
+      senderName: userName,
+      id: "msg_3",
+      timestamp: Date.now() + 6000,
+    },
+    {
+      from: "auraB" as const,
+      text: `haha ok theyre intrigued. what are they looking for tho?`,
+      senderName: matchName,
+      id: "msg_4",
+      timestamp: Date.now() + 8000,
+    },
+    {
+      from: "auraA" as const,
+      text: `something real. tired of surface level stuff yk?`,
+      senderName: userName,
+      id: "msg_5",
+      timestamp: Date.now() + 10000,
+    },
+    {
+      from: "auraB" as const,
+      text: `ok literally same page. i think u two should meet 💫`,
+      senderName: matchName,
+      id: "msg_6",
+      timestamp: Date.now() + 12000,
+    },
+  ];
 }
 
-export async function reportUser(userId: string, reason: string): Promise<void> {
-  await delay(500);
-  console.log(`[REPORT] User ${userId} reported for: ${reason}`);
-}
+// ============================================
+// DEFAULT EXPORT
+// ============================================
 
-// --- DEBUG HELPERS (remove in production) ---
-
-export function debugResetAllData(): void {
-  localStorage.removeItem(MATCH_STORAGE_KEY);
-  localStorage.removeItem(LIKES_STORAGE_KEY);
-  MATCHES = [];
-  LIKES = [];
-  console.log('[DEBUG] All match data reset');
-}
-
-export function debugGetState(): { matches: MatchPair[]; likes: MatchLike[] } {
-  return { matches: loadMatches(), likes: loadLikes() };
-}
+export default {
+  MOCK_PROFILES,
+  getProfileById,
+  fetchDailyPicks,
+  fetchDiscoverProfiles,
+  getAllProfiles,
+  getNearbyProfiles,
+  triggerBackgroundAuraMatch,
+  fetchMatches,
+  likeProfile,
+  superLikeProfile,
+  passProfile,
+  unmatchUser,
+  unmatchProfile,
+  reportUser,
+  reportProfile,
+  blockUser,
+  blockProfile,
+  unblockUser,
+  unblockProfile,
+  getBlockedUsers,
+  getBlockedProfiles,
+  getTwinIntro,
+  processTwinChat,
+  calculateCompatibility,
+  getCompatibilityBreakdown,
+};

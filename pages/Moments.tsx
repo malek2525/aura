@@ -1,12 +1,16 @@
+// src/pages/Moments.tsx
+// Fixed version with correct Moment type
+
 import React, { useState, useEffect, useRef } from "react";
 import { Icons } from "../components/Icons";
 import { Moment } from "../types";
 import { compressImage } from "../utils/image";
 
-// Mock Data
+// Mock Data - includes all required fields
 const DEFAULT_MOMENTS: Moment[] = [
   {
     id: "m1",
+    userIds: ["user1", "user2"],
     userNames: ["Alex", "Sarah"],
     userAvatars: [
       "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop",
@@ -20,9 +24,11 @@ const DEFAULT_MOMENTS: Moment[] = [
     likes: 124,
     timestamp: "2h ago",
     vibeTag: "Cozy",
+    isPublic: true,
   },
   {
     id: "m2",
+    userIds: ["user3", "user4"],
     userNames: ["Leo", "Mina"],
     userAvatars: [
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
@@ -36,9 +42,11 @@ const DEFAULT_MOMENTS: Moment[] = [
     likes: 89,
     timestamp: "5h ago",
     vibeTag: "Artsy",
+    isPublic: true,
   },
   {
     id: "m3",
+    userIds: ["user5", "user6"],
     userNames: ["Jordan", "Riley"],
     userAvatars: [
       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
@@ -52,6 +60,7 @@ const DEFAULT_MOMENTS: Moment[] = [
     likes: 203,
     timestamp: "1d ago",
     vibeTag: "Romantic",
+    isPublic: true,
   },
 ];
 
@@ -111,7 +120,7 @@ export const Moments: React.FC = () => {
     if (activeTab === "trending") {
       return b.likes - a.likes;
     }
-    return 0; // 'recent' keeps original order (newest first)
+    return 0;
   });
 
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,12 +139,11 @@ export const Moments: React.FC = () => {
     if (!newImage) return;
 
     setIsPosting(true);
-
-    // Simulate upload delay
     await new Promise((resolve) => setTimeout(resolve, 800));
 
     const newMoment: Moment = {
       id: `new_${Date.now()}`,
+      userIds: ["current_user", "match_user"],
       userNames: ["You", "Your Match"],
       userAvatars: [
         "https://ui-avatars.com/api/?name=You&background=FF6B6B&color=fff",
@@ -147,6 +155,7 @@ export const Moments: React.FC = () => {
       likes: 0,
       timestamp: "just now",
       vibeTag: selectedVibe,
+      isPublic: true,
     };
 
     const updatedMoments = [newMoment, ...moments];
@@ -168,7 +177,6 @@ export const Moments: React.FC = () => {
       newLiked.delete(momentId);
     } else {
       newLiked.add(momentId);
-      // Show heart animation
       setShowHeartAnimation(momentId);
       setTimeout(() => setShowHeartAnimation(null), 800);
     }
@@ -176,7 +184,6 @@ export const Moments: React.FC = () => {
     setLikedMoments(newLiked);
     localStorage.setItem("aura_liked_moments", JSON.stringify([...newLiked]));
 
-    // Update like count
     setMoments((prev) =>
       prev.map((m) =>
         m.id === momentId
@@ -203,7 +210,6 @@ export const Moments: React.FC = () => {
     if (!likedMoments.has(momentId)) {
       handleLike(momentId);
     } else {
-      // Still show animation even if already liked
       setShowHeartAnimation(momentId);
       setTimeout(() => setShowHeartAnimation(null), 800);
     }
@@ -227,19 +233,19 @@ export const Moments: React.FC = () => {
           <TabButton
             active={activeTab === "trending"}
             onClick={() => setActiveTab("trending")}
-            icon={Icons.TrendingUp}
+            icon={Icons.Zap}
             label="trending"
           />
           <TabButton
             active={activeTab === "recent"}
             onClick={() => setActiveTab("recent")}
-            icon={Icons.Clock}
+            icon={Icons.Calendar}
             label="recent"
           />
           <TabButton
             active={activeTab === "following"}
             onClick={() => setActiveTab("following")}
-            icon={Icons.Users}
+            icon={Icons.Heart}
             label="following"
           />
         </div>
@@ -248,7 +254,6 @@ export const Moments: React.FC = () => {
       {/* Feed */}
       <div className="flex-1 overflow-y-auto px-4 space-y-5 no-scrollbar pb-24">
         {sortedMoments.length === 0 ? (
-          // Empty State
           <div className="flex flex-col items-center justify-center py-16">
             <div className="w-20 h-20 bg-coral-light/20 rounded-full flex items-center justify-center mb-4">
               <Icons.Camera size={32} className="text-coral" />
@@ -304,7 +309,6 @@ export const Moments: React.FC = () => {
       {showCreator && (
         <div className="fixed inset-0 z-[90] bg-black/80 flex flex-col justify-end">
           <div className="bg-white rounded-t-[32px] p-6 pb-8 animate-in slide-in-from-bottom duration-300 max-h-[90vh] overflow-y-auto">
-            {/* Header */}
             <div className="flex justify-between items-center mb-5">
               <div>
                 <h3 className="font-bold text-lg">share a moment</h3>
@@ -318,7 +322,6 @@ export const Moments: React.FC = () => {
               </button>
             </div>
 
-            {/* Image Upload */}
             <div
               onClick={() => fileInputRef.current?.click()}
               className="aspect-[4/3] bg-warm-white rounded-2xl mb-4 flex items-center justify-center border-2 border-dashed border-warm-gray text-text-muted cursor-pointer hover:border-coral/50 hover:bg-coral-light/5 transition-all overflow-hidden"
@@ -355,7 +358,6 @@ export const Moments: React.FC = () => {
               onChange={handleImageSelect}
             />
 
-            {/* Vibe Tag Selection */}
             <div className="mb-4">
               <label className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2 block">
                 vibe tag
@@ -377,7 +379,6 @@ export const Moments: React.FC = () => {
               </div>
             </div>
 
-            {/* Caption */}
             <textarea
               value={newCaption}
               onChange={(e) => setNewCaption(e.target.value)}
@@ -389,7 +390,6 @@ export const Moments: React.FC = () => {
               {newCaption.length}/200
             </p>
 
-            {/* Post Button */}
             <button
               disabled={!newImage || isPosting}
               onClick={handlePost}
@@ -519,7 +519,6 @@ const MomentCard: React.FC<MomentCardProps> = ({
 
       {/* Content */}
       <div className="p-4">
-        {/* Location & Time */}
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center gap-1.5 text-coral text-xs font-bold">
             <Icons.MapPin size={12} />
@@ -530,7 +529,6 @@ const MomentCard: React.FC<MomentCardProps> = ({
           </span>
         </div>
 
-        {/* Caption */}
         <p className="text-sm text-text-main leading-relaxed mb-3">
           {moment.caption}
         </p>
@@ -562,7 +560,7 @@ const MomentCard: React.FC<MomentCardProps> = ({
           </button>
 
           <button onClick={onSave} className="ml-auto">
-            <Icons.Bookmark
+            <Icons.Star
               size={22}
               className={`transition-all ${
                 isSaved
@@ -576,3 +574,5 @@ const MomentCard: React.FC<MomentCardProps> = ({
     </div>
   );
 };
+
+export default Moments;

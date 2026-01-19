@@ -1,229 +1,208 @@
-import React, { useEffect, useState } from 'react';
-import { Icons } from '../components/Icons';
-import { MatchWithProfile } from '../types';
-import { fetchMatches } from '../services/matchService';
+import React, { useEffect, useState } from "react";
+import { Icons } from "../components/Icons";
+import { Match } from "../types";
+import { fetchMatches, MOCK_PROFILES } from "../services/matchService";
 
 interface ChatProps {
   onChatSelect: (matchId: string) => void;
 }
 
+// Demo matches for testing chat games
+const DEMO_MATCHES: Match[] = [
+  {
+    matchId: "match_julia",
+    oderId: "profile_1",
+    name: "Julia",
+    photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400",
+    preview: "hey! loved ur profile ✨",
+    time: "2m",
+    unread: true,
+    isAuraMatch: true,
+    transcript: [
+      {
+        id: "1",
+        from: "auraB",
+        text: "omg u both love coffee thats cute",
+        senderName: "Julia",
+        timestamp: Date.now() - 10000,
+      },
+      {
+        id: "2",
+        from: "auraA",
+        text: "tell them i make a mean latte",
+        senderName: "You",
+        timestamp: Date.now() - 8000,
+      },
+      {
+        id: "3",
+        from: "auraB",
+        text: "okay theyre intrigued 👀",
+        senderName: "Julia",
+        timestamp: Date.now() - 5000,
+      },
+    ],
+    profile: MOCK_PROFILES[0],
+  },
+  {
+    matchId: "match_emma",
+    oderId: "profile_3",
+    name: "Emma",
+    photo: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400",
+    preview: "that hiking spot looks amazing!",
+    time: "1h",
+    unread: false,
+    isAuraMatch: false,
+    profile: MOCK_PROFILES[2],
+  },
+  {
+    matchId: "match_sophie",
+    oderId: "profile_5",
+    name: "Sophie",
+    photo: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400",
+    preview: "wanna play 20 questions? 😊",
+    time: "3h",
+    unread: true,
+    isAuraMatch: false,
+    profile: MOCK_PROFILES[4],
+  },
+  {
+    matchId: "match_nina",
+    oderId: "profile_9",
+    name: "Nina",
+    photo: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400",
+    preview: "my cats approve btw 🐱",
+    time: "1d",
+    unread: false,
+    isAuraMatch: false,
+    profile: MOCK_PROFILES[8],
+  },
+];
+
 export const Chat: React.FC<ChatProps> = ({ onChatSelect }) => {
-  const [matches, setMatches] = useState<MatchWithProfile[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
-  
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      const data = await fetchMatches("me");
-      setMatches(data);
+      try {
+        const data = await fetchMatches("me");
+        // Merge with demo matches
+        const merged = [
+          ...DEMO_MATCHES,
+          ...data.filter(
+            (d) => !DEMO_MATCHES.find((dm) => dm.matchId === d.matchId),
+          ),
+        ];
+        setMatches(merged);
+      } catch (e) {
+        // Use demo matches if fetch fails
+        setMatches(DEMO_MATCHES);
+      }
       setLoading(false);
     };
     load();
   }, []);
 
-  // Filter matches by search
-  const filteredMatches = searchQuery 
-    ? matches.filter(m => 
-        m.other.auraProfile.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredMatches = searchQuery
+    ? matches.filter((m) =>
+        m.name.toLowerCase().includes(searchQuery.toLowerCase()),
       )
     : matches;
 
-  // Separate new matches (no messages yet) from conversations
-  const newMatches = filteredMatches.filter(m => !m.match.twinTranscript?.length && !m.match.isAuraMatch);
-  const auraMatches = filteredMatches.filter(m => m.match.isAuraMatch);
-  const conversations = filteredMatches.filter(m => !m.match.isAuraMatch || m.match.twinTranscript?.length);
-
-  // Get preview text for a match
-  const getPreviewText = (m: MatchWithProfile): string => {
-    if (m.match.isAuraMatch && m.match.twinTranscript?.length) {
-      // Show last message from Aura convo
-      const lastMsg = m.match.twinTranscript[m.match.twinTranscript.length - 1];
-      return `✨ "${lastMsg.text}"`;
-    }
-    if (m.match.icebreaker) {
-      return `💡 ${m.match.icebreaker}`;
-    }
-    return "Say hello! 👋";
-  };
-
-  // Format time ago
-  const timeAgo = (timestamp: number): string => {
-    const now = Date.now();
-    const diff = now - timestamp;
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-    
-    if (minutes < 1) return 'now';
-    if (minutes < 60) return `${minutes}m`;
-    if (hours < 24) return `${hours}h`;
-    if (days < 7) return `${days}d`;
-    return `${Math.floor(days / 7)}w`;
-  };
+  const auraMatches = filteredMatches.filter((m) => m.isAuraMatch);
+  const regularMatches = filteredMatches.filter((m) => !m.isAuraMatch);
 
   if (loading) {
     return (
-      <div className="h-full bg-warm-white flex items-center justify-center">
-        <Icons.Loader2 className="animate-spin text-coral" size={32} />
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <Icons.Loader2 className="animate-spin text-gray-400" size={32} />
       </div>
     );
   }
 
   return (
-    <div className="h-full bg-warm-white flex flex-col pt-6">
-      
+    <div className="min-h-screen bg-white pb-24">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6 px-5">
-        <h1 className="text-2xl font-extrabold text-text-main">Connections</h1>
-        <button 
-          onClick={() => setShowSearch(!showSearch)}
-          className={`p-3 rounded-2xl border transition-all ${
-            showSearch 
-              ? 'bg-coral text-white border-coral' 
-              : 'bg-white border-warm-gray text-text-main hover:text-coral'
-          }`}
-        >
-          <Icons.Search size={20} />
-        </button>
-      </div>
+      <div className="px-5 pt-6 pb-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
+          <button
+            onClick={() => setShowSearch(!showSearch)}
+            className={`p-2.5 rounded-xl transition-all ${
+              showSearch
+                ? "bg-gray-900 text-white"
+                : "bg-gray-100 text-gray-600"
+            }`}
+          >
+            <Icons.Search size={20} />
+          </button>
+        </div>
 
-      {/* Search Bar (expandable) */}
-      {showSearch && (
-        <div className="px-5 mb-4 animate-in slide-in-from-top-2">
-          <div className="relative">
-            <Icons.Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
+        {/* Search */}
+        {showSearch && (
+          <div className="mt-4 relative">
+            <Icons.Search
+              size={18}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <input
               type="text"
-              placeholder="Search matches..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-white border border-warm-gray rounded-2xl text-sm focus:outline-none focus:border-coral transition-colors"
+              className="w-full pl-11 pr-4 py-3 bg-gray-100 rounded-xl text-sm focus:outline-none"
               autoFocus
             />
-            {searchQuery && (
-              <button 
-                onClick={() => setSearchQuery('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-main"
-              >
-                <Icons.X size={16} />
-              </button>
-            )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* New Matches Row */}
-      {newMatches.length > 0 && (
-        <div className="mb-6 px-5">
-          <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4 ml-1">
-            New Matches
-          </h2>
-          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-            {/* Add Self */}
-            <div className="flex flex-col items-center gap-2 min-w-[72px]">
-              <div className="w-[72px] h-[72px] rounded-[24px] bg-white border-2 border-dashed border-warm-gray flex items-center justify-center cursor-pointer hover:border-coral transition-colors text-coral">
-                <Icons.Plus size={24} />
-              </div>
-              <span className="text-xs font-bold text-text-muted">You</span>
-            </div>
-
-            {/* New Match Avatars */}
-            {newMatches.map((m) => (
-              <div 
-                key={m.match.id} 
-                className="flex flex-col items-center gap-2 min-w-[72px] cursor-pointer group" 
-                onClick={() => onChatSelect(m.other.uid)}
-              >
-                <div className="w-[72px] h-[72px] rounded-[24px] p-[2px] bg-gradient-to-tr from-coral to-gold">
-                  <div className="w-full h-full rounded-[22px] border-2 border-white overflow-hidden">
-                    <img 
-                      src={m.other.auraProfile.photos[0]} 
-                      alt={m.other.auraProfile.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-                    />
-                  </div>
-                </div>
-                <span className="text-xs font-bold text-text-main">{m.other.auraProfile.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Aura Matches Section (Special highlight) */}
+      {/* Aura Matches - Subtle purple instead of orange */}
       {auraMatches.length > 0 && (
-        <div className="mb-4 px-5">
+        <div className="px-5 py-4">
           <div className="flex items-center gap-2 mb-3">
-            <Icons.Sparkles size={14} className="text-coral" />
-            <h2 className="text-xs font-bold text-coral uppercase tracking-wider">
+            <Icons.Sparkles size={14} className="text-purple-500" />
+            <span className="text-xs font-semibold text-purple-500 uppercase tracking-wide">
               Aura Matches
-            </h2>
-            <span className="text-[10px] bg-coral/10 text-coral px-2 py-0.5 rounded-full font-bold">
-              {auraMatches.length} new
             </span>
           </div>
-          
+
           <div className="space-y-2">
             {auraMatches.map((m) => (
-              <div 
-                key={m.match.id}
-                onClick={() => onChatSelect(m.other.uid)}
-                className="relative overflow-hidden bg-gradient-to-r from-coral/5 to-gold/5 rounded-3xl border border-coral/20 p-4 cursor-pointer hover:border-coral/40 transition-all group"
+              <div
+                key={m.matchId}
+                onClick={() => onChatSelect(m.profile?.id || m.oderId)}
+                className="flex items-center gap-3 p-3 bg-purple-50 rounded-2xl cursor-pointer hover:bg-purple-100 transition-colors"
               >
-                {/* Sparkle decoration */}
-                <div className="absolute top-2 right-2 opacity-30">
-                  <Icons.Sparkles size={24} className="text-coral" />
-                </div>
-                
-                <div className="flex items-center gap-4">
-                  {/* Avatar with Aura ring */}
-                  <div className="relative">
-                    <div className="w-14 h-14 rounded-full p-[2px] bg-gradient-to-tr from-coral to-gold">
-                      <div className="w-full h-full rounded-full overflow-hidden border-2 border-white">
-                        <img 
-                          src={m.other.auraProfile.photos[0]} 
-                          alt={m.other.auraProfile.name}
-                          className="w-full h-full object-cover" 
-                        />
-                      </div>
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-coral rounded-full flex items-center justify-center border-2 border-white">
-                      <Icons.Sparkles size={12} className="text-white" />
-                    </div>
+                <div className="relative">
+                  <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-purple-200">
+                    <img
+                      src={m.photo}
+                      alt={m.name}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center mb-1">
-                      <h3 className="font-bold text-text-main">{m.other.auraProfile.name}</h3>
-                      <span className="text-[10px] font-bold text-coral">
-                        {m.match.compatibilityScore || 90}% match
-                      </span>
-                    </div>
-                    
-                    {/* Transcript preview */}
-                    {m.match.twinTranscript && m.match.twinTranscript.length > 0 ? (
-                      <p className="text-sm text-text-sec truncate italic">
-                        "{m.match.twinTranscript[m.match.twinTranscript.length - 1].text}"
-                      </p>
-                    ) : (
-                      <p className="text-sm text-coral font-medium">
-                        Your Auras connected! Tap to see what they said ✨
-                      </p>
-                    )}
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
+                    <Icons.Sparkles size={10} className="text-white" />
                   </div>
                 </div>
 
-                {/* Icebreaker suggestion */}
-                {m.match.icebreaker && (
-                  <div className="mt-3 pt-3 border-t border-coral/10">
-                    <p className="text-xs text-text-muted mb-1">💡 Suggested opener:</p>
-                    <p className="text-sm text-text-main font-medium truncate">
-                      "{m.match.icebreaker}"
-                    </p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-semibold text-gray-900">{m.name}</h3>
+                    <span className="text-[10px] text-purple-500 font-medium">
+                      Aura Match
+                    </span>
                   </div>
-                )}
+                  <p className="text-sm text-gray-500 truncate mt-0.5">
+                    {m.transcript?.length
+                      ? `"${m.transcript[m.transcript.length - 1].text}"`
+                      : "Your Auras connected! ✨"}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
@@ -231,68 +210,62 @@ export const Chat: React.FC<ChatProps> = ({ onChatSelect }) => {
       )}
 
       {/* Regular Conversations */}
-      <div className="flex-1 overflow-y-auto px-5 pb-36">
-        <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3 ml-1">
-          Conversations
-        </h2>
-        
-        <div className="space-y-2">
-          {conversations.filter(m => !m.match.isAuraMatch).map((m) => (
-            <div 
-              key={m.match.id}
-              onClick={() => onChatSelect(m.other.uid)}
-              className="flex items-center gap-4 p-4 bg-white rounded-3xl border border-transparent hover:border-warm-gray transition-all cursor-pointer shadow-sm group"
+      <div className="px-5 py-2">
+        {auraMatches.length > 0 && (
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+            Messages
+          </h2>
+        )}
+
+        <div className="space-y-1">
+          {regularMatches.map((m) => (
+            <div
+              key={m.matchId}
+              onClick={() => onChatSelect(m.profile?.id || m.oderId)}
+              className="flex items-center gap-3 p-3 rounded-2xl cursor-pointer hover:bg-gray-50 transition-colors"
             >
-              {/* Avatar */}
               <div className="relative">
-                <div className="w-14 h-14 rounded-full overflow-hidden bg-warm-gray">
-                  <img 
-                    src={m.other.auraProfile.photos[0]} 
-                    alt={m.other.auraProfile.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
+                <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-100">
+                  <img
+                    src={m.photo}
+                    alt={m.name}
+                    className="w-full h-full object-cover"
                   />
                 </div>
-                {/* Online indicator (mock) */}
-                {Math.random() > 0.5 && (
-                  <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white" />
+                {m.unread && (
+                  <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-blue-500 rounded-full border-2 border-white" />
                 )}
               </div>
-              
+
               <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-center mb-1">
-                  <h3 className="font-bold text-text-main text-base">
-                    {m.other.auraProfile.name}
+                <div className="flex justify-between items-center">
+                  <h3
+                    className={`font-semibold ${m.unread ? "text-gray-900" : "text-gray-700"}`}
+                  >
+                    {m.name}
                   </h3>
-                  <span className="text-[10px] font-bold text-text-muted">
-                    {timeAgo(m.match.createdAt)}
-                  </span>
+                  <span className="text-[11px] text-gray-400">{m.time}</span>
                 </div>
-                <p className="text-sm text-text-sec truncate">
-                  {getPreviewText(m)}
+                <p
+                  className={`text-sm truncate mt-0.5 ${m.unread ? "text-gray-900 font-medium" : "text-gray-500"}`}
+                >
+                  {m.preview}
                 </p>
               </div>
-              
-              {/* Unread indicator */}
-              {Math.random() > 0.7 && (
-                <div className="w-3 h-3 bg-coral rounded-full flex-shrink-0" />
-              )}
             </div>
           ))}
 
           {/* Empty State */}
           {filteredMatches.length === 0 && (
-            <div className="text-center py-16">
-              <div className="w-20 h-20 bg-warm-gray/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Icons.MessageCircle size={32} className="text-text-muted" />
+            <div className="text-center py-20">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Icons.MessageCircle size={28} className="text-gray-400" />
               </div>
-              <h3 className="font-bold text-text-main mb-2">
-                {searchQuery ? 'No matches found' : 'No connections yet'}
+              <h3 className="font-semibold text-gray-900 mb-1">
+                No messages yet
               </h3>
-              <p className="text-sm text-text-muted max-w-[200px] mx-auto">
-                {searchQuery 
-                  ? `No one named "${searchQuery}"` 
-                  : 'Start swiping to find your matches!'
-                }
+              <p className="text-sm text-gray-500">
+                Start swiping to find matches!
               </p>
             </div>
           )}
