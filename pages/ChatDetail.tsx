@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Icons } from "../components/Icons";
+import { ChevronLeft, MoreVertical, User, AlertTriangle, UserMinus, Sparkles, Smile, Image as ImageIcon, Send } from "lucide-react";
 import { UserProfile, Match, TwinChatMessage } from "../types";
 import {
   fetchMatches,
@@ -113,7 +113,7 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
       try {
         const allMatches = await fetchMatches("me");
         const currentMatch = allMatches.find(
-          (m) => m.profile?.id === match.id || m.oderId === match.id,
+          (m: any) => m.profile?.id === match.id || m.id === match.id,
         );
 
         if (currentMatch) {
@@ -196,7 +196,7 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
           onClick={onBack}
           className="p-2 -ml-2 hover:bg-gray-100 rounded-full"
         >
-          <Icons.ChevronLeft size={24} className="text-gray-600" />
+          <ChevronLeft size={24} className="text-gray-600" />
         </button>
 
         <div
@@ -220,7 +220,7 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
           onClick={() => setShowMenu(!showMenu)}
           className="p-2 hover:bg-gray-100 rounded-full"
         >
-          <Icons.MoreVertical size={20} className="text-gray-600" />
+          <MoreVertical size={20} className="text-gray-600" />
         </button>
       </div>
 
@@ -234,7 +234,7 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
             }}
             className="w-full px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-3"
           >
-            <Icons.User size={18} /> View Profile
+            <User size={18} /> View Profile
           </button>
           <button
             onClick={() => {
@@ -243,7 +243,7 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
             }}
             className="w-full px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-3"
           >
-            <Icons.AlertTriangle size={18} /> Report
+            <AlertTriangle size={18} /> Report
           </button>
           <button
             onClick={() => {
@@ -252,7 +252,7 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
             }}
             className="w-full px-4 py-3 text-left text-sm font-medium text-red-500 hover:bg-red-50 flex items-center gap-3"
           >
-            <Icons.UserMinus size={18} /> Unmatch
+            <UserMinus size={18} /> Unmatch
           </button>
         </div>
       )}
@@ -264,7 +264,7 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Icons.Sparkles size={14} className="text-purple-500" />
+                <Sparkles size={14} className="text-purple-500" />
                 <span className="text-xs font-semibold text-purple-500">
                   Aura Conversation
                 </span>
@@ -291,7 +291,7 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
                     }`}
                   >
                     <p className="text-[10px] opacity-70 mb-1">
-                      {msg.senderName}'s Aura
+                      {msg.senderName || (msg.from === "auraA" ? "My Aura" : `${match.name}'s Aura`)}
                     </p>
                     <p>{msg.text}</p>
                   </div>
@@ -408,7 +408,7 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
               }}
               className={`p-2 rounded-full transition-colors ${showEmojiPicker ? "bg-gray-200" : "hover:bg-gray-100"}`}
             >
-              <Icons.Smile size={20} className="text-gray-500" />
+              <Smile size={20} className="text-gray-500" />
             </button>
             <button
               onClick={() => {
@@ -417,7 +417,7 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
               }}
               className={`p-2 rounded-full transition-colors ${showGifPicker ? "bg-gray-200" : "hover:bg-gray-100"}`}
             >
-              <Icons.Image size={20} className="text-gray-500" />
+              <ImageIcon size={20} className="text-gray-500" />
             </button>
           </div>
 
@@ -442,7 +442,7 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
             disabled={!inputText.trim()}
             className="p-2.5 bg-gray-900 text-white rounded-full disabled:opacity-40"
           >
-            <Icons.Send size={18} />
+            <Send size={18} />
           </button>
         </div>
       </div>
@@ -483,7 +483,7 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="bg-white rounded-3xl w-full max-w-xs p-6 text-center">
             <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Icons.UserMinus size={24} className="text-red-500" />
+              <UserMinus size={24} className="text-red-500" />
             </div>
             <h3 className="text-lg font-bold mb-2">Unmatch {match.name}?</h3>
             <p className="text-sm text-gray-500 mb-6">

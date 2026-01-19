@@ -339,7 +339,6 @@ export const Icons = {
   Images,
   Play,
   Pause,
-  Video,
   Music,
   Film,
 
