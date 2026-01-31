@@ -219,18 +219,14 @@ export const Discover: React.FC<DiscoverProps> = ({
 
     if (loading) {
         return (
-            <div className="absolute inset-0 flex items-center justify-center bg-warm-white">
+            <div className="flex-1 min-h-0 flex items-center justify-center bg-[#f8f6f6]">
                 <Icons.Loader2 className="animate-spin text-coral" size={32} />
             </div>
         );
     }
 
     return (
-        <div className="absolute inset-0 flex flex-col bg-warm-white overflow-hidden" style={{background: '#f8f6f6'}}>
-            {/* DEBUG - Remove after testing */}
-            <div style={{padding: '20px', background: 'red', color: 'white', zIndex: 9999}}>
-                DEBUG: Discover loaded, profiles: {profiles.length}, current: {currentIndex}, hasProfiles: {hasProfiles ? 'yes' : 'no'}
-            </div>
+        <div className="flex-1 min-h-0 flex flex-col bg-[#f8f6f6] overflow-hidden">
             {/* Header - Fixed at top */}
             <div className="flex-shrink-0 sticky top-0 z-50 px-4 pt-4 pb-3 bg-warm-white/95 backdrop-blur-sm">
                 <div className="flex items-center justify-between">

@@ -339,7 +339,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="fixed inset-0 w-full h-full bg-warm-white text-text-main font-sans flex flex-col mx-auto max-w-md relative shadow-2xl overflow-hidden sm:border-x border-warm-gray/50">
-      <main className="flex-1 w-full h-full overflow-hidden relative z-0">
+      <main className="flex-1 min-h-0 w-full overflow-hidden relative z-0">
         {renderMainContent()}
       </main>
 
