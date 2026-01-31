@@ -33,6 +33,7 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  AlertTriangle,
   Info,
   HelpCircle,
   ArrowLeft,
@@ -145,6 +146,14 @@ import {
   Hexagon,
   Diamond,
   Gem,
+  Ruler,
+  GraduationCap,
+  Wine,
+  Cigarette,
+  Briefcase,
+  Smile,
+  LogOut,
+  HelpingHand,
   type LucideIcon,
 } from "lucide-react";
 
@@ -451,6 +460,17 @@ export const Icons = {
   Square,
   Triangle,
   Hexagon,
+
+  // Profile Details
+  Ruler,
+  GraduationCap,
+  Wine,
+  Cigarette,
+  Briefcase,
+  Smile,
+  LogOut,
+  HelpingHand,
+  AlertTriangle,
 };
 
 export default Icons;

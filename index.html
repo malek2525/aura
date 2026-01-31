@@ -14,13 +14,14 @@
         theme: {
           extend: {
             colors: {
+              primary: '#ee2b5b',
               coral: {
-                DEFAULT: '#FF6B6B', // Warm, catchy red-pink
-                light: '#FF8E8E',
-                dark: '#EE5253',
+                DEFAULT: '#ee2b5b',
+                light: '#f8a0b3',
+                dark: '#c91e4a',
               },
               gold: {
-                DEFAULT: '#FFA502', // Catchy warm yellow/orange
+                DEFAULT: '#FFA502',
               },
               sage: {
                  DEFAULT: '#2ED573', 
@@ -28,14 +29,20 @@
                  dark: '#26AF61',
               },
               warm: {
-                white: '#FFF9F5',   // Cozy background
-                gray: '#F2EAE0',
-                dark: '#DCD6CC',
+                white: '#f8f6f6',
+                gray: '#e7cfd5',
+                dark: '#462a32',
               },
               text: {
-                main: '#2D3436', 
-                sec: '#636E72',
-                muted: '#B2BEC3',
+                main: '#1b0d11', 
+                sec: '#9a4c5f',
+                muted: '#c48fa0',
+              },
+              bg: {
+                light: '#f8f6f6',
+                dark: '#221015',
+                card: '#ffffff',
+                cardDark: '#2d161c',
               },
             },
             fontFamily: {
@@ -70,8 +77,8 @@
       body { 
         font-family: 'Plus Jakarta Sans', sans-serif; 
         -webkit-tap-highlight-color: transparent; 
-        background-color: #FFF9F5; 
-        color: #2D3436; 
+        background-color: #f8f6f6; 
+        color: #1b0d11; 
       }
       /* Hide scrollbar for Chrome, Safari and Opera */
       .no-scrollbar::-webkit-scrollbar {

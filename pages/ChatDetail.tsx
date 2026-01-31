@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ChevronLeft, MoreVertical, User, AlertTriangle, UserMinus, Sparkles, Smile, Image as ImageIcon, Send } from "lucide-react";
+import { ChevronLeft, MoreVertical, User, AlertTriangle, UserMinus, Sparkles, Smile, Image as ImageIcon, Send, Gamepad2 } from "lucide-react";
 import { UserProfile, Match, TwinChatMessage } from "../types";
 import {
   fetchMatches,
   reportUser,
   unmatchProfile,
 } from "../services/matchService";
+import { ChatGames } from "../components/ChatGames";
 
 interface ChatDetailProps {
   match: UserProfile;
@@ -94,6 +95,7 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
   // Media State
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
+  const [showGames, setShowGames] = useState(false);
 
   // Aura State
   const [auraTranscript, setAuraTranscript] = useState<
@@ -299,13 +301,13 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
               ))}
             </div>
 
-            {matchData?.icebreaker && (
+            {(matchData as any)?.icebreaker && (
               <div className="mt-3 p-3 bg-gray-50 rounded-xl">
                 <p className="text-xs text-gray-500 mb-1">
                   💡 Suggested opener:
                 </p>
                 <p className="text-sm text-gray-800 font-medium">
-                  "{matchData.icebreaker}"
+                  "{(matchData as any).icebreaker}"
                 </p>
               </div>
             )}
@@ -419,6 +421,12 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
             >
               <ImageIcon size={20} className="text-gray-500" />
             </button>
+            <button
+              onClick={() => setShowGames(true)}
+              className="p-2 rounded-full transition-colors hover:bg-gray-100"
+            >
+              <Gamepad2 size={20} className="text-gray-500" />
+            </button>
           </div>
 
           <div className="flex-1 bg-gray-100 rounded-full px-4 py-2 flex items-center">
@@ -476,6 +484,23 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Chat Games Modal */}
+      {showGames && (
+        <ChatGames
+          matchName={match.name}
+          onSendMessage={(text) => {
+            const newMsg: ChatMessage = {
+              id: Date.now().toString(),
+              fromMe: true,
+              text,
+              timestamp: Date.now(),
+            };
+            setMessages((prev) => [...prev, newMsg]);
+          }}
+          onClose={() => setShowGames(false)}
+        />
       )}
 
       {/* Unmatch Confirmation */}

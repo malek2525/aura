@@ -9,10 +9,16 @@ The user wants an iterative development process. They prefer detailed explanatio
 ## System Architecture
 
 ### UI/UX Decisions
-The application features a complete VisionOS-style glass aesthetic.
-- **Global Layout**: Deep slate gradient background with a centered `max-w-7xl` container.
-- **Glass Cards**: `rounded-3xl`, `bg-slate-900/70`, `border-white/10`, `backdrop-blur-2xl`, `shadow-2xl`.
-- **Colors**: Deep slate (`slate-950`, `slate-900`) with soft white/slate text. Accent colors are violet (primary) and blue/teal (secondary), avoiding neon.
+The application features a modern "quiet luxury" dating app aesthetic.
+- **Global Layout**: Clean light background with centered mobile-first container.
+- **Color Scheme** (Updated Jan 2026):
+  - Primary: `#ee2b5b` (magenta/pink)
+  - Background: `#f8f6f6` (light cream)
+  - Card: `#ffffff` (white)
+  - Text Main: `#1b0d11` (dark brown)
+  - Text Secondary: `#9a4c5f` (muted rose)
+  - Border: `#e7cfd5` (soft pink gray)
+- **Typography**: Plus Jakarta Sans font family, bold weights for headings.
 - **Typography**: Uppercase tracking, small text sizes, monospace for labels.
 - **Motion**: Soft animations for indicators (pulse) and smooth transitions.
 - **Avatar System**: Two avatar components for different use cases:

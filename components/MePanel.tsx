@@ -11,12 +11,10 @@ interface MePanelProps {
 }
 
 const buildLifestyleLine = (profile: UserProfile): string => {
-  const lifestyle = profile.dating?.lifestyle;
-  if (!lifestyle) return "";
   const bits: string[] = [];
-  if (lifestyle.smoking === "yes") bits.push("Smokes");
-  if (lifestyle.drinking === "yes") bits.push("Drinks");
-  if (lifestyle.pets && lifestyle.pets.length > 0) bits.push(`Pets: ${lifestyle.pets.join(", ")}`);
+  const details = profile.details as any;
+  if (details?.smoking && details.smoking !== "Never") bits.push("Smokes");
+  if (details?.drinking && details.drinking !== "Never") bits.push("Drinks");
   if (profile.job) bits.push(profile.job);
   return bits.join(" · ");
 };
@@ -32,13 +30,10 @@ export const MePanel: React.FC<MePanelProps> = ({
   const primaryPhoto = photos[0];
   
   const locationLabel = `${profile.age} · ${profile.location}`;
-  const bio = profile.bio || profile.dating?.bio || "";
-  const summary = profile.auraRead || profile.summary;
+  const bio = profile.bio || "";
+  const summary = profile.auraRead || "";
   const interests = profile.interests || [];
-  const vibeWords = profile.vibeTags || profile.vibeWords || [];
-  
-  const greenFlags = profile.greenFlags || profile.aura?.greenFlags || [];
-  const redFlags = profile.redFlags || profile.aura?.redFlags || [];
+  const vibeWords = profile.vibeTags || [];
 
   return (
     <div className="fixed inset-0 z-[100] flex justify-end">

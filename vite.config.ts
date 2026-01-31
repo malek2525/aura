@@ -15,9 +15,9 @@ export default defineConfig({
 
   server: {
     host: "0.0.0.0",
-    port: Number(process.env.PORT) || 5173,
+    port: 5000,
     strictPort: true,
-    allowedHosts: [".replit.dev"],
+    allowedHosts: true,
     hmr: {
       protocol: "wss",
       clientPort: 443,
