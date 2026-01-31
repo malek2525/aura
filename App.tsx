@@ -26,6 +26,10 @@ import { Settings } from "@/pages/Settings";
 import { Filters } from "@/pages/Filters";
 import { AppIcons } from "@/pages/AppIcons";
 import { CodeMerger } from "@/pages/CodeMerger";
+import { SubscriptionPlans } from "@/pages/SubscriptionPlans";
+import { SuccessRewards } from "@/pages/SuccessRewards";
+import { DatePlanner } from "@/pages/DatePlanner";
+import { Shop } from "@/pages/Shop";
 
 // Components
 import { StoryViewer } from "@/components/StoryViewer";
@@ -378,6 +382,10 @@ const AppContent: React.FC = () => {
             onBack={handleCloseSubView}
             onOpenIcons={() => setSubView("app-icons")}
             onOpenCodeMerger={() => setSubView("code-merger")}
+            onOpenSubscription={() => setSubView("subscription-plans")}
+            onOpenRewards={() => setSubView("success-rewards")}
+            onOpenShop={() => setSubView("shop")}
+            onOpenDatePlanner={() => setSubView("date-planner")}
           />
         </Overlay>
       )}
@@ -389,6 +397,29 @@ const AppContent: React.FC = () => {
       {subView === "code-merger" && (
         <Overlay>
           <CodeMerger onBack={() => setSubView("settings")} />
+        </Overlay>
+      )}
+      {subView === "subscription-plans" && (
+        <Overlay>
+          <SubscriptionPlans onBack={() => setSubView("settings")} />
+        </Overlay>
+      )}
+      {subView === "success-rewards" && (
+        <Overlay>
+          <SuccessRewards onBack={() => setSubView("settings")} />
+        </Overlay>
+      )}
+      {subView === "date-planner" && (
+        <Overlay>
+          <DatePlanner onBack={() => setSubView("settings")} />
+        </Overlay>
+      )}
+      {subView === "shop" && (
+        <Overlay>
+          <Shop
+            onBack={() => setSubView("settings")}
+            onViewPlans={() => setSubView("subscription-plans")}
+          />
         </Overlay>
       )}
       {subView === "filters" && (

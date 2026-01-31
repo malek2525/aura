@@ -20,7 +20,11 @@ export type SubViewState =
   | "filters"
   | "app-icons"
   | "code-merger"
-  | "aura-simulation";
+  | "aura-simulation"
+  | "subscription-plans"
+  | "success-rewards"
+  | "date-planner"
+  | "shop";
 
 // ============================================
 // USER PROFILE TYPES

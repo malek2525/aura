@@ -154,6 +154,7 @@ import {
   Smile,
   LogOut,
   HelpingHand,
+  ShoppingBag,
   type LucideIcon,
 } from "lucide-react";
 
@@ -471,6 +472,7 @@ export const Icons = {
   LogOut,
   HelpingHand,
   AlertTriangle,
+  ShoppingBag,
 };
 
 export default Icons;

@@ -5,12 +5,20 @@ interface SettingsProps {
   onBack: () => void;
   onOpenIcons?: () => void;
   onOpenCodeMerger?: () => void;
+  onOpenSubscription?: () => void;
+  onOpenRewards?: () => void;
+  onOpenShop?: () => void;
+  onOpenDatePlanner?: () => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({
   onBack,
   onOpenIcons,
   onOpenCodeMerger,
+  onOpenSubscription,
+  onOpenRewards,
+  onOpenShop,
+  onOpenDatePlanner,
 }) => {
   const [minMatchScore, setMinMatchScore] = useState(80);
   const [strictDealbreakers, setStrictDealbreakers] = useState(true);
@@ -222,6 +230,69 @@ export const Settings: React.FC<SettingsProps> = ({
                 <Toggle value={expandDistance} onChange={setExpandDistance} />
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Premium & Shop */}
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-sm">👑</span>
+            <h2 className="text-xs font-bold text-primary uppercase tracking-wider">
+              Premium & Rewards
+            </h2>
+          </div>
+          <div className="bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden">
+            {onOpenSubscription && (
+              <div
+                onClick={onOpenSubscription}
+                className="flex items-center p-4 border-b border-gray-100 hover:bg-white cursor-pointer transition-colors"
+              >
+                <Icons.Crown size={18} className="text-primary mr-3" />
+                <span className="text-sm font-medium text-text-main flex-1">
+                  Subscription Plans
+                </span>
+                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full mr-2">
+                  Go Premium
+                </span>
+                <Icons.ChevronRight size={16} className="text-gray-400" />
+              </div>
+            )}
+            {onOpenRewards && (
+              <div
+                onClick={onOpenRewards}
+                className="flex items-center p-4 border-b border-gray-100 hover:bg-white cursor-pointer transition-colors"
+              >
+                <Icons.Award size={18} className="text-amber-500 mr-3" />
+                <span className="text-sm font-medium text-text-main flex-1">
+                  Success Rewards
+                </span>
+                <Icons.ChevronRight size={16} className="text-gray-400" />
+              </div>
+            )}
+            {onOpenShop && (
+              <div
+                onClick={onOpenShop}
+                className="flex items-center p-4 border-b border-gray-100 hover:bg-white cursor-pointer transition-colors"
+              >
+                <Icons.ShoppingBag size={18} className="text-purple-500 mr-3" />
+                <span className="text-sm font-medium text-text-main flex-1">
+                  Aura Shop
+                </span>
+                <Icons.ChevronRight size={16} className="text-gray-400" />
+              </div>
+            )}
+            {onOpenDatePlanner && (
+              <div
+                onClick={onOpenDatePlanner}
+                className="flex items-center p-4 hover:bg-white cursor-pointer transition-colors"
+              >
+                <Icons.Calendar size={18} className="text-rose-500 mr-3" />
+                <span className="text-sm font-medium text-text-main flex-1">
+                  AI Date Planner
+                </span>
+                <Icons.ChevronRight size={16} className="text-gray-400" />
+              </div>
+            )}
           </div>
         </section>
 
