@@ -84,6 +84,16 @@ The application features a modern "quiet luxury" dating app aesthetic.
 - **Match Test Simulation**: Demonstrates compatibility analysis between user profiles and demo profiles, providing compatibility scores, insights, and suggested openers.
 - **NeuralLinkScreen**: Integrates the living AuraAvatar and a "Reply Lab" button that can prefill the textarea with current chat input.
 - **Onboarding**: Multi-step profile creation ("Core Identity", "Social Energy", "Boundaries & Goals") capturing user data.
+- **Chat Games**: Multiplayer mini-games in chat (`components/ChatGames.tsx`):
+  - Games are stored separately from chat messages in `activeGames` state array (not in chat history)
+  - "Active Games" banner above chat displays clickable pills for each ongoing game
+  - Clicking a game pill opens interactive modal showing question, options, and both players' answers
+  - Game types: Would You Rather, This or That, Two Truths One Lie, Hot Takes, 36 Questions, Emoji Story, Compatibility
+  - Uses structured `GameData` interface exported from ChatGames: `{ gameType, question?, options?, myAnswer?, theirAnswer? }`
+- **Discover Filters**: Matching filters appear in Discover page (not Settings):
+  - Bottom sheet modal with gender, age range (separate min/max sliders), distance, and interests
+  - Filters control matching preferences; Settings only for app configuration
+  - Empty state shows "You've seen everyone!" with "Edit Filters" button
 
 ### System Design Choices
 - **Centralized State Management**: `App.tsx` manages global state for screen switching and authentication, ensuring a single-page application feel without reloads.

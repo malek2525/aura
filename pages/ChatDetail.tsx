@@ -6,7 +6,7 @@ import {
   reportUser,
   unmatchProfile,
 } from "../services/matchService";
-import { ChatGames } from "../components/ChatGames";
+import { ChatGames, GameData } from "../components/ChatGames";
 
 interface ChatDetailProps {
   match: UserProfile;
@@ -19,8 +19,9 @@ interface ChatMessage {
   fromMe: boolean;
   text: string;
   timestamp: number;
-  type?: "text" | "image" | "gif";
+  type?: "text" | "image" | "gif" | "game";
   mediaUrl?: string;
+  gameData?: GameData;
 }
 
 const EMOJIS = [
@@ -106,6 +107,10 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
   >(null);
   const [showTranscript, setShowTranscript] = useState(true);
   const [matchData, setMatchData] = useState<Match | null>(null);
+  
+  // Game State - Games stored separately from chat messages
+  const [activeGames, setActiveGames] = useState<GameData[]>([]);
+  const [viewingGame, setViewingGame] = useState<GameData | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -329,6 +334,39 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
                 </p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Active Games Banner */}
+        {activeGames.length > 0 && (
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Gamepad2 size={14} className="text-purple-500" />
+              <span className="text-xs font-bold text-purple-500 uppercase tracking-wide">Active Games</span>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {activeGames.map((game, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setViewingGame(game)}
+                  className="flex-shrink-0 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">🎮</span>
+                    <span className="text-xs font-bold">
+                      {game.gameType === 'would-you-rather' ? 'Would You Rather' : 
+                       game.gameType === 'this-or-that' ? 'This or That' :
+                       game.gameType === 'two-truths' ? '2 Truths 1 Lie' :
+                       game.gameType === 'hot-takes' ? 'Hot Take' : 
+                       game.gameType === 'question-game' ? '36 Questions' :
+                       game.gameType === 'emoji-story' ? 'Emoji Story' :
+                       game.gameType === 'compatibility' ? 'Compatibility' : 'Game'}
+                    </span>
+                  </div>
+                  <p className="text-[10px] opacity-80 mt-1">Tap to play</p>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -556,17 +594,123 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
       {showGames && (
         <ChatGames
           matchName={match.name}
-          onSendMessage={(text) => {
-            const newMsg: ChatMessage = {
-              id: Date.now().toString(),
-              fromMe: true,
-              text,
-              timestamp: Date.now(),
-            };
-            setMessages((prev) => [...prev, newMsg]);
+          onSendGame={(gameData) => {
+            // Add to active games (not chat history)
+            setActiveGames((prev) => [...prev, gameData]);
+            // Open the game modal immediately
+            setViewingGame(gameData);
           }}
           onClose={() => setShowGames(false)}
         />
+      )}
+
+      {/* Game Play Modal */}
+      {viewingGame && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Gamepad2 size={20} />
+                  <span className="font-bold">
+                    {viewingGame.gameType === 'would-you-rather' ? 'Would You Rather' : 
+                     viewingGame.gameType === 'this-or-that' ? 'This or That' :
+                     viewingGame.gameType === 'two-truths' ? '2 Truths 1 Lie' :
+                     viewingGame.gameType === 'hot-takes' ? 'Hot Take' : 
+                     viewingGame.gameType === 'question-game' ? '36 Questions' :
+                     viewingGame.gameType === 'emoji-story' ? 'Emoji Story' :
+                     viewingGame.gameType === 'compatibility' ? 'Compatibility' : 'Game'}
+                  </span>
+                </div>
+                <button 
+                  onClick={() => setViewingGame(null)}
+                  className="p-1 hover:bg-white/20 rounded-full"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+            
+            {/* Content */}
+            <div className="p-6">
+              {/* Question */}
+              {viewingGame.question && (
+                <div className="mb-6">
+                  <p className="text-xs font-bold text-gray-400 uppercase mb-2">Question</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {viewingGame.question}
+                  </p>
+                </div>
+              )}
+              
+              {/* Options - Only show for games with clear options */}
+              {viewingGame.options && viewingGame.options.length > 0 && viewingGame.options.length <= 5 && (
+                <div className="space-y-3 mb-6">
+                  {viewingGame.options.map((option, idx) => {
+                    const isMyAnswer = viewingGame.myAnswer === option;
+                    const isTheirAnswer = viewingGame.theirAnswer === option;
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          if (!viewingGame.theirAnswer) {
+                            // Update the game with their answer
+                            setActiveGames(prev => prev.map(g => 
+                              g === viewingGame ? { ...g, theirAnswer: option } : g
+                            ));
+                            setViewingGame({ ...viewingGame, theirAnswer: option });
+                          }
+                        }}
+                        className={`w-full p-4 rounded-xl text-left font-medium transition-all ${
+                          isMyAnswer 
+                            ? 'bg-purple-100 border-2 border-purple-500 text-purple-900' 
+                            : isTheirAnswer
+                            ? 'bg-pink-100 border-2 border-pink-500 text-pink-900'
+                            : 'bg-gray-100 border-2 border-transparent hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span>{option}</span>
+                          {isMyAnswer && <span className="text-xs bg-purple-500 text-white px-2 py-1 rounded-full">You</span>}
+                          {isTheirAnswer && <span className="text-xs bg-pink-500 text-white px-2 py-1 rounded-full">{match.name}</span>}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              
+              {/* Results */}
+              {viewingGame.myAnswer && (
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-sm text-gray-600 mb-2">
+                    <span className="font-semibold">You picked:</span> {viewingGame.myAnswer}
+                  </p>
+                  {viewingGame.theirAnswer ? (
+                    <p className="text-sm text-gray-600">
+                      <span className="font-semibold">{match.name} picked:</span> {viewingGame.theirAnswer}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-400 italic">
+                      Waiting for {match.name}'s answer...
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {/* Footer */}
+            <div className="px-6 pb-6">
+              <button
+                onClick={() => setViewingGame(null)}
+                className="w-full py-3 bg-gray-900 text-white font-bold rounded-xl"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Unmatch Confirmation */}

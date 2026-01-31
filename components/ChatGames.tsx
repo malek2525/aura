@@ -1,8 +1,16 @@
 import React, { useState } from 'react';
 import { Icons } from './Icons';
 
+export interface GameData {
+  gameType: string;
+  question?: string;
+  options?: string[];
+  myAnswer?: string;
+  theirAnswer?: string;
+}
+
 interface ChatGamesProps {
-  onSendMessage: (text: string) => void;
+  onSendGame: (gameData: GameData) => void;
   onClose: () => void;
   matchName: string;
 }
@@ -19,7 +27,7 @@ export interface GameInvite {
 
 type GameType = 'menu' | 'would-you-rather' | 'this-or-that' | 'two-truths' | 'question-game' | 'emoji-story' | 'hot-takes' | 'compatibility';
 
-export const ChatGames: React.FC<ChatGamesProps> = ({ onSendMessage, onClose, matchName }) => {
+export const ChatGames: React.FC<ChatGamesProps> = ({ onSendGame, onClose, matchName }) => {
   const [activeGame, setActiveGame] = useState<GameType>('menu');
 
   const games = [
@@ -36,8 +44,8 @@ export const ChatGames: React.FC<ChatGamesProps> = ({ onSendMessage, onClose, ma
     setActiveGame(gameId);
   };
 
-  const handleSendAndClose = (message: string) => {
-    onSendMessage(message);
+  const handleSendGame = (gameData: GameData) => {
+    onSendGame(gameData);
     onClose();
   };
 
@@ -103,31 +111,31 @@ export const ChatGames: React.FC<ChatGamesProps> = ({ onSendMessage, onClose, ma
           )}
 
           {activeGame === 'would-you-rather' && (
-            <WouldYouRatherGame onSend={handleSendAndClose} matchName={matchName} />
+            <WouldYouRatherGame onSend={handleSendGame} matchName={matchName} />
           )}
 
           {activeGame === 'this-or-that' && (
-            <ThisOrThatGame onSend={handleSendAndClose} matchName={matchName} />
+            <ThisOrThatGame onSend={handleSendGame} matchName={matchName} />
           )}
 
           {activeGame === 'two-truths' && (
-            <TwoTruthsGame onSend={handleSendAndClose} matchName={matchName} />
+            <TwoTruthsGame onSend={handleSendGame} matchName={matchName} />
           )}
 
           {activeGame === 'question-game' && (
-            <QuestionGame onSend={handleSendAndClose} matchName={matchName} />
+            <QuestionGame onSend={handleSendGame} matchName={matchName} />
           )}
 
           {activeGame === 'emoji-story' && (
-            <EmojiStoryGame onSend={handleSendAndClose} matchName={matchName} />
+            <EmojiStoryGame onSend={handleSendGame} matchName={matchName} />
           )}
 
           {activeGame === 'hot-takes' && (
-            <HotTakesGame onSend={handleSendAndClose} matchName={matchName} />
+            <HotTakesGame onSend={handleSendGame} matchName={matchName} />
           )}
 
           {activeGame === 'compatibility' && (
-            <CompatibilityGame onSend={handleSendAndClose} matchName={matchName} />
+            <CompatibilityGame onSend={handleSendGame} matchName={matchName} />
           )}
 
         </div>
@@ -154,7 +162,7 @@ const WOULD_YOU_RATHER_QUESTIONS = [
   { a: "be famous but broke", b: "rich but unknown" },
 ];
 
-const WouldYouRatherGame: React.FC<{ onSend: (msg: string) => void; matchName: string }> = ({ onSend, matchName }) => {
+const WouldYouRatherGame: React.FC<{ onSend: (data: GameData) => void; matchName: string }> = ({ onSend, matchName }) => {
   const [currentQ, setCurrentQ] = useState(() => 
     WOULD_YOU_RATHER_QUESTIONS[Math.floor(Math.random() * WOULD_YOU_RATHER_QUESTIONS.length)]
   );
@@ -163,9 +171,12 @@ const WouldYouRatherGame: React.FC<{ onSend: (msg: string) => void; matchName: s
   const handleSend = () => {
     const choiceText = selected === 'a' ? currentQ.a : currentQ.b;
     
-    const message = `🎮 WOULD YOU RATHER?\n\n🅰️ ${currentQ.a}\n\n🅱️ ${currentQ.b}\n\n━━━━━━━━━━━━━━━\nI picked: ${selected === 'a' ? '🅰️' : '🅱️'} ${choiceText}\n\n👉 Your turn! Tap to reply with A or B`;
-    
-    onSend(message);
+    onSend({
+      gameType: 'would-you-rather',
+      question: `${currentQ.a} OR ${currentQ.b}`,
+      options: [currentQ.a, currentQ.b],
+      myAnswer: choiceText,
+    });
   };
 
   const handleNewQuestion = () => {
@@ -245,7 +256,7 @@ const THIS_OR_THAT_PAIRS = [
   ["🥤 Sweet", "🧂 Salty"],
 ];
 
-const ThisOrThatGame: React.FC<{ onSend: (msg: string) => void; matchName: string }> = ({ onSend, matchName }) => {
+const ThisOrThatGame: React.FC<{ onSend: (data: GameData) => void; matchName: string }> = ({ onSend, matchName }) => {
   const [pairs, setPairs] = useState(() => 
     [...THIS_OR_THAT_PAIRS].sort(() => Math.random() - 0.5).slice(0, 5)
   );
@@ -259,9 +270,14 @@ const ThisOrThatGame: React.FC<{ onSend: (msg: string) => void; matchName: strin
 
   const handleSend = () => {
     const myPicks = pairs.map((pair, i) => pair[answers[i] || 0]).join(' • ');
-    const questions = pairs.map(pair => `${pair[0]} or ${pair[1]}?`).join('\n');
+    const allOptions = pairs.map(pair => pair.join(' or '));
     
-    onSend(`⚡ THIS OR THAT?\n\n${questions}\n\n━━━━━━━━━━━━━━━\nMy picks: ${myPicks}\n\n👉 Now you pick! Reply with your answers`);
+    onSend({
+      gameType: 'this-or-that',
+      question: allOptions.join(', '),
+      options: allOptions,
+      myAnswer: myPicks,
+    });
   };
 
   const allAnswered = answers.filter(a => a !== undefined).length === pairs.length;
@@ -319,7 +335,7 @@ const TWO_TRUTHS_PROMPTS = [
   "a hidden skill",
 ];
 
-const TwoTruthsGame: React.FC<{ onSend: (msg: string) => void; matchName: string }> = ({ onSend, matchName }) => {
+const TwoTruthsGame: React.FC<{ onSend: (data: GameData) => void; matchName: string }> = ({ onSend, matchName }) => {
   const [statements, setStatements] = useState(['', '', '']);
   const [lieIndex, setLieIndex] = useState<number | null>(null);
 
@@ -331,7 +347,12 @@ const TwoTruthsGame: React.FC<{ onSend: (msg: string) => void; matchName: string
 
   const handleSend = () => {
     const shuffled = [...statements].sort(() => Math.random() - 0.5);
-    onSend(`🎭 2 TRUTHS & 1 LIE\n\nGuess which one is the lie!\n\n1️⃣ ${shuffled[0]}\n2️⃣ ${shuffled[1]}\n3️⃣ ${shuffled[2]}\n\n━━━━━━━━━━━━━━━\n👉 Reply with 1, 2, or 3!\nThen it's YOUR turn to share yours 🎭`);
+    onSend({
+      gameType: 'two-truths',
+      question: 'Guess which one is the lie!',
+      options: shuffled,
+      myAnswer: statements[lieIndex || 0],
+    });
   };
 
   const canSend = statements.every(s => s.trim().length > 0) && lieIndex !== null;
@@ -402,7 +423,7 @@ const DEEP_QUESTIONS = [
   "What's one thing you wish more people understood about you?",
 ];
 
-const QuestionGame: React.FC<{ onSend: (msg: string) => void; matchName: string }> = ({ onSend, matchName }) => {
+const QuestionGame: React.FC<{ onSend: (data: GameData) => void; matchName: string }> = ({ onSend, matchName }) => {
   const [level, setLevel] = useState<1 | 2 | 3>(1);
   const [currentQ, setCurrentQ] = useState(() => DEEP_QUESTIONS[Math.floor(Math.random() * 6)]);
 
@@ -417,7 +438,11 @@ const QuestionGame: React.FC<{ onSend: (msg: string) => void; matchName: string 
   };
 
   const handleSend = () => {
-    onSend(`💭 DEEP QUESTION TIME\n\n"${currentQ}"\n\n━━━━━━━━━━━━━━━\n👉 I'll answer first, then it's your turn!`);
+    onSend({
+      gameType: 'question-game',
+      question: currentQ,
+      options: [],
+    });
   };
 
   return (
@@ -475,7 +500,7 @@ const EMOJI_PROMPTS = [
   "your weekend plans",
 ];
 
-const EmojiStoryGame: React.FC<{ onSend: (msg: string) => void; matchName: string }> = ({ onSend, matchName }) => {
+const EmojiStoryGame: React.FC<{ onSend: (data: GameData) => void; matchName: string }> = ({ onSend, matchName }) => {
   const [story, setStory] = useState('');
   const [prompt, setPrompt] = useState(() => 
     EMOJI_PROMPTS[Math.floor(Math.random() * EMOJI_PROMPTS.length)]
@@ -484,7 +509,11 @@ const EmojiStoryGame: React.FC<{ onSend: (msg: string) => void; matchName: strin
   const commonEmojis = ['😀', '😂', '🥰', '😎', '🤔', '😴', '🎉', '❤️', '🔥', '✨', '👀', '🙌', '💀', '🥺', '😭', '🤣', '💕', '🌟', '🎮', '🍕', '☕', '🌙', '🌈', '🏠', '✈️', '🎵', '📱', '💪', '🙏', '👋'];
 
   const handleSend = () => {
-    onSend(`📖 EMOJI STORY CHALLENGE!\n\nPrompt: "${prompt}"\n\nMy story: ${story}\n\n━━━━━━━━━━━━━━━\n👉 Can you guess what it means?\nThen make YOUR emoji story! 📖`);
+    onSend({
+      gameType: 'emoji-story',
+      question: prompt,
+      myAnswer: story,
+    });
   };
 
   return (
@@ -553,15 +582,19 @@ const HOT_TAKES = [
   "raisins ruin cookies",
 ];
 
-const HotTakesGame: React.FC<{ onSend: (msg: string) => void; matchName: string }> = ({ onSend, matchName }) => {
+const HotTakesGame: React.FC<{ onSend: (data: GameData) => void; matchName: string }> = ({ onSend, matchName }) => {
   const [currentTake, setCurrentTake] = useState(() => 
     HOT_TAKES[Math.floor(Math.random() * HOT_TAKES.length)]
   );
   const [opinion, setOpinion] = useState<'agree' | 'disagree' | null>(null);
 
   const handleSend = () => {
-    const reaction = opinion === 'agree' ? '✅ AGREE' : '❌ DISAGREE';
-    onSend(`🔥 HOT TAKE!\n\n"${currentTake}"\n\n━━━━━━━━━━━━━━━\nMy verdict: ${reaction}\n\n👉 What do YOU think? Agree or disagree?`);
+    onSend({
+      gameType: 'hot-takes',
+      question: currentTake,
+      options: ['Agree', 'Disagree'],
+      myAnswer: opinion === 'agree' ? 'Agree' : 'Disagree',
+    });
   };
 
   return (
@@ -625,7 +658,7 @@ const COMPATIBILITY_QUESTIONS = [
   { q: "Social battery?", options: ["Always charged", "Needs recharging", "Low capacity"] },
 ];
 
-const CompatibilityGame: React.FC<{ onSend: (msg: string) => void; matchName: string }> = ({ onSend, matchName }) => {
+const CompatibilityGame: React.FC<{ onSend: (data: GameData) => void; matchName: string }> = ({ onSend, matchName }) => {
   const [answers, setAnswers] = useState<string[]>([]);
   const [currentQ, setCurrentQ] = useState(0);
 
@@ -639,8 +672,12 @@ const CompatibilityGame: React.FC<{ onSend: (msg: string) => void; matchName: st
   };
 
   const handleSend = () => {
-    const results = COMPATIBILITY_QUESTIONS.map((q, i) => `• ${q.q} → ${answers[i]}`).join('\n');
-    onSend(`💕 COMPATIBILITY QUIZ!\n\nMy answers:\n${results}\n\n━━━━━━━━━━━━━━━\n👉 Take the quiz and let's compare!\nHow many do we match on? 💕`);
+    onSend({
+      gameType: 'compatibility',
+      question: 'Compatibility Quiz',
+      options: COMPATIBILITY_QUESTIONS.map(q => q.q),
+      myAnswer: answers.join(', '),
+    });
   };
 
   const isComplete = answers.length === COMPATIBILITY_QUESTIONS.length;

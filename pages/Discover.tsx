@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Icons } from "../components/Icons";
-import { UserProfile, PublicProfileSummary } from "../types";
+import { UserProfile } from "../types";
 import {
     fetchDiscoverProfiles,
     fetchDailyPicks,
@@ -8,7 +8,6 @@ import {
 } from "../services/matchService";
 
 interface DiscoverProps {
-    onOpenFilters: () => void;
     onViewProfile: (profile: UserProfile) => void;
     onViewStory: (profile: UserProfile) => void;
     onStartAuraChat: (profile: UserProfile) => void;
@@ -18,8 +17,14 @@ interface DiscoverProps {
 
 type DiscoverMode = "stack" | "picks";
 
+interface DiscoverProfileData {
+    id: string;
+    auraProfile: UserProfile;
+}
+
+type ProfileDataType = DiscoverProfileData | UserProfile;
+
 export const Discover: React.FC<DiscoverProps> = ({
-    onOpenFilters,
     onViewProfile,
     onViewStory,
     onStartAuraChat,
@@ -27,10 +32,21 @@ export const Discover: React.FC<DiscoverProps> = ({
     onPass,
 }) => {
     const [mode, setMode] = useState<DiscoverMode>("stack");
-    const [profiles, setProfiles] = useState<PublicProfileSummary[]>([]);
+    const [profiles, setProfiles] = useState<ProfileDataType[]>([]);
     const [dailyPicks, setDailyPicks] = useState<UserProfile[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [showFilters, setShowFilters] = useState(false);
+
+    // Filter State
+    const [gender, setGender] = useState<'women'|'men'|'everyone'>('women');
+    const [minAge, setMinAge] = useState(18);
+    const [maxAge, setMaxAge] = useState(35);
+    const [distance, setDistance] = useState(25);
+    const [expandAge, setExpandAge] = useState(true);
+    const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+
+    const interestsList = ['Gym', 'Art', 'Music', 'Tech', 'Travel', 'Foodie', 'Gaming', 'Outdoors'];
 
     // Swipe State
     const [swipeOffset, setSwipeOffset] = useState(0);
@@ -71,8 +87,13 @@ export const Discover: React.FC<DiscoverProps> = ({
         setIsAuraMatching(false);
     }, [currentIndex]);
 
-    const currentProfileData = profiles[currentIndex % profiles.length];
-    const currentProfile = currentProfileData?.auraProfile as UserProfile;
+    const currentProfileData = profiles[currentIndex];
+    const currentProfile = currentProfileData 
+        ? ('auraProfile' in currentProfileData 
+            ? currentProfileData.auraProfile 
+            : currentProfileData) as UserProfile
+        : null;
+    const hasProfiles = profiles.length > 0 && currentIndex < profiles.length;
 
     const handleAction = async (action: "pass" | "like", isAura = false) => {
         if (!currentProfile) return;
@@ -81,7 +102,7 @@ export const Discover: React.FC<DiscoverProps> = ({
         setSwipeOffset(action === "like" ? screenWidth : -screenWidth);
 
         setTimeout(async () => {
-            const nextIndex = (currentIndex + 1) % profiles.length;
+            const nextIndex = currentIndex + 1;
             setCurrentIndex(nextIndex);
             setSwipeOffset(0);
             setIsAnimating(false);
@@ -89,8 +110,8 @@ export const Discover: React.FC<DiscoverProps> = ({
             if (isAura) {
                 onLike();
             } else {
-                if (action === "like") {
-                    await likeProfile("me", currentProfile.id);
+                if (action === "like" && currentProfile) {
+                    await likeProfile("me", currentProfile);
                     onLike();
                 } else {
                     onPass();
@@ -100,7 +121,7 @@ export const Discover: React.FC<DiscoverProps> = ({
     };
 
     const handleAuraMatchClick = async () => {
-        if (isAuraMatching) return;
+        if (isAuraMatching || !currentProfile) return;
         setIsAuraMatching(true);
 
         await onStartAuraChat(currentProfile);
@@ -108,6 +129,34 @@ export const Discover: React.FC<DiscoverProps> = ({
         setTimeout(() => {
             handleAction("like", true);
         }, 500);
+    };
+
+    const toggleInterest = (item: string) => {
+        if (selectedInterests.includes(item)) {
+            setSelectedInterests(selectedInterests.filter(i => i !== item));
+        } else {
+            setSelectedInterests([...selectedInterests, item]);
+        }
+    };
+
+    const handleMinAgeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = parseInt(e.target.value);
+        if (val < maxAge) {
+            setMinAge(val);
+        }
+    };
+
+    const handleMaxAgeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = parseInt(e.target.value);
+        if (val > minAge) {
+            setMaxAge(val);
+        }
+    };
+
+    const handleApplyFilters = () => {
+        setShowFilters(false);
+        // Reset to start with new filters
+        setCurrentIndex(0);
     };
 
     // === TOUCH HANDLERS WITH DIRECTION LOCKING ===
@@ -166,7 +215,6 @@ export const Discover: React.FC<DiscoverProps> = ({
         directionLockedRef.current = null;
     };
 
-    // FIXED: Changed from h-full to absolute inset-0 for proper full-screen height
     if (loading) {
         return (
             <div className="absolute inset-0 flex items-center justify-center bg-warm-white">
@@ -176,7 +224,6 @@ export const Discover: React.FC<DiscoverProps> = ({
     }
 
     return (
-        // FIXED: Using absolute positioning for full height
         <div className="absolute inset-0 flex flex-col bg-warm-white overflow-hidden">
             {/* Header - Fixed at top */}
             <div className="flex-shrink-0 sticky top-0 z-50 px-4 pt-4 pb-3 bg-warm-white/95 backdrop-blur-sm">
@@ -197,7 +244,7 @@ export const Discover: React.FC<DiscoverProps> = ({
                         </button>
                     </div>
                     <button
-                        onClick={onOpenFilters}
+                        onClick={() => setShowFilters(true)}
                         className="p-3 bg-white rounded-2xl border border-warm-gray shadow-sm hover:border-coral transition-colors"
                     >
                         <Icons.SlidersHorizontal
@@ -210,7 +257,7 @@ export const Discover: React.FC<DiscoverProps> = ({
 
             {/* MODE: STACK */}
             {mode === "stack" &&
-                (currentProfile ? (
+                (hasProfiles && currentProfile ? (
                     <div className="flex-1 overflow-hidden relative">
                         {/* Swipeable Card Container */}
                         <div
@@ -467,27 +514,35 @@ export const Discover: React.FC<DiscoverProps> = ({
                         </div>
                     </div>
                 ) : (
+                    /* Empty State - No more profiles */
                     <div className="flex-1 flex flex-col items-center justify-center bg-warm-white p-8 text-center">
-                        <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400 animate-in zoom-in">
-                            <Icons.Search size={32} />
+                        <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+                            <Icons.Users size={40} className="text-primary" />
                         </div>
-                        <h2 className="text-xl font-bold text-text-main">
-                            No more profiles
+                        <h2 className="text-2xl font-bold text-text-main mb-2">
+                            You've seen everyone!
                         </h2>
-                        <p className="text-text-sec mt-2">
-                            Check back later or adjust your filters.
+                        <p className="text-text-sec mb-6 max-w-xs">
+                            No more profiles match your current filters. Try expanding your preferences to discover more people.
                         </p>
                         <button
-                            onClick={onOpenFilters}
-                            className="mt-6 px-6 py-3 bg-white border border-warm-gray rounded-xl text-sm font-bold shadow-sm hover:border-coral transition-colors"
+                            onClick={() => setShowFilters(true)}
+                            className="px-8 py-4 bg-primary text-white rounded-2xl text-sm font-bold shadow-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
                         >
-                            Adjust Filters
+                            <Icons.SlidersHorizontal size={18} />
+                            Edit Filters
+                        </button>
+                        <button
+                            onClick={() => setCurrentIndex(0)}
+                            className="mt-4 px-6 py-3 text-primary font-semibold text-sm hover:bg-primary/10 rounded-xl transition-colors"
+                        >
+                            Start Over
                         </button>
                     </div>
                 ))}
 
             {/* Floating Action Buttons */}
-            {mode === "stack" && currentProfile && (
+            {mode === "stack" && hasProfiles && currentProfile && (
                 <div className="absolute bottom-24 left-0 right-0 px-6 flex justify-center items-center gap-6 z-[60] pointer-events-none">
                     <button
                         onClick={(e) => {
@@ -568,37 +623,187 @@ export const Discover: React.FC<DiscoverProps> = ({
                                     </span>
                                 </div>
 
-                                <div className="absolute bottom-3 left-3 text-white">
-                                    <h3 className="font-bold text-sm">
+                                <div className="absolute bottom-0 left-0 right-0 p-3">
+                                    <h3 className="font-bold text-white text-lg">
                                         {p.name}, {p.age}
                                     </h3>
-                                    <p className="text-[10px] text-white/80">
-                                        {p.job}
+                                    <p className="text-white/80 text-xs">
+                                        {p.distance}km away
                                     </p>
-                                </div>
-                                <div className="absolute bottom-3 right-3">
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onLike();
-                                        }}
-                                        className="bg-coral p-1.5 rounded-full text-white shadow-sm"
-                                    >
-                                        <Icons.Heart
-                                            size={14}
-                                            fill="currentColor"
-                                        />
-                                    </button>
                                 </div>
                             </div>
                         ))}
-                        <div className="aspect-[3/4] bg-white border-2 border-dashed border-warm-gray rounded-2xl flex flex-col items-center justify-center text-center p-4">
-                            <div className="w-12 h-12 bg-warm-gray rounded-full flex items-center justify-center mb-3 text-text-muted">
-                                <Icons.Lock size={20} />
-                            </div>
-                            <p className="text-sm font-bold text-text-muted">
-                                More tomorrow
-                            </p>
+                    </div>
+                </div>
+            )}
+
+            {/* FILTERS BOTTOM SHEET */}
+            {showFilters && (
+                <div className="fixed inset-0 z-[100]">
+                    {/* Backdrop */}
+                    <div 
+                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                        onClick={() => setShowFilters(false)}
+                    />
+                    
+                    {/* Sheet */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[85vh] overflow-hidden animate-in slide-in-from-bottom duration-300">
+                        {/* Header */}
+                        <div className="sticky top-0 bg-white px-4 py-4 flex items-center justify-between border-b border-warm-gray z-10">
+                            <button 
+                                onClick={() => setShowFilters(false)} 
+                                className="p-2 -ml-2 text-text-sec hover:bg-warm-gray rounded-full"
+                            >
+                                <Icons.X size={24} />
+                            </button>
+                            <h2 className="text-lg font-bold text-text-main">Match Filters</h2>
+                            <button 
+                                onClick={handleApplyFilters}
+                                className="text-primary font-bold text-sm"
+                            >
+                                Apply
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="overflow-y-auto p-4 pb-8 space-y-5 max-h-[70vh]">
+                            {/* Gender */}
+                            <section className="bg-bg-light p-4 rounded-2xl">
+                                <h3 className="text-sm font-bold text-text-main mb-3">Show me</h3>
+                                <div className="flex bg-white p-1 rounded-xl border border-warm-gray">
+                                    {(['women', 'men', 'everyone'] as const).map((opt) => (
+                                        <button 
+                                            key={opt}
+                                            onClick={() => setGender(opt)} 
+                                            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all capitalize ${gender === opt ? 'bg-primary text-white shadow-sm' : 'text-text-sec'}`}
+                                        >
+                                            {opt}
+                                        </button>
+                                    ))}
+                                </div>
+                            </section>
+
+                            {/* Age Range - DUAL SLIDER */}
+                            <section className="bg-bg-light p-4 rounded-2xl">
+                                <div className="flex justify-between mb-4">
+                                    <span className="text-sm font-bold text-text-main">Age Range</span>
+                                    <span className="text-sm font-bold text-primary">{minAge} - {maxAge}</span>
+                                </div>
+                                
+                                {/* Min Age Slider */}
+                                <div className="mb-5">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="text-xs font-semibold text-text-sec">Min Age</label>
+                                        <span className="text-xs font-bold text-text-main bg-white px-2 py-1 rounded-lg border border-warm-gray">{minAge}</span>
+                                    </div>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 right-0 flex items-center pointer-events-none">
+                                            <div className="w-full h-2 bg-white rounded-full border border-warm-gray">
+                                                <div 
+                                                    className="h-full bg-primary/30 rounded-full"
+                                                    style={{ width: `${((minAge - 18) / 42) * 100}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <input 
+                                            type="range" 
+                                            min="18" 
+                                            max="59" 
+                                            value={minAge} 
+                                            onChange={handleMinAgeChange}
+                                            className="w-full h-2 appearance-none cursor-pointer bg-transparent relative z-10"
+                                            style={{
+                                                WebkitAppearance: 'none',
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Max Age Slider */}
+                                <div className="mb-4">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="text-xs font-semibold text-text-sec">Max Age</label>
+                                        <span className="text-xs font-bold text-text-main bg-white px-2 py-1 rounded-lg border border-warm-gray">{maxAge}</span>
+                                    </div>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 right-0 flex items-center pointer-events-none">
+                                            <div className="w-full h-2 bg-white rounded-full border border-warm-gray">
+                                                <div 
+                                                    className="h-full bg-primary rounded-full"
+                                                    style={{ width: `${((maxAge - 19) / 41) * 100}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <input 
+                                            type="range" 
+                                            min="19" 
+                                            max="60" 
+                                            value={maxAge} 
+                                            onChange={handleMaxAgeChange}
+                                            className="w-full h-2 appearance-none cursor-pointer bg-transparent relative z-10"
+                                            style={{
+                                                WebkitAppearance: 'none',
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Expand Toggle */}
+                                <div className="flex justify-between items-center border-t border-warm-gray pt-4">
+                                    <span className="text-xs text-text-sec">Expand range if needed</span>
+                                    <div 
+                                        onClick={() => setExpandAge(!expandAge)}
+                                        className={`w-10 h-6 rounded-full relative cursor-pointer transition-colors ${expandAge ? 'bg-primary' : 'bg-warm-gray'}`}
+                                    >
+                                        <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all shadow-sm ${expandAge ? 'right-1' : 'left-1'}`}></div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Distance */}
+                            <section className="bg-bg-light p-4 rounded-2xl">
+                                <div className="flex justify-between mb-4">
+                                    <span className="text-sm font-bold text-text-main">Maximum Distance</span>
+                                    <span className="text-sm font-bold text-primary">{distance} km</span>
+                                </div>
+                                <input 
+                                    type="range" 
+                                    min="5" 
+                                    max="100" 
+                                    value={distance} 
+                                    onChange={(e) => setDistance(parseInt(e.target.value))}
+                                    className="w-full h-2 bg-warm-gray rounded-lg appearance-none cursor-pointer accent-primary" 
+                                />
+                            </section>
+
+                            {/* Interests */}
+                            <section className="bg-bg-light p-4 rounded-2xl">
+                                <h3 className="text-sm font-bold text-text-main mb-3">Interests</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {interestsList.map((tag) => {
+                                        const isSelected = selectedInterests.includes(tag);
+                                        return (
+                                            <button 
+                                                key={tag} 
+                                                onClick={() => toggleInterest(tag)}
+                                                className={`px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${isSelected ? 'bg-primary text-white border-primary' : 'bg-white border-warm-gray text-text-sec hover:border-primary'}`}
+                                            >
+                                                {tag}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </section>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="sticky bottom-0 p-4 bg-white border-t border-warm-gray">
+                            <button 
+                                onClick={handleApplyFilters}
+                                className="w-full py-4 bg-primary text-white font-bold text-sm rounded-2xl"
+                            >
+                                Show Matches
+                            </button>
                         </div>
                     </div>
                 </div>
