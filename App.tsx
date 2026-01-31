@@ -27,7 +27,6 @@ import { Filters } from "@/pages/Filters";
 import { AppIcons } from "@/pages/AppIcons";
 import { CodeMerger } from "@/pages/CodeMerger";
 import { SubscriptionPlans } from "@/pages/SubscriptionPlans";
-import { SuccessRewards } from "@/pages/SuccessRewards";
 import { DatePlanner } from "@/pages/DatePlanner";
 import { Shop } from "@/pages/Shop";
 
@@ -383,7 +382,6 @@ const AppContent: React.FC = () => {
             onOpenIcons={() => setSubView("app-icons")}
             onOpenCodeMerger={() => setSubView("code-merger")}
             onOpenSubscription={() => setSubView("subscription-plans")}
-            onOpenRewards={() => setSubView("success-rewards")}
             onOpenShop={() => setSubView("shop")}
             onOpenDatePlanner={() => setSubView("date-planner")}
           />
@@ -402,11 +400,6 @@ const AppContent: React.FC = () => {
       {subView === "subscription-plans" && (
         <Overlay>
           <SubscriptionPlans onBack={() => setSubView("settings")} />
-        </Overlay>
-      )}
-      {subView === "success-rewards" && (
-        <Overlay>
-          <SuccessRewards onBack={() => setSubView("settings")} />
         </Overlay>
       )}
       {subView === "date-planner" && (

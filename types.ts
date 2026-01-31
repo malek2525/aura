@@ -22,7 +22,6 @@ export type SubViewState =
   | "code-merger"
   | "aura-simulation"
   | "subscription-plans"
-  | "success-rewards"
   | "date-planner"
   | "shop";
 

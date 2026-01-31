@@ -6,7 +6,6 @@ interface SettingsProps {
   onOpenIcons?: () => void;
   onOpenCodeMerger?: () => void;
   onOpenSubscription?: () => void;
-  onOpenRewards?: () => void;
   onOpenShop?: () => void;
   onOpenDatePlanner?: () => void;
 }
@@ -16,7 +15,6 @@ export const Settings: React.FC<SettingsProps> = ({
   onOpenIcons,
   onOpenCodeMerger,
   onOpenSubscription,
-  onOpenRewards,
   onOpenShop,
   onOpenDatePlanner,
 }) => {
@@ -253,18 +251,6 @@ export const Settings: React.FC<SettingsProps> = ({
                 </span>
                 <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full mr-2">
                   Go Premium
-                </span>
-                <Icons.ChevronRight size={16} className="text-gray-400" />
-              </div>
-            )}
-            {onOpenRewards && (
-              <div
-                onClick={onOpenRewards}
-                className="flex items-center p-4 border-b border-gray-100 hover:bg-white cursor-pointer transition-colors"
-              >
-                <Icons.Award size={18} className="text-amber-500 mr-3" />
-                <span className="text-sm font-medium text-text-main flex-1">
-                  Success Rewards
                 </span>
                 <Icons.ChevronRight size={16} className="text-gray-400" />
               </div>
