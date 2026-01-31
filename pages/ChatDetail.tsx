@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ChevronLeft, MoreVertical, User, AlertTriangle, UserMinus, Sparkles, Smile, Image as ImageIcon, Send, Gamepad2 } from "lucide-react";
+import { ChevronLeft, MoreVertical, User, AlertTriangle, UserMinus, Sparkles, Smile, Image as ImageIcon, Send, Gamepad2, Camera, Upload, X } from "lucide-react";
 import { UserProfile, Match, TwinChatMessage } from "../types";
 import {
   fetchMatches,
@@ -96,6 +96,9 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [showGames, setShowGames] = useState(false);
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Aura State
   const [auraTranscript, setAuraTranscript] = useState<
@@ -135,13 +138,27 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
     scrollToBottom();
   }, [messages, auraTranscript]);
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      handleSend("", "image", base64);
+    };
+    reader.readAsDataURL(file);
+    setShowMediaPicker(false);
+    e.target.value = "";
+  };
+
   const handleSend = (
     text?: string,
     type: "text" | "image" | "gif" = "text",
     mediaUrl?: string,
   ) => {
     const txt = text || inputText;
-    if (!txt.trim() && type === "text") return;
+    if (!txt.trim() && type === "text" && !mediaUrl) return;
 
     const newMsg: ChatMessage = {
       id: `msg_${Date.now()}`,
@@ -156,6 +173,7 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
     setInputText("");
     setShowEmojiPicker(false);
     setShowGifPicker(false);
+    setShowMediaPicker(false);
 
     // Simulate reply after 2 seconds
     setTimeout(() => {
@@ -399,6 +417,43 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
         </div>
       )}
 
+      {/* Media Picker */}
+      {showMediaPicker && (
+        <div className="px-4 py-4 border-t border-gray-100 bg-gray-50">
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={() => cameraInputRef.current?.click()}
+              className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-gray-200 hover:border-primary transition-colors min-w-[100px]"
+            >
+              <Camera size={28} className="text-primary" />
+              <span className="text-xs font-bold text-text-main">Camera</span>
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-gray-200 hover:border-primary transition-colors min-w-[100px]"
+            >
+              <Upload size={28} className="text-primary" />
+              <span className="text-xs font-bold text-text-main">Gallery</span>
+            </button>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+        </div>
+      )}
+
       {/* Input Area */}
       <div className="px-4 py-3 border-t border-gray-100 bg-white">
         <div className="flex items-center gap-2">
@@ -416,10 +471,21 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({
               onClick={() => {
                 setShowGifPicker(!showGifPicker);
                 setShowEmojiPicker(false);
+                setShowMediaPicker(false);
               }}
               className={`p-2 rounded-full transition-colors ${showGifPicker ? "bg-gray-200" : "hover:bg-gray-100"}`}
             >
               <ImageIcon size={20} className="text-gray-500" />
+            </button>
+            <button
+              onClick={() => {
+                setShowMediaPicker(!showMediaPicker);
+                setShowEmojiPicker(false);
+                setShowGifPicker(false);
+              }}
+              className={`p-2 rounded-full transition-colors ${showMediaPicker ? "bg-gray-200" : "hover:bg-gray-100"}`}
+            >
+              <Camera size={20} className="text-gray-500" />
             </button>
             <button
               onClick={() => setShowGames(true)}

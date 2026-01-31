@@ -9,11 +9,10 @@ interface LikesProps {
 }
 
 export const Likes: React.FC<LikesProps> = ({ onProfileClick }) => {
-  // Use mock data from service to get real profile objects for the interaction
   const mockLikedUser = getProfileById('demo_sarah');
 
   return (
-    <div className="h-full bg-warm-white flex flex-col pt-4 pb-24 px-4 overflow-y-auto no-scrollbar">
+    <div className="h-full bg-bg-light flex flex-col pt-4 pb-24 px-4 overflow-y-auto no-scrollbar">
       <div className="flex justify-between items-center mb-6 px-2">
         <div>
           <h1 className="text-2xl font-extrabold text-text-main tracking-tight">Likes</h1>
@@ -33,14 +32,13 @@ export const Likes: React.FC<LikesProps> = ({ onProfileClick }) => {
                  <span className="text-gold text-[10px] font-bold uppercase tracking-widest">Aura Gold</span>
               </div>
               <h3 className="text-white font-extrabold text-xl leading-tight">See who likes you</h3>
-              <p className="text-white/60 text-xs font-medium">Unlock 12+ admirers waiting for you.</p>
+              <p className="text-white/60 text-xs font-medium">Unlock all your admirers waiting for you.</p>
           </div>
           <button className="bg-white text-black px-5 py-2.5 rounded-full text-xs font-bold hover:scale-105 transition-transform shadow-lg">
             Unlock Now
           </button>
         </div>
         
-        {/* Decorative elements */}
         <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-gold/30 to-coral/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/4"></div>
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 blur-2xl rounded-full translate-y-1/2 -translate-x-1/4"></div>
       </div>
@@ -48,55 +46,41 @@ export const Likes: React.FC<LikesProps> = ({ onProfileClick }) => {
       {/* Matches Section */}
       <div className="mb-8">
         <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4 px-1">Your Matches</h2>
-        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4">
-           {/* Sarah Match */}
-             <div className="flex flex-col items-center gap-2 min-w-[76px] cursor-pointer group" onClick={() => mockLikedUser && onProfileClick(mockLikedUser)}>
-               <div className="w-[76px] h-[76px] rounded-full p-[3px] bg-gradient-to-tr from-coral to-gold shadow-sm group-hover:scale-105 transition-transform">
-                 <div className="w-full h-full rounded-full border-2 border-white overflow-hidden">
-                    <img src={mockLikedUser?.photos[0] || 'https://ui-avatars.com/api/?name=S'} className="w-full h-full object-cover" />
-                 </div>
-               </div>
-               <span className="text-xs font-bold text-text-main">Sarah</span>
-             </div>
-             
-             {/* Placeholder for empty state if needed */}
-             {/* <div className="flex flex-col items-center gap-2 min-w-[76px] opacity-40">
-                <div className="w-[76px] h-[76px] rounded-full bg-gray-200 border-2 border-white"></div>
-                <div className="w-12 h-3 bg-gray-200 rounded-full"></div>
-             </div> */}
-        </div>
+        {mockLikedUser ? (
+          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 -mx-4 px-4">
+            <div className="flex flex-col items-center gap-2 min-w-[76px] cursor-pointer group" onClick={() => mockLikedUser && onProfileClick(mockLikedUser)}>
+              <div className="w-[76px] h-[76px] rounded-full p-[3px] bg-gradient-to-tr from-primary to-gold shadow-sm group-hover:scale-105 transition-transform">
+                <div className="w-full h-full rounded-full border-2 border-white overflow-hidden">
+                   <img src={mockLikedUser?.photos[0] || 'https://ui-avatars.com/api/?name=S'} className="w-full h-full object-cover" />
+                </div>
+              </div>
+              <span className="text-xs font-bold text-text-main">{mockLikedUser.name}</span>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-8 bg-white rounded-2xl">
+            <Icons.Heart size={32} className="text-text-muted mx-auto mb-2" />
+            <p className="text-sm text-text-sec font-medium">No matches yet</p>
+            <p className="text-xs text-text-muted">Keep swiping to find your match!</p>
+          </div>
+        )}
       </div>
 
-      {/* Likes Grid */}
-      <div>
-        <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4 px-1">12 People Like You</h2>
-        <div className="grid grid-cols-2 gap-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="relative aspect-[3/4] rounded-3xl overflow-hidden bg-warm-gray border-4 border-white shadow-sm group cursor-pointer">
-              {/* Image with Blur */}
-              <img 
-                src={`https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=600&fit=crop&q=60`} 
-                className="w-full h-full object-cover blur-md scale-110 opacity-80 transition-all duration-700 group-hover:scale-105 group-hover:opacity-60" 
-                alt="Hidden User" 
-              />
-              
-              {/* Overlay Content */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/10">
-                <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center mb-2 border border-white/40 shadow-lg group-hover:scale-110 transition-transform">
-                   <Icons.Heart size={20} className="text-white fill-white drop-shadow-md" />
-                </div>
-                <span className="px-3 py-1 bg-black/40 backdrop-blur-md rounded-full text-[10px] font-bold text-white uppercase tracking-widest border border-white/10">
-                    Nearby
-                </span>
-              </div>
-            </div>
-          ))}
-          
-          {/* More placeholder */}
-          <div className="aspect-[3/4] rounded-3xl bg-gray-100 flex flex-col items-center justify-center border-4 border-white border-dashed text-text-muted">
-              <span className="text-2xl font-black opacity-20">+6</span>
-              <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-1">More</span>
+      {/* Likes Info - No fake profiles */}
+      <div className="flex-1">
+        <h2 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-4 px-1">People Who Like You</h2>
+        
+        <div className="bg-white rounded-3xl p-8 text-center border border-warm-gray">
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Icons.Heart size={28} className="text-primary" />
           </div>
+          <h3 className="text-lg font-bold text-text-main mb-2">Your Admirers Are Hidden</h3>
+          <p className="text-sm text-text-sec mb-6">
+            Upgrade to Aura Gold to see who's interested in you and match instantly.
+          </p>
+          <button className="bg-primary text-white px-6 py-3 rounded-full text-sm font-bold hover:bg-primary/90 transition-colors">
+            Upgrade to See Likes
+          </button>
         </div>
       </div>
     </div>

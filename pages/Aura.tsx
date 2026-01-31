@@ -20,6 +20,7 @@ export const Aura: React.FC<AuraProps> = ({
 }) => {
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [selectedCard, setSelectedCard] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -46,6 +47,16 @@ export const Aura: React.FC<AuraProps> = ({
   };
 
   const completion = calculateCompletion();
+
+  const handleCardClick = (cardId: string, action?: () => void) => {
+    setSelectedCard(cardId);
+    if (action) {
+      setTimeout(() => {
+        action();
+        setSelectedCard(null);
+      }, 150);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-bg-light pb-24">
@@ -130,44 +141,54 @@ export const Aura: React.FC<AuraProps> = ({
         Quick Actions
       </h3>
 
-      {/* Quick Actions Grid */}
+      {/* Quick Actions Grid - All same style, border on select */}
       <div className="grid grid-cols-2 gap-3 px-4 mb-8">
         <button
-          onClick={onEditProfile}
-          className="flex flex-col gap-3 rounded-xl border border-warm-gray bg-white p-5 items-start justify-center cursor-pointer active:scale-95 transition-transform"
+          onClick={() => handleCardClick('edit', onEditProfile)}
+          className={`flex flex-col gap-3 rounded-xl bg-primary/5 p-5 items-start justify-center cursor-pointer active:scale-95 transition-all ${
+            selectedCard === 'edit' ? 'border-2 border-primary' : 'border border-transparent'
+          }`}
         >
-          <div className="bg-primary/10 p-2 rounded-lg text-primary">
+          <div className="bg-primary p-2 rounded-lg text-white">
             <Icons.Edit size={24} />
           </div>
           <h2 className="text-sm font-bold leading-tight text-text-main">Edit Profile</h2>
         </button>
 
         <button
-          onClick={onSettings}
-          className="flex flex-col gap-3 rounded-xl border border-warm-gray bg-white p-5 items-start justify-center cursor-pointer active:scale-95 transition-transform"
+          onClick={() => handleCardClick('settings', onSettings)}
+          className={`flex flex-col gap-3 rounded-xl bg-primary/5 p-5 items-start justify-center cursor-pointer active:scale-95 transition-all ${
+            selectedCard === 'settings' ? 'border-2 border-primary' : 'border border-transparent'
+          }`}
         >
-          <div className="bg-primary/10 p-2 rounded-lg text-primary">
+          <div className="bg-primary p-2 rounded-lg text-white">
             <Icons.Settings size={24} />
           </div>
           <h2 className="text-sm font-bold leading-tight text-text-main">Settings</h2>
         </button>
 
         <button
-          className="flex flex-col gap-3 rounded-xl border border-warm-gray bg-white p-5 items-start justify-center cursor-pointer active:scale-95 transition-transform"
+          onClick={() => handleCardClick('safety')}
+          className={`flex flex-col gap-3 rounded-xl bg-primary/5 p-5 items-start justify-center cursor-pointer active:scale-95 transition-all ${
+            selectedCard === 'safety' ? 'border-2 border-primary' : 'border border-transparent'
+          }`}
         >
-          <div className="bg-primary/10 p-2 rounded-lg text-primary">
+          <div className="bg-primary p-2 rounded-lg text-white">
             <Icons.ShieldCheck size={24} />
           </div>
           <h2 className="text-sm font-bold leading-tight text-text-main">Safety</h2>
         </button>
 
         <button
-          className="flex flex-col gap-3 rounded-xl border-2 border-primary bg-primary/5 p-5 items-start justify-center cursor-pointer active:scale-95 transition-transform shadow-sm"
+          onClick={() => handleCardClick('boost')}
+          className={`flex flex-col gap-3 rounded-xl bg-primary/5 p-5 items-start justify-center cursor-pointer active:scale-95 transition-all ${
+            selectedCard === 'boost' ? 'border-2 border-primary' : 'border border-transparent'
+          }`}
         >
           <div className="bg-primary p-2 rounded-lg text-white">
             <Icons.Zap size={24} />
           </div>
-          <h2 className="text-primary text-sm font-bold leading-tight">Boost</h2>
+          <h2 className="text-sm font-bold leading-tight text-text-main">Boost</h2>
         </button>
       </div>
 

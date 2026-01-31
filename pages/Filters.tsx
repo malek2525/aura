@@ -4,9 +4,10 @@ import { Icons } from '../components/Icons';
 
 interface FiltersProps {
   onClose: () => void;
+  onShowMatches?: () => void;
 }
 
-export const Filters: React.FC<FiltersProps> = ({ onClose }) => {
+export const Filters: React.FC<FiltersProps> = ({ onClose, onShowMatches }) => {
   const [gender, setGender] = useState<'women'|'men'|'everyone'>('women');
   const [minAge, setMinAge] = useState(18);
   const [maxAge, setMaxAge] = useState(35);
@@ -40,6 +41,17 @@ export const Filters: React.FC<FiltersProps> = ({ onClose }) => {
     }
   };
 
+  const handleApply = () => {
+    onClose();
+  };
+
+  const handleApplyAndShowMatches = () => {
+    onClose();
+    if (onShowMatches) {
+      onShowMatches();
+    }
+  };
+
   return (
     <div className="h-full bg-bg-light flex flex-col">
        <div className="bg-white px-4 py-4 flex items-center shadow-sm justify-between sticky top-0 z-10">
@@ -47,10 +59,10 @@ export const Filters: React.FC<FiltersProps> = ({ onClose }) => {
           <Icons.X size={24} />
         </button>
         <h1 className="text-lg font-bold text-text-main">Filters</h1>
-        <button onClick={onClose} className="text-primary font-bold text-sm">Apply</button>
+        <button onClick={handleApply} className="text-primary font-bold text-sm">Apply</button>
       </div>
 
-      <div className="p-4 pb-24 overflow-y-auto space-y-6 no-scrollbar">
+      <div className="p-4 pb-32 overflow-y-auto space-y-6 no-scrollbar">
         
         {/* Gender */}
         <section className="bg-white p-4 rounded-2xl shadow-sm border border-warm-gray">
@@ -186,6 +198,24 @@ export const Filters: React.FC<FiltersProps> = ({ onClose }) => {
            </button>
         </section>
 
+      </div>
+
+      {/* Bottom Action Buttons */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-warm-gray flex gap-3">
+        <button 
+          onClick={handleApply}
+          className="flex-1 py-3 bg-primary text-white font-bold text-sm rounded-xl"
+        >
+          Apply Filters
+        </button>
+        {onShowMatches && (
+          <button 
+            onClick={handleApplyAndShowMatches}
+            className="flex-1 py-3 bg-primary/10 text-primary font-bold text-sm rounded-xl border border-primary"
+          >
+            Show Matches
+          </button>
+        )}
       </div>
     </div>
   );
