@@ -90,10 +90,28 @@ The application features a modern "quiet luxury" dating app aesthetic.
   - Clicking a game pill opens interactive modal showing question, options, and both players' answers
   - Game types: Would You Rather, This or That, Two Truths One Lie, Hot Takes, 36 Questions, Emoji Story, Compatibility
   - Uses structured `GameData` interface exported from ChatGames: `{ gameType, question?, options?, myAnswer?, theirAnswer? }`
-- **Discover Filters**: Matching filters appear in Discover page (not Settings):
-  - Bottom sheet modal with gender, age range (separate min/max sliders), distance, and interests
-  - Filters control matching preferences; Settings only for app configuration
-  - Empty state shows "You've seen everyone!" with "Edit Filters" button
+- **Discover Filters** (`pages/Discover.tsx`): Comprehensive filtering system with bottom sheet modal:
+  - **Age**: Dual range sliders (18-65) for min/max age
+  - **Distance**: Slider (1-100 miles) with formatted labels
+  - **Gender**: Chip selection (All, Women, Men, Non-binary)
+  - **Relationship Goals**: Chip selection (Relationship, Casual, Friends, Not Sure)
+  - **Education**: Chip selection aligned with mock data (Bachelors, Masters, Self-taught, Student, Art School)
+  - **Lifestyle**: Drinking (any/socially/sometimes), Smoking (any/no/sometimes)
+  - **Height**: Minimum height dropdown with common heights (5'0" to 6'3")
+  - **Interests**: Multi-select chip grid (Gym, Art, Music, Tech, Travel, etc.)
+  - **Toggles**: Verified only, Has photos
+  - **Pagination**: Server-side tracking of seen profiles via `seenProfileIds` Set, deduplication, "Load More" button
+  - **Empty State**: "You've seen everyone!" message with "Load More" and "Edit Filters" buttons using flex-1 min-h-0 layout
+- **Profile Page** (`pages/Profile.tsx`): Unified cohesive layout:
+  - Photo gallery with swipe navigation and dot indicators
+  - Gradient overlays for text readability
+  - Compact details list (location, job, height, etc.)
+  - Floating "Aura Match" button replacing star/superlike
+- **Aura Match Feature** (`services/matchService.ts`):
+  - `triggerBackgroundAuraMatch()` simulates AI twin conversation between both profiles
+  - Creates Match with transcript and persists to localStorage ("aura_matches")
+  - Chat list reads from "aura_matches" via `fetchMatches()`
+  - Navigation to chat detail after successful match
 
 ### System Design Choices
 - **Centralized State Management**: `App.tsx` manages global state for screen switching and authentication, ensuring a single-page application feel without reloads.
