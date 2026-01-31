@@ -176,9 +176,19 @@ const AppContent: React.FC = () => {
 
   const handleStartAuraChat = async (profile: UserProfile) => {
     if (!myProfile) return;
-    setNotification("Auras are connecting in the background...");
+    setNotification("Auras are connecting...");
     await triggerBackgroundAuraMatch(myProfile, profile);
-    setNotification("Aura Match ready! Check your chats.");
+    setNotification("Aura Match created! Opening chat...");
+    
+    // Close any open profile view
+    handleCloseSubView();
+    
+    // Navigate to chat view and open the chat detail
+    setCurrentView("chat");
+    setTimeout(() => {
+      setSelectedProfile(profile);
+      setSubView("chat-detail");
+    }, 500);
   };
 
   const handleCloseSubView = () => {
@@ -404,9 +414,9 @@ const AppContent: React.FC = () => {
                 setMatchedProfile(selectedProfile);
             }}
             onPass={handleCloseSubView}
-            onSuperLike={() => {
+            onAuraMatch={() => {
               if (selectedProfile && selectedProfile.id !== myProfile.id)
-                setMatchedProfile(selectedProfile);
+                handleStartAuraChat(selectedProfile);
             }}
           />
         </Overlay>

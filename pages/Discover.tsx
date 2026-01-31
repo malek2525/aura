@@ -5,6 +5,7 @@ import {
     fetchDiscoverProfiles,
     fetchDailyPicks,
     likeProfile,
+    resetDiscoverPagination,
 } from "../services/matchService";
 
 interface DiscoverProps {
@@ -45,8 +46,24 @@ export const Discover: React.FC<DiscoverProps> = ({
     const [distance, setDistance] = useState(25);
     const [expandAge, setExpandAge] = useState(true);
     const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+    
+    // Additional Filter State
+    const [lookingFor, setLookingFor] = useState<string[]>([]);
+    const [lifestyle, setLifestyle] = useState<{drinking: string; smoking: string}>({ drinking: 'any', smoking: 'any' });
+    const [minHeight, setMinHeight] = useState<string>('any');
+    const [education, setEducation] = useState<string[]>([]);
+    const [hasPhotos, setHasPhotos] = useState(true);
+    const [verified, setVerified] = useState(false);
+    
+    // Pagination State
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
 
-    const interestsList = ['Gym', 'Art', 'Music', 'Tech', 'Travel', 'Foodie', 'Gaming', 'Outdoors'];
+    const interestsList = ['Gym', 'Art', 'Music', 'Tech', 'Travel', 'Foodie', 'Gaming', 'Outdoors', 'Reading', 'Movies', 'Cooking', 'Photography', 'Coffee', 'Design', 'Books', 'Hiking'];
+    const lookingForOptions = ['Relationship', 'Casual', 'Friends', 'Not Sure'];
+    const educationOptions = ['Bachelors', 'Masters', 'Self-taught', 'Student', 'Art School'];
+    const heightOptions = ['any', "5'0\"", "5'3\"", "5'5\"", "5'6\"", "5'7\"", "5'9\"", "5'11\"", "6'0\"", "6'3\""];
 
     // Swipe State
     const [swipeOffset, setSwipeOffset] = useState(0);
@@ -67,8 +84,11 @@ export const Discover: React.FC<DiscoverProps> = ({
     useEffect(() => {
         const load = async () => {
             console.log("[Discover] Loading profiles...");
+            // Reset pagination on initial load
+            resetDiscoverPagination();
+            
             const [discoverData, picksData] = await Promise.all([
-                fetchDiscoverProfiles("me"),
+                fetchDiscoverProfiles("me", 1, 10),
                 fetchDailyPicks("me"),
             ]);
             console.log("[Discover] Loaded profiles:", discoverData.length, "discover,", picksData.length, "picks");
@@ -155,10 +175,134 @@ export const Discover: React.FC<DiscoverProps> = ({
         }
     };
 
-    const handleApplyFilters = () => {
+    // Client-side filter function
+    const applyFiltersToProfiles = (allProfiles: ProfileDataType[]): ProfileDataType[] => {
+        return allProfiles.filter(profileData => {
+            const profile = ('auraProfile' in profileData ? profileData.auraProfile : profileData) as UserProfile;
+            
+            // Age filter
+            if (profile.age < minAge || profile.age > maxAge) return false;
+            
+            // Distance filter
+            if (profile.distance > distance) return false;
+            
+            // Verified filter
+            if (verified && !profile.verified) return false;
+            
+            // Has photos filter
+            if (hasPhotos && (!profile.photos || profile.photos.length === 0)) return false;
+            
+            // Gender filter (simulate based on name patterns for demo)
+            // In real app, this would check profile.gender field
+            
+            // Looking for filter - if filter is set, profile must match
+            if (lookingFor.length > 0) {
+                if (!profile.details?.lookingFor) return false;
+                if (!lookingFor.includes(profile.details.lookingFor)) return false;
+            }
+            
+            // Education filter - if filter is set, profile must match
+            if (education.length > 0) {
+                if (!profile.details?.education) return false;
+                if (!education.includes(profile.details.education)) return false;
+            }
+            
+            // Lifestyle - drinking - if filter is set, profile must match
+            if (lifestyle.drinking !== 'any') {
+                if (!profile.details?.drinking) return false;
+                if (profile.details.drinking.toLowerCase() !== lifestyle.drinking) return false;
+            }
+            
+            // Lifestyle - smoking - if filter is set, profile must match
+            if (lifestyle.smoking !== 'any') {
+                if (!profile.details?.smoking) return false;
+                if (profile.details.smoking.toLowerCase() !== lifestyle.smoking) return false;
+            }
+            
+            // Min height filter
+            if (minHeight !== 'any' && profile.details?.height) {
+                // Parse height to compare - heights are like "5'6\"" or "5'11\""
+                const heightOrder = ["5'0\"", "5'3\"", "5'5\"", "5'6\"", "5'7\"", "5'9\"", "5'11\"", "6'0\"", "6'3\""];
+                // Profile height might be like '5\'6"' - normalize it
+                const profileHeight = profile.details.height.replace(/\s.*$/, ''); // Remove any trailing text
+                const profileIdx = heightOrder.findIndex(h => profileHeight.includes(h.replace('"', '')));
+                const minIdx = heightOrder.indexOf(minHeight);
+                if (profileIdx !== -1 && minIdx !== -1 && profileIdx < minIdx) return false;
+            }
+            
+            // Interests filter
+            if (selectedInterests.length > 0) {
+                const hasMatchingInterest = profile.interests.some(i => selectedInterests.includes(i));
+                if (!hasMatchingInterest) return false;
+            }
+            
+            return true;
+        });
+    };
+
+    const handleApplyFilters = async () => {
         setShowFilters(false);
-        // Reset to start with new filters
+        setLoading(true);
+        setPage(1);
+        setHasMore(true);
+        
+        // Reset pagination tracking
+        resetDiscoverPagination();
+
+        // Re-fetch all profiles (page 1)
+        const [discoverData, picksData] = await Promise.all([
+            fetchDiscoverProfiles("me", 1, 10),
+            fetchDailyPicks("me"),
+        ]);
+        
+        // Apply client-side filters
+        const filteredProfiles = applyFiltersToProfiles(discoverData);
+        const filteredPicks = applyFiltersToProfiles(picksData.map(p => ({ id: p.id, auraProfile: p })))
+            .map(p => ('auraProfile' in p ? p.auraProfile : p) as UserProfile);
+        
+        setProfiles(filteredProfiles);
+        setDailyPicks(filteredPicks);
+        setLoading(false);
         setCurrentIndex(0);
+    };
+    
+    const loadMoreProfiles = async () => {
+        if (loadingMore || !hasMore) return;
+        
+        const nextPage = page + 1;
+        setLoadingMore(true);
+        console.log("[Discover] Loading more profiles, page:", nextPage);
+        
+        // Fetch next page of profiles
+        const moreProfiles = await fetchDiscoverProfiles("me", nextPage, 10);
+        
+        // Apply filters to new batch
+        const filteredNew = applyFiltersToProfiles(moreProfiles);
+        
+        if (filteredNew.length === 0) {
+            setHasMore(false);
+        } else {
+            setProfiles(prev => [...prev, ...filteredNew]);
+            setPage(nextPage);
+        }
+        
+        setLoadingMore(false);
+    };
+    
+    const toggleLookingFor = (item: string) => {
+        if (lookingFor.includes(item)) {
+            setLookingFor(lookingFor.filter(i => i !== item));
+        } else {
+            setLookingFor([...lookingFor, item]);
+        }
+    };
+    
+    const toggleEducation = (item: string) => {
+        if (education.includes(item)) {
+            setEducation(education.filter(i => i !== item));
+        } else {
+            setEducation([...education, item]);
+        }
     };
 
     // === TOUCH HANDLERS WITH DIRECTION LOCKING ===
@@ -517,28 +661,50 @@ export const Discover: React.FC<DiscoverProps> = ({
                     </div>
                 ) : (
                     /* Empty State - No more profiles */
-                    <div className="flex-1 flex flex-col items-center justify-center bg-warm-white p-8 text-center">
-                        <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-                            <Icons.Users size={40} className="text-primary" />
+                    <div className="flex-1 min-h-0 flex flex-col items-center justify-center bg-[#f8f6f6] p-8 text-center">
+                        <div className="w-24 h-24 bg-coral/10 rounded-full flex items-center justify-center mb-6">
+                            <Icons.Users size={40} className="text-coral" />
                         </div>
-                        <h2 className="text-2xl font-bold text-text-main mb-2">
+                        <h2 className="text-2xl font-bold text-text-main mb-3">
                             You've seen everyone!
                         </h2>
-                        <p className="text-text-sec mb-6 max-w-xs">
+                        <p className="text-text-sec mb-8 max-w-xs leading-relaxed">
                             No more profiles match your current filters. Try expanding your preferences to discover more people.
                         </p>
+                        
+                        {/* Load More Button */}
+                        {hasMore && (
+                            <button
+                                onClick={loadMoreProfiles}
+                                disabled={loadingMore}
+                                className="px-8 py-4 bg-coral text-white rounded-2xl text-sm font-bold shadow-lg hover:bg-coral-dark transition-colors flex items-center gap-2 mb-4 disabled:opacity-70"
+                            >
+                                {loadingMore ? (
+                                    <>
+                                        <Icons.Loader2 size={18} className="animate-spin" />
+                                        Loading...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Icons.RefreshCw size={18} />
+                                        Load More Profiles
+                                    </>
+                                )}
+                            </button>
+                        )}
+                        
                         <button
                             onClick={() => setShowFilters(true)}
-                            className="px-8 py-4 bg-primary text-white rounded-2xl text-sm font-bold shadow-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+                            className="px-8 py-4 bg-white border-2 border-coral text-coral rounded-2xl text-sm font-bold hover:bg-coral/5 transition-colors flex items-center gap-2"
                         >
                             <Icons.SlidersHorizontal size={18} />
                             Edit Filters
                         </button>
                         <button
                             onClick={() => setCurrentIndex(0)}
-                            className="mt-4 px-6 py-3 text-primary font-semibold text-sm hover:bg-primary/10 rounded-xl transition-colors"
+                            className="mt-4 px-6 py-3 text-text-sec font-semibold text-sm hover:text-coral transition-colors"
                         >
-                            Start Over
+                            Start Over from Beginning
                         </button>
                     </div>
                 ))}
@@ -778,6 +944,97 @@ export const Discover: React.FC<DiscoverProps> = ({
                                 />
                             </section>
 
+                            {/* Looking For */}
+                            <section className="bg-bg-light p-4 rounded-2xl">
+                                <h3 className="text-sm font-bold text-text-main mb-3">Looking For</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {lookingForOptions.map((opt) => {
+                                        const isSelected = lookingFor.includes(opt);
+                                        return (
+                                            <button 
+                                                key={opt} 
+                                                onClick={() => toggleLookingFor(opt)}
+                                                className={`px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${isSelected ? 'bg-coral text-white border-coral' : 'bg-white border-warm-gray text-text-sec hover:border-coral'}`}
+                                            >
+                                                {opt}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </section>
+
+                            {/* Minimum Height */}
+                            <section className="bg-bg-light p-4 rounded-2xl">
+                                <h3 className="text-sm font-bold text-text-main mb-3">Minimum Height</h3>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {heightOptions.map((h) => (
+                                        <button 
+                                            key={h} 
+                                            onClick={() => setMinHeight(h)}
+                                            className={`px-3 py-2.5 rounded-xl text-xs font-semibold border transition-colors ${minHeight === h ? 'bg-primary text-white border-primary' : 'bg-white border-warm-gray text-text-sec hover:border-primary'}`}
+                                        >
+                                            {h === 'any' ? 'Any Height' : h}
+                                        </button>
+                                    ))}
+                                </div>
+                            </section>
+
+                            {/* Education */}
+                            <section className="bg-bg-light p-4 rounded-2xl">
+                                <h3 className="text-sm font-bold text-text-main mb-3">Education</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {educationOptions.map((ed) => {
+                                        const isSelected = education.includes(ed);
+                                        return (
+                                            <button 
+                                                key={ed} 
+                                                onClick={() => toggleEducation(ed)}
+                                                className={`px-4 py-2 rounded-full text-xs font-semibold border transition-colors ${isSelected ? 'bg-primary text-white border-primary' : 'bg-white border-warm-gray text-text-sec hover:border-primary'}`}
+                                            >
+                                                {ed}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </section>
+
+                            {/* Lifestyle */}
+                            <section className="bg-bg-light p-4 rounded-2xl">
+                                <h3 className="text-sm font-bold text-text-main mb-3">Lifestyle</h3>
+                                
+                                {/* Drinking */}
+                                <div className="mb-4">
+                                    <label className="text-xs font-semibold text-text-sec mb-2 block">Drinking</label>
+                                    <div className="flex gap-2">
+                                        {['any', 'socially', 'sometimes'].map((opt) => (
+                                            <button 
+                                                key={opt} 
+                                                onClick={() => setLifestyle(prev => ({ ...prev, drinking: opt }))}
+                                                className={`flex-1 px-2 py-2 rounded-lg text-xs font-semibold border transition-colors capitalize ${lifestyle.drinking === opt ? 'bg-primary text-white border-primary' : 'bg-white border-warm-gray text-text-sec'}`}
+                                            >
+                                                {opt}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                {/* Smoking */}
+                                <div>
+                                    <label className="text-xs font-semibold text-text-sec mb-2 block">Smoking</label>
+                                    <div className="flex gap-2">
+                                        {['any', 'no', 'sometimes'].map((opt) => (
+                                            <button 
+                                                key={opt} 
+                                                onClick={() => setLifestyle(prev => ({ ...prev, smoking: opt }))}
+                                                className={`flex-1 px-2 py-2 rounded-lg text-xs font-semibold border transition-colors capitalize ${lifestyle.smoking === opt ? 'bg-primary text-white border-primary' : 'bg-white border-warm-gray text-text-sec'}`}
+                                            >
+                                                {opt}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </section>
+
                             {/* Interests */}
                             <section className="bg-bg-light p-4 rounded-2xl">
                                 <h3 className="text-sm font-bold text-text-main mb-3">Interests</h3>
@@ -794,6 +1051,39 @@ export const Discover: React.FC<DiscoverProps> = ({
                                             </button>
                                         );
                                     })}
+                                </div>
+                            </section>
+
+                            {/* Additional Preferences */}
+                            <section className="bg-bg-light p-4 rounded-2xl space-y-4">
+                                <h3 className="text-sm font-bold text-text-main">Additional Preferences</h3>
+                                
+                                {/* Has Photos Toggle */}
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <span className="text-sm text-text-main font-medium">Has Photos</span>
+                                        <p className="text-xs text-text-sec">Only show profiles with photos</p>
+                                    </div>
+                                    <div 
+                                        onClick={() => setHasPhotos(!hasPhotos)}
+                                        className={`w-12 h-7 rounded-full relative cursor-pointer transition-colors ${hasPhotos ? 'bg-primary' : 'bg-warm-gray'}`}
+                                    >
+                                        <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all shadow-sm ${hasPhotos ? 'right-1' : 'left-1'}`}></div>
+                                    </div>
+                                </div>
+
+                                {/* Verified Only Toggle */}
+                                <div className="flex justify-between items-center pt-3 border-t border-warm-gray">
+                                    <div>
+                                        <span className="text-sm text-text-main font-medium">Verified Only</span>
+                                        <p className="text-xs text-text-sec">Only show verified profiles</p>
+                                    </div>
+                                    <div 
+                                        onClick={() => setVerified(!verified)}
+                                        className={`w-12 h-7 rounded-full relative cursor-pointer transition-colors ${verified ? 'bg-primary' : 'bg-warm-gray'}`}
+                                    >
+                                        <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-all shadow-sm ${verified ? 'right-1' : 'left-1'}`}></div>
+                                    </div>
                                 </div>
                             </section>
                         </div>

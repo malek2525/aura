@@ -445,10 +445,42 @@ export async function fetchDailyPicks(
   return [...profiles].sort(() => Math.random() - 0.5);
 }
 
+// Track seen profiles for pagination simulation
+let seenProfileIds: Set<string> = new Set();
+
 export async function fetchDiscoverProfiles(
   currentUserId?: string,
+  page: number = 1,
+  limit: number = 10,
 ): Promise<UserProfile[]> {
-  return fetchDailyPicks(currentUserId);
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  
+  const profiles = currentUserId
+    ? MOCK_PROFILES.filter((p) => p.userId !== currentUserId)
+    : MOCK_PROFILES;
+  
+  // Shuffle profiles for variety
+  const shuffled = [...profiles].sort(() => Math.random() - 0.5);
+  
+  // For first page, reset seen profiles
+  if (page === 1) {
+    seenProfileIds = new Set();
+  }
+  
+  // Filter out already seen profiles
+  const unseen = shuffled.filter(p => !seenProfileIds.has(p.id));
+  
+  // Get next batch
+  const batch = unseen.slice(0, limit);
+  
+  // Mark as seen
+  batch.forEach(p => seenProfileIds.add(p.id));
+  
+  return batch;
+}
+
+export function resetDiscoverPagination(): void {
+  seenProfileIds = new Set();
 }
 
 export async function getAllProfiles(): Promise<UserProfile[]> {
@@ -478,6 +510,37 @@ export async function triggerBackgroundAuraMatch(
   );
   const score = Math.min(100, 50 + sharedInterests * 10 - introvertDiff * 5);
   const isMatch = score >= 60;
+  
+  // Generate Aura conversation transcript
+  const transcript = generateDemoTranscript(userProfile.name, targetProfile.name);
+  
+  // Create and persist the match with Aura conversation
+  const newMatch: Match = {
+    matchId: `aura_match_${Date.now()}`,
+    oderId: targetProfile.id,
+    name: targetProfile.name,
+    photo: targetProfile.photos[0],
+    preview: `Aura Match! Score: ${score}% ✨`,
+    time: "Just now",
+    unread: true,
+    isAuraMatch: true,
+    transcript,
+    profile: targetProfile,
+  };
+  
+  try {
+    const stored = localStorage.getItem("aura_matches");
+    const matches = stored ? JSON.parse(stored) : [];
+    // Avoid duplicates
+    const exists = matches.some((m: Match) => m.oderId === targetProfile.id);
+    if (!exists) {
+      matches.unshift(newMatch);
+      localStorage.setItem("aura_matches", JSON.stringify(matches));
+    }
+  } catch (e) {
+    console.error("Failed to save Aura match", e);
+  }
+  
   return {
     isMatch,
     score,
