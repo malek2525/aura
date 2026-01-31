@@ -112,6 +112,25 @@ The application features a modern "quiet luxury" dating app aesthetic.
   - Creates Match with transcript and persists to localStorage ("aura_matches")
   - Chat list reads from "aura_matches" via `fetchMatches()`
   - Navigation to chat detail after successful match
+- **Subscription Plans** (`pages/SubscriptionPlans.tsx`):
+  - 4 subscription tiers: Free, Aura Standard ($19.99), Aura Plus ($34.99), Aura Elite ($79.99)
+  - Monthly/annual billing toggle with 20% annual discount
+  - Feature lists with checkmarks, limitations with X marks
+  - "Most Popular" badge on Aura Plus tier
+- **Success Rewards Program** (`pages/SuccessRewards.tsx`):
+  - 3 reward tiers: Aura Couple (5%), Aura Engaged (7%), Aura Married (10%)
+  - Revenue sharing for couples who met on Aura
+  - Milestone bonuses: Baby Bonus, Couple of the Month, Referral Multiplier
+- **AI Date Planner** (`pages/DatePlanner.tsx`):
+  - AI-powered date suggestions based on shared interests
+  - Category filters: Food, Activities, Outdoor, Entertainment, Cultural
+  - Location search, compatibility scores, duration, estimated costs
+  - Save, Book, Share actions for each date suggestion
+- **Aura Shop** (`pages/Shop.tsx`):
+  - Virtual gifts: Digital Rose, Coffee Date, Champagne Toast
+  - Boosters: Aura Boost, Super Boost
+  - Premium features: See Who Liked You, Rewind Pack, Premium Games
+  - Value packs with discounts
 
 ### System Design Choices
 - **Centralized State Management**: `App.tsx` manages global state for screen switching and authentication, ensuring a single-page application feel without reloads.
