@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Icons } from './Icons';
 
 interface ChatGamesProps {
-  onSendMessage: (text: string, gameData?: GameInvite) => void;
+  onSendMessage: (text: string) => void;
   onClose: () => void;
   matchName: string;
 }
@@ -36,8 +36,8 @@ export const ChatGames: React.FC<ChatGamesProps> = ({ onSendMessage, onClose, ma
     setActiveGame(gameId);
   };
 
-  const handleSendAndClose = (message: string, gameData?: GameInvite) => {
-    onSendMessage(message, gameData);
+  const handleSendAndClose = (message: string) => {
+    onSendMessage(message);
     onClose();
   };
 
@@ -154,7 +154,7 @@ const WOULD_YOU_RATHER_QUESTIONS = [
   { a: "be famous but broke", b: "rich but unknown" },
 ];
 
-const WouldYouRatherGame: React.FC<{ onSend: (msg: string, gameData?: GameInvite) => void; matchName: string }> = ({ onSend, matchName }) => {
+const WouldYouRatherGame: React.FC<{ onSend: (msg: string) => void; matchName: string }> = ({ onSend, matchName }) => {
   const [currentQ, setCurrentQ] = useState(() => 
     WOULD_YOU_RATHER_QUESTIONS[Math.floor(Math.random() * WOULD_YOU_RATHER_QUESTIONS.length)]
   );
@@ -162,21 +162,10 @@ const WouldYouRatherGame: React.FC<{ onSend: (msg: string, gameData?: GameInvite
 
   const handleSend = () => {
     const choiceText = selected === 'a' ? currentQ.a : currentQ.b;
-    const gameId = `wyr_${Date.now()}`;
     
     const message = `🎮 WOULD YOU RATHER?\n\n🅰️ ${currentQ.a}\n\n🅱️ ${currentQ.b}\n\n━━━━━━━━━━━━━━━\nI picked: ${selected === 'a' ? '🅰️' : '🅱️'} ${choiceText}\n\n👉 Your turn! Tap to reply with A or B`;
     
-    const gameData: GameInvite = {
-      type: 'game_invite',
-      gameType: 'would-you-rather',
-      gameId,
-      question: `${currentQ.a} OR ${currentQ.b}`,
-      options: [currentQ.a, currentQ.b],
-      myAnswer: choiceText,
-      status: 'waiting'
-    };
-    
-    onSend(message, gameData);
+    onSend(message);
   };
 
   const handleNewQuestion = () => {
