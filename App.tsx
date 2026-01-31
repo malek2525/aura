@@ -319,7 +319,6 @@ const AppContent: React.FC = () => {
       case "discover":
         return (
           <Discover
-            onOpenFilters={() => setSubView("filters")}
             onViewProfile={handleViewProfile}
             onViewStory={handleViewStory}
             onStartAuraChat={handleStartAuraChat}
