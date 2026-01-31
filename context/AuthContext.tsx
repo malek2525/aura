@@ -159,7 +159,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       await firebaseSignOut(auth);
     } else {
       localStorage.removeItem('aura_mock_user');
-      localStorage.removeItem('aura_profile_mock_user_123'); // Optional: clear profile on logout?
       setUser(null);
     }
   };

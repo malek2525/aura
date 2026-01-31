@@ -1,23 +1,29 @@
-// src/components/ChatGames.tsx
-// Fun mini-games to break the ice and make chatting more interesting
-
 import React, { useState } from 'react';
 import { Icons } from './Icons';
 
 interface ChatGamesProps {
-  onSendMessage: (text: string) => void;
+  onSendMessage: (text: string, gameData?: GameInvite) => void;
   onClose: () => void;
   matchName: string;
+}
+
+export interface GameInvite {
+  type: 'game_invite';
+  gameType: string;
+  gameId: string;
+  question?: string;
+  options?: string[];
+  myAnswer?: string;
+  status: 'waiting' | 'answered' | 'complete';
 }
 
 type GameType = 'menu' | 'would-you-rather' | 'this-or-that' | 'two-truths' | 'question-game' | 'emoji-story' | 'hot-takes' | 'compatibility';
 
 export const ChatGames: React.FC<ChatGamesProps> = ({ onSendMessage, onClose, matchName }) => {
   const [activeGame, setActiveGame] = useState<GameType>('menu');
-  const [gameState, setGameState] = useState<any>({});
 
   const games = [
-    { id: 'would-you-rather', icon: '🤔', name: 'Would You Rather', desc: 'impossible choices' },
+    { id: 'would-you-rather', icon: '🤔', name: 'Would You Rather', desc: 'take turns choosing' },
     { id: 'this-or-that', icon: '⚡', name: 'This or That', desc: 'quick fire picks' },
     { id: 'two-truths', icon: '🎭', name: '2 Truths 1 Lie', desc: 'guess the lie' },
     { id: 'question-game', icon: '💭', name: '36 Questions', desc: 'get deep fast' },
@@ -28,11 +34,10 @@ export const ChatGames: React.FC<ChatGamesProps> = ({ onSendMessage, onClose, ma
 
   const handleStartGame = (gameId: GameType) => {
     setActiveGame(gameId);
-    setGameState({});
   };
 
-  const handleSendAndClose = (message: string) => {
-    onSendMessage(message);
+  const handleSendAndClose = (message: string, gameData?: GameInvite) => {
+    onSendMessage(message, gameData);
     onClose();
   };
 
@@ -40,7 +45,6 @@ export const ChatGames: React.FC<ChatGamesProps> = ({ onSendMessage, onClose, ma
     <div className="fixed inset-0 z-50 bg-black/60 flex items-end justify-center">
       <div className="bg-white w-full max-w-md rounded-t-3xl max-h-[85vh] overflow-hidden animate-in slide-in-from-bottom duration-300">
         
-        {/* Header */}
         <div className="sticky top-0 bg-white border-b border-warm-gray px-5 py-4 flex items-center justify-between z-10">
           <div className="flex items-center gap-3">
             {activeGame !== 'menu' && (
@@ -53,10 +57,10 @@ export const ChatGames: React.FC<ChatGamesProps> = ({ onSendMessage, onClose, ma
             )}
             <div>
               <h3 className="font-bold text-text-main">
-                {activeGame === 'menu' ? 'chat games 🎮' : games.find(g => g.id === activeGame)?.name}
+                {activeGame === 'menu' ? 'Games 🎮' : games.find(g => g.id === activeGame)?.name}
               </h3>
               <p className="text-xs text-text-sec">
-                {activeGame === 'menu' ? 'pick a game to play together' : `playing with ${matchName}`}
+                {activeGame === 'menu' ? 'Play together with ' + matchName : `Playing with ${matchName}`}
               </p>
             </div>
           </div>
@@ -65,80 +69,65 @@ export const ChatGames: React.FC<ChatGamesProps> = ({ onSendMessage, onClose, ma
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-5 overflow-y-auto max-h-[70vh]">
           
-          {/* Game Menu */}
           {activeGame === 'menu' && (
-            <div className="grid grid-cols-2 gap-3">
-              {games.map(game => (
-                <button
-                  key={game.id}
-                  onClick={() => handleStartGame(game.id as GameType)}
-                  className="bg-warm-white p-4 rounded-2xl text-left hover:bg-coral-light/10 hover:border-coral/20 border border-transparent transition-all group"
-                >
-                  <span className="text-2xl mb-2 block">{game.icon}</span>
-                  <span className="font-bold text-sm text-text-main block">{game.name}</span>
-                  <span className="text-[10px] text-text-sec">{game.desc}</span>
-                </button>
-              ))}
+            <div className="space-y-4">
+              <div className="bg-primary/5 p-4 rounded-2xl border border-primary/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">🎮</span>
+                  <span className="font-bold text-sm text-text-main">How It Works</span>
+                </div>
+                <p className="text-xs text-text-sec leading-relaxed">
+                  1. You pick a game and make your choice<br/>
+                  2. Your invite is sent to {matchName}<br/>
+                  3. They respond with their answer<br/>
+                  4. Compare and keep playing! 🎉
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {games.map(game => (
+                  <button
+                    key={game.id}
+                    onClick={() => handleStartGame(game.id as GameType)}
+                    className="bg-warm-white p-4 rounded-2xl text-left hover:bg-primary/5 hover:border-primary/20 border border-transparent transition-all group"
+                  >
+                    <span className="text-2xl mb-2 block">{game.icon}</span>
+                    <span className="font-bold text-sm text-text-main block">{game.name}</span>
+                    <span className="text-[10px] text-text-sec">{game.desc}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Would You Rather */}
           {activeGame === 'would-you-rather' && (
-            <WouldYouRatherGame 
-              onSend={handleSendAndClose}
-              matchName={matchName}
-            />
+            <WouldYouRatherGame onSend={handleSendAndClose} matchName={matchName} />
           )}
 
-          {/* This or That */}
           {activeGame === 'this-or-that' && (
-            <ThisOrThatGame 
-              onSend={handleSendAndClose}
-              matchName={matchName}
-            />
+            <ThisOrThatGame onSend={handleSendAndClose} matchName={matchName} />
           )}
 
-          {/* Two Truths One Lie */}
           {activeGame === 'two-truths' && (
-            <TwoTruthsGame 
-              onSend={handleSendAndClose}
-              matchName={matchName}
-            />
+            <TwoTruthsGame onSend={handleSendAndClose} matchName={matchName} />
           )}
 
-          {/* 36 Questions */}
           {activeGame === 'question-game' && (
-            <QuestionGame 
-              onSend={handleSendAndClose}
-              matchName={matchName}
-            />
+            <QuestionGame onSend={handleSendAndClose} matchName={matchName} />
           )}
 
-          {/* Emoji Story */}
           {activeGame === 'emoji-story' && (
-            <EmojiStoryGame 
-              onSend={handleSendAndClose}
-              matchName={matchName}
-            />
+            <EmojiStoryGame onSend={handleSendAndClose} matchName={matchName} />
           )}
 
-          {/* Hot Takes */}
           {activeGame === 'hot-takes' && (
-            <HotTakesGame 
-              onSend={handleSendAndClose}
-              matchName={matchName}
-            />
+            <HotTakesGame onSend={handleSendAndClose} matchName={matchName} />
           )}
 
-          {/* Compatibility Quiz */}
           {activeGame === 'compatibility' && (
-            <CompatibilityGame 
-              onSend={handleSendAndClose}
-              matchName={matchName}
-            />
+            <CompatibilityGame onSend={handleSendAndClose} matchName={matchName} />
           )}
 
         </div>
@@ -146,10 +135,6 @@ export const ChatGames: React.FC<ChatGamesProps> = ({ onSendMessage, onClose, ma
     </div>
   );
 };
-
-// ============================================
-// WOULD YOU RATHER
-// ============================================
 
 const WOULD_YOU_RATHER_QUESTIONS = [
   { a: "have the ability to fly", b: "be invisible" },
@@ -169,19 +154,29 @@ const WOULD_YOU_RATHER_QUESTIONS = [
   { a: "be famous but broke", b: "rich but unknown" },
 ];
 
-const WouldYouRatherGame: React.FC<{ onSend: (msg: string) => void; matchName: string }> = ({ onSend, matchName }) => {
+const WouldYouRatherGame: React.FC<{ onSend: (msg: string, gameData?: GameInvite) => void; matchName: string }> = ({ onSend, matchName }) => {
   const [currentQ, setCurrentQ] = useState(() => 
     WOULD_YOU_RATHER_QUESTIONS[Math.floor(Math.random() * WOULD_YOU_RATHER_QUESTIONS.length)]
   );
   const [selected, setSelected] = useState<'a' | 'b' | null>(null);
 
-  const handleSelect = (choice: 'a' | 'b') => {
-    setSelected(choice);
-  };
-
   const handleSend = () => {
     const choiceText = selected === 'a' ? currentQ.a : currentQ.b;
-    onSend(`🎮 Would You Rather?\n\nA: ${currentQ.a}\nB: ${currentQ.b}\n\nI picked: ${choiceText.toUpperCase()} 👀\n\nwhat about u?`);
+    const gameId = `wyr_${Date.now()}`;
+    
+    const message = `🎮 WOULD YOU RATHER?\n\n🅰️ ${currentQ.a}\n\n🅱️ ${currentQ.b}\n\n━━━━━━━━━━━━━━━\nI picked: ${selected === 'a' ? '🅰️' : '🅱️'} ${choiceText}\n\n👉 Your turn! Tap to reply with A or B`;
+    
+    const gameData: GameInvite = {
+      type: 'game_invite',
+      gameType: 'would-you-rather',
+      gameId,
+      question: `${currentQ.a} OR ${currentQ.b}`,
+      options: [currentQ.a, currentQ.b],
+      myAnswer: choiceText,
+      status: 'waiting'
+    };
+    
+    onSend(message, gameData);
   };
 
   const handleNewQuestion = () => {
@@ -191,31 +186,33 @@ const WouldYouRatherGame: React.FC<{ onSend: (msg: string) => void; matchName: s
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-text-sec text-center mb-6">pick one and send to {matchName}!</p>
+      <div className="bg-primary/5 p-3 rounded-xl text-center">
+        <p className="text-xs text-text-sec">Pick one, then {matchName} picks. Compare answers! 🎯</p>
+      </div>
       
       <button
-        onClick={() => handleSelect('a')}
+        onClick={() => setSelected('a')}
         className={`w-full p-5 rounded-2xl text-left transition-all ${
           selected === 'a' 
-            ? 'bg-coral text-white ring-2 ring-coral ring-offset-2' 
-            : 'bg-warm-white hover:bg-coral-light/20'
+            ? 'bg-primary text-white ring-2 ring-primary ring-offset-2' 
+            : 'bg-warm-white hover:bg-primary/10'
         }`}
       >
-        <span className="text-xs font-bold uppercase tracking-wider opacity-70">Option A</span>
+        <span className="text-xs font-bold uppercase tracking-wider opacity-70">🅰️ Option A</span>
         <p className="font-bold mt-1">{currentQ.a}</p>
       </button>
 
       <div className="text-center text-text-muted font-bold text-sm">or</div>
 
       <button
-        onClick={() => handleSelect('b')}
+        onClick={() => setSelected('b')}
         className={`w-full p-5 rounded-2xl text-left transition-all ${
           selected === 'b' 
-            ? 'bg-coral text-white ring-2 ring-coral ring-offset-2' 
-            : 'bg-warm-white hover:bg-coral-light/20'
+            ? 'bg-primary text-white ring-2 ring-primary ring-offset-2' 
+            : 'bg-warm-white hover:bg-primary/10'
         }`}
       >
-        <span className="text-xs font-bold uppercase tracking-wider opacity-70">Option B</span>
+        <span className="text-xs font-bold uppercase tracking-wider opacity-70">🅱️ Option B</span>
         <p className="font-bold mt-1">{currentQ.b}</p>
       </button>
 
@@ -224,23 +221,19 @@ const WouldYouRatherGame: React.FC<{ onSend: (msg: string) => void; matchName: s
           onClick={handleNewQuestion}
           className="flex-1 py-3 border border-warm-gray rounded-xl text-sm font-bold text-text-sec hover:bg-warm-white"
         >
-          new question
+          New Question
         </button>
         <button 
           onClick={handleSend}
           disabled={!selected}
-          className="flex-1 py-3 bg-coral text-white rounded-xl text-sm font-bold disabled:opacity-50"
+          className="flex-1 py-3 bg-primary text-white rounded-xl text-sm font-bold disabled:opacity-50"
         >
-          send it! 🎮
+          Send to {matchName} 🎮
         </button>
       </div>
     </div>
   );
 };
-
-// ============================================
-// THIS OR THAT (Quick Fire)
-// ============================================
 
 const THIS_OR_THAT_PAIRS = [
   ["☕ Coffee", "🍵 Tea"],
@@ -276,15 +269,19 @@ const ThisOrThatGame: React.FC<{ onSend: (msg: string) => void; matchName: strin
   };
 
   const handleSend = () => {
-    const results = pairs.map((pair, i) => `${pair[answers[i] || 0]}`).join(' | ');
-    onSend(`⚡ This or That!\n\n${results}\n\nwhat would u pick? 👀`);
+    const myPicks = pairs.map((pair, i) => pair[answers[i] || 0]).join(' • ');
+    const questions = pairs.map(pair => `${pair[0]} or ${pair[1]}?`).join('\n');
+    
+    onSend(`⚡ THIS OR THAT?\n\n${questions}\n\n━━━━━━━━━━━━━━━\nMy picks: ${myPicks}\n\n👉 Now you pick! Reply with your answers`);
   };
 
   const allAnswered = answers.filter(a => a !== undefined).length === pairs.length;
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-text-sec text-center mb-4">quick picks! tap ur choice</p>
+      <div className="bg-primary/5 p-3 rounded-xl text-center">
+        <p className="text-xs text-text-sec">Quick picks! See how many match with {matchName} ⚡</p>
+      </div>
       
       {pairs.map((pair, i) => (
         <div key={i} className="flex gap-2">
@@ -292,8 +289,8 @@ const ThisOrThatGame: React.FC<{ onSend: (msg: string) => void; matchName: strin
             onClick={() => handleSelect(i, 0)}
             className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all ${
               answers[i] === 0 
-                ? 'bg-coral text-white' 
-                : 'bg-warm-white hover:bg-coral-light/20'
+                ? 'bg-primary text-white' 
+                : 'bg-warm-white hover:bg-primary/10'
             }`}
           >
             {pair[0]}
@@ -302,8 +299,8 @@ const ThisOrThatGame: React.FC<{ onSend: (msg: string) => void; matchName: strin
             onClick={() => handleSelect(i, 1)}
             className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all ${
               answers[i] === 1 
-                ? 'bg-coral text-white' 
-                : 'bg-warm-white hover:bg-coral-light/20'
+                ? 'bg-primary text-white' 
+                : 'bg-warm-white hover:bg-primary/10'
             }`}
           >
             {pair[1]}
@@ -314,17 +311,13 @@ const ThisOrThatGame: React.FC<{ onSend: (msg: string) => void; matchName: strin
       <button 
         onClick={handleSend}
         disabled={!allAnswered}
-        className="w-full py-4 bg-coral text-white rounded-xl font-bold mt-4 disabled:opacity-50"
+        className="w-full py-4 bg-primary text-white rounded-xl font-bold mt-4 disabled:opacity-50"
       >
-        {allAnswered ? 'send my picks! ⚡' : `pick all ${pairs.length} first`}
+        {allAnswered ? `Compare with ${matchName}! ⚡` : `Pick all ${pairs.length} first`}
       </button>
     </div>
   );
 };
-
-// ============================================
-// TWO TRUTHS ONE LIE
-// ============================================
 
 const TWO_TRUTHS_PROMPTS = [
   "something adventurous you've done",
@@ -349,7 +342,7 @@ const TwoTruthsGame: React.FC<{ onSend: (msg: string) => void; matchName: string
 
   const handleSend = () => {
     const shuffled = [...statements].sort(() => Math.random() - 0.5);
-    onSend(`🎭 2 Truths & 1 Lie!\n\nCan you guess which one is the lie?\n\n1. ${shuffled[0]}\n2. ${shuffled[1]}\n3. ${shuffled[2]}\n\n👀 take ur best guess!`);
+    onSend(`🎭 2 TRUTHS & 1 LIE\n\nGuess which one is the lie!\n\n1️⃣ ${shuffled[0]}\n2️⃣ ${shuffled[1]}\n3️⃣ ${shuffled[2]}\n\n━━━━━━━━━━━━━━━\n👉 Reply with 1, 2, or 3!\nThen it's YOUR turn to share yours 🎭`);
   };
 
   const canSend = statements.every(s => s.trim().length > 0) && lieIndex !== null;
@@ -357,8 +350,8 @@ const TwoTruthsGame: React.FC<{ onSend: (msg: string) => void; matchName: string
 
   return (
     <div className="space-y-4">
-      <div className="bg-coral-light/20 p-3 rounded-xl">
-        <p className="text-xs text-coral font-bold">💡 Need ideas?</p>
+      <div className="bg-primary/5 p-3 rounded-xl">
+        <p className="text-xs text-primary font-bold">💡 Need ideas?</p>
         <p className="text-sm text-text-main">Try: {randomPrompt}</p>
       </div>
 
@@ -366,24 +359,24 @@ const TwoTruthsGame: React.FC<{ onSend: (msg: string) => void; matchName: string
         <div key={i} className="space-y-1">
           <div className="flex items-center justify-between">
             <label className="text-xs font-bold text-text-muted uppercase">
-              {lieIndex === i ? '🤥 The Lie' : `✅ Truth ${lieIndex === null ? '' : (i < lieIndex! ? i + 1 : i)}`}
+              {lieIndex === i ? '🤥 The Lie' : `✅ Truth`}
             </label>
             <button
               onClick={() => setLieIndex(lieIndex === i ? null : i)}
               className={`text-xs px-2 py-1 rounded-full ${
                 lieIndex === i 
-                  ? 'bg-coral text-white' 
-                  : 'bg-warm-white text-text-sec hover:bg-coral-light/20'
+                  ? 'bg-primary text-white' 
+                  : 'bg-warm-white text-text-sec hover:bg-primary/10'
               }`}
             >
-              {lieIndex === i ? 'this is the lie' : 'mark as lie'}
+              {lieIndex === i ? 'This is the lie' : 'Mark as lie'}
             </button>
           </div>
           <input
             value={statements[i]}
             onChange={(e) => handleStatementChange(i, e.target.value)}
             placeholder={i === 0 ? "I once..." : i === 1 ? "I've never..." : "I can..."}
-            className="w-full bg-warm-white border border-warm-gray rounded-xl px-4 py-3 text-sm focus:border-coral outline-none"
+            className="w-full bg-warm-white border border-warm-gray rounded-xl px-4 py-3 text-sm focus:border-primary outline-none"
           />
         </div>
       ))}
@@ -391,34 +384,27 @@ const TwoTruthsGame: React.FC<{ onSend: (msg: string) => void; matchName: string
       <button 
         onClick={handleSend}
         disabled={!canSend}
-        className="w-full py-4 bg-coral text-white rounded-xl font-bold disabled:opacity-50"
+        className="w-full py-4 bg-primary text-white rounded-xl font-bold disabled:opacity-50"
       >
-        {canSend ? 'send & challenge them! 🎭' : 'fill all 3 & mark the lie'}
+        {canSend ? `Challenge ${matchName}! 🎭` : 'Fill all 3 & mark the lie'}
       </button>
     </div>
   );
 };
 
-// ============================================
-// 36 QUESTIONS (Deep Conversation)
-// ============================================
-
 const DEEP_QUESTIONS = [
-  // Level 1 - Light
   "What would be a perfect day for you?",
   "If you could wake up tomorrow with one new ability, what would it be?",
   "What's your most treasured memory?",
   "What do you value most in friendship?",
   "If you could change one thing about how you were raised, what would it be?",
   "What's something you've always wanted to try but haven't yet?",
-  // Level 2 - Medium
   "What's your biggest fear and why?",
   "Is there something you've dreamed of doing for a long time? Why haven't you done it?",
   "What does friendship mean to you?",
   "What's your most embarrassing moment?",
   "When did you last cry in front of someone?",
   "What, if anything, is too serious to joke about?",
-  // Level 3 - Deep
   "If you died tonight with no chance to talk to anyone, what would you most regret not saying?",
   "Your house catches fire. After saving people and pets, you can grab one item. What?",
   "Of everyone in your family, whose death would disturb you most? Why?",
@@ -442,14 +428,15 @@ const QuestionGame: React.FC<{ onSend: (msg: string) => void; matchName: string 
   };
 
   const handleSend = () => {
-    onSend(`💭 Deep Question Time!\n\n"${currentQ}"\n\nill answer first if u want 👀`);
+    onSend(`💭 DEEP QUESTION TIME\n\n"${currentQ}"\n\n━━━━━━━━━━━━━━━\n👉 I'll answer first, then it's your turn!`);
   };
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-text-sec text-center">based on the famous 36 questions study</p>
+      <div className="bg-primary/5 p-3 rounded-xl text-center">
+        <p className="text-xs text-text-sec">Based on the famous 36 questions study 💡</p>
+      </div>
       
-      {/* Level Selector */}
       <div className="flex gap-2">
         {[1, 2, 3].map(l => (
           <button
@@ -457,8 +444,8 @@ const QuestionGame: React.FC<{ onSend: (msg: string) => void; matchName: string 
             onClick={() => { setLevel(l as 1|2|3); handleNewQuestion(); }}
             className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
               level === l 
-                ? 'bg-coral text-white' 
-                : 'bg-warm-white text-text-sec hover:bg-coral-light/20'
+                ? 'bg-primary text-white' 
+                : 'bg-warm-white text-text-sec hover:bg-primary/10'
             }`}
           >
             {l === 1 ? '🌱 Light' : l === 2 ? '🌿 Medium' : '🌳 Deep'}
@@ -466,8 +453,7 @@ const QuestionGame: React.FC<{ onSend: (msg: string) => void; matchName: string 
         ))}
       </div>
 
-      {/* Question Display */}
-      <div className="bg-gradient-to-br from-coral-light/20 to-gold/10 p-6 rounded-2xl text-center">
+      <div className="bg-gradient-to-br from-primary/10 to-gold/10 p-6 rounded-2xl text-center">
         <p className="text-lg font-bold text-text-main leading-relaxed">"{currentQ}"</p>
       </div>
 
@@ -476,22 +462,18 @@ const QuestionGame: React.FC<{ onSend: (msg: string) => void; matchName: string 
           onClick={handleNewQuestion}
           className="flex-1 py-3 border border-warm-gray rounded-xl text-sm font-bold text-text-sec hover:bg-warm-white"
         >
-          different question
+          Different Question
         </button>
         <button 
           onClick={handleSend}
-          className="flex-1 py-3 bg-coral text-white rounded-xl text-sm font-bold"
+          className="flex-1 py-3 bg-primary text-white rounded-xl text-sm font-bold"
         >
-          send this one 💭
+          Ask {matchName} 💭
         </button>
       </div>
     </div>
   );
 };
-
-// ============================================
-// EMOJI STORY
-// ============================================
 
 const EMOJI_PROMPTS = [
   "describe your day so far",
@@ -513,7 +495,7 @@ const EmojiStoryGame: React.FC<{ onSend: (msg: string) => void; matchName: strin
   const commonEmojis = ['😀', '😂', '🥰', '😎', '🤔', '😴', '🎉', '❤️', '🔥', '✨', '👀', '🙌', '💀', '🥺', '😭', '🤣', '💕', '🌟', '🎮', '🍕', '☕', '🌙', '🌈', '🏠', '✈️', '🎵', '📱', '💪', '🙏', '👋'];
 
   const handleSend = () => {
-    onSend(`📖 Emoji Story Challenge!\n\nPrompt: "${prompt}"\n\nMy story: ${story}\n\ncan u guess what it means? 🤔 now u try!`);
+    onSend(`📖 EMOJI STORY CHALLENGE!\n\nPrompt: "${prompt}"\n\nMy story: ${story}\n\n━━━━━━━━━━━━━━━\n👉 Can you guess what it means?\nThen make YOUR emoji story! 📖`);
   };
 
   return (
@@ -523,14 +505,14 @@ const EmojiStoryGame: React.FC<{ onSend: (msg: string) => void; matchName: strin
         <p className="font-bold text-text-main">{prompt}</p>
         <button 
           onClick={() => setPrompt(EMOJI_PROMPTS[Math.floor(Math.random() * EMOJI_PROMPTS.length)])}
-          className="text-xs text-coral mt-2"
+          className="text-xs text-primary mt-2"
         >
-          different prompt
+          Different prompt
         </button>
       </div>
 
       <div className="bg-warm-white rounded-xl p-4 min-h-[80px] text-center text-2xl">
-        {story || <span className="text-text-muted text-sm">tap emojis below to build your story</span>}
+        {story || <span className="text-text-muted text-sm">Tap emojis below to build your story</span>}
       </div>
 
       <div className="flex flex-wrap gap-2 justify-center">
@@ -538,7 +520,7 @@ const EmojiStoryGame: React.FC<{ onSend: (msg: string) => void; matchName: strin
           <button
             key={emoji}
             onClick={() => setStory(prev => prev + emoji)}
-            className="w-10 h-10 bg-white rounded-lg text-xl hover:bg-coral-light/20 transition-colors"
+            className="w-10 h-10 bg-white rounded-lg text-xl hover:bg-primary/10 transition-colors"
           >
             {emoji}
           </button>
@@ -550,23 +532,19 @@ const EmojiStoryGame: React.FC<{ onSend: (msg: string) => void; matchName: strin
           onClick={() => setStory('')}
           className="py-3 px-6 border border-warm-gray rounded-xl text-sm font-bold text-text-sec"
         >
-          clear
+          Clear
         </button>
         <button 
           onClick={handleSend}
           disabled={story.length < 3}
-          className="flex-1 py-3 bg-coral text-white rounded-xl text-sm font-bold disabled:opacity-50"
+          className="flex-1 py-3 bg-primary text-white rounded-xl text-sm font-bold disabled:opacity-50"
         >
-          send story! 📖
+          Send to {matchName}! 📖
         </button>
       </div>
     </div>
   );
 };
-
-// ============================================
-// HOT TAKES
-// ============================================
 
 const HOT_TAKES = [
   "pineapple on pizza is actually good",
@@ -594,12 +572,14 @@ const HotTakesGame: React.FC<{ onSend: (msg: string) => void; matchName: string 
 
   const handleSend = () => {
     const reaction = opinion === 'agree' ? '✅ AGREE' : '❌ DISAGREE';
-    onSend(`🔥 Hot Take!\n\n"${currentTake}"\n\nMy verdict: ${reaction}\n\nwhat do u think? 👀`);
+    onSend(`🔥 HOT TAKE!\n\n"${currentTake}"\n\n━━━━━━━━━━━━━━━\nMy verdict: ${reaction}\n\n👉 What do YOU think? Agree or disagree?`);
   };
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-text-sec text-center">share ur spicy opinions 🌶️</p>
+      <div className="bg-primary/5 p-3 rounded-xl text-center">
+        <p className="text-xs text-text-sec">Share spicy opinions with {matchName} 🌶️</p>
+      </div>
       
       <div className="bg-gradient-to-br from-orange-100 to-red-50 p-6 rounded-2xl text-center border border-orange-200">
         <span className="text-3xl mb-3 block">🔥</span>
@@ -634,23 +614,19 @@ const HotTakesGame: React.FC<{ onSend: (msg: string) => void; matchName: string 
           onClick={() => { setCurrentTake(HOT_TAKES[Math.floor(Math.random() * HOT_TAKES.length)]); setOpinion(null); }}
           className="flex-1 py-3 border border-warm-gray rounded-xl text-sm font-bold text-text-sec"
         >
-          next take
+          Next Take
         </button>
         <button 
           onClick={handleSend}
           disabled={!opinion}
-          className="flex-1 py-3 bg-coral text-white rounded-xl text-sm font-bold disabled:opacity-50"
+          className="flex-1 py-3 bg-primary text-white rounded-xl text-sm font-bold disabled:opacity-50"
         >
-          send it! 🔥
+          Send it! 🔥
         </button>
       </div>
     </div>
   );
 };
-
-// ============================================
-// COMPATIBILITY QUIZ
-// ============================================
 
 const COMPATIBILITY_QUESTIONS = [
   { q: "Ideal weekend?", options: ["Going out", "Staying in", "Mix of both"] },
@@ -674,8 +650,8 @@ const CompatibilityGame: React.FC<{ onSend: (msg: string) => void; matchName: st
   };
 
   const handleSend = () => {
-    const results = COMPATIBILITY_QUESTIONS.map((q, i) => `${q.q} ${answers[i]}`).join('\n');
-    onSend(`💕 Compatibility Quiz!\n\nMy answers:\n${results}\n\ntake the quiz and lets compare! 👀`);
+    const results = COMPATIBILITY_QUESTIONS.map((q, i) => `• ${q.q} → ${answers[i]}`).join('\n');
+    onSend(`💕 COMPATIBILITY QUIZ!\n\nMy answers:\n${results}\n\n━━━━━━━━━━━━━━━\n👉 Take the quiz and let's compare!\nHow many do we match on? 💕`);
   };
 
   const isComplete = answers.length === COMPATIBILITY_QUESTIONS.length;
@@ -689,12 +665,12 @@ const CompatibilityGame: React.FC<{ onSend: (msg: string) => void; matchName: st
             <p className="text-sm text-text-sec">Question {currentQ + 1}/{COMPATIBILITY_QUESTIONS.length}</p>
             <div className="flex gap-1">
               {COMPATIBILITY_QUESTIONS.map((_, i) => (
-                <div key={i} className={`w-2 h-2 rounded-full ${i < answers.length ? 'bg-coral' : 'bg-warm-gray'}`} />
+                <div key={i} className={`w-2 h-2 rounded-full ${i < answers.length ? 'bg-primary' : 'bg-warm-gray'}`} />
               ))}
             </div>
           </div>
 
-          <div className="bg-coral-light/20 p-5 rounded-2xl text-center">
+          <div className="bg-primary/10 p-5 rounded-2xl text-center">
             <p className="text-lg font-bold text-text-main">{question.q}</p>
           </div>
 
@@ -703,7 +679,7 @@ const CompatibilityGame: React.FC<{ onSend: (msg: string) => void; matchName: st
               <button
                 key={option}
                 onClick={() => handleAnswer(option)}
-                className="w-full py-3 bg-warm-white rounded-xl text-sm font-bold text-text-main hover:bg-coral-light/20 transition-colors"
+                className="w-full py-3 bg-warm-white rounded-xl text-sm font-bold text-text-main hover:bg-primary/10 transition-colors"
               >
                 {option}
               </button>
@@ -712,17 +688,17 @@ const CompatibilityGame: React.FC<{ onSend: (msg: string) => void; matchName: st
         </>
       ) : (
         <>
-          <div className="bg-gradient-to-br from-coral-light/30 to-gold/20 p-6 rounded-2xl text-center">
+          <div className="bg-gradient-to-br from-primary/10 to-gold/20 p-6 rounded-2xl text-center">
             <span className="text-4xl mb-3 block">💕</span>
             <p className="font-bold text-text-main mb-2">Quiz complete!</p>
-            <p className="text-sm text-text-sec">Send your results and see if you match!</p>
+            <p className="text-sm text-text-sec">Send your results and see how you match!</p>
           </div>
 
           <div className="space-y-2 bg-warm-white p-4 rounded-xl">
             {COMPATIBILITY_QUESTIONS.map((q, i) => (
               <div key={i} className="flex justify-between text-sm">
                 <span className="text-text-sec">{q.q}</span>
-                <span className="font-bold text-coral">{answers[i]}</span>
+                <span className="font-bold text-primary">{answers[i]}</span>
               </div>
             ))}
           </div>
@@ -732,13 +708,13 @@ const CompatibilityGame: React.FC<{ onSend: (msg: string) => void; matchName: st
               onClick={() => { setAnswers([]); setCurrentQ(0); }}
               className="flex-1 py-3 border border-warm-gray rounded-xl text-sm font-bold text-text-sec"
             >
-              retake
+              Retake
             </button>
             <button 
               onClick={handleSend}
-              className="flex-1 py-3 bg-coral text-white rounded-xl text-sm font-bold"
+              className="flex-1 py-3 bg-primary text-white rounded-xl text-sm font-bold"
             >
-              send results! 💕
+              Compare with {matchName}! 💕
             </button>
           </div>
         </>

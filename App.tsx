@@ -384,7 +384,13 @@ const AppContent: React.FC = () => {
       )}
       {subView === "filters" && (
         <Overlay>
-          <Filters onClose={handleCloseSubView} />
+          <Filters 
+            onClose={handleCloseSubView} 
+            onShowMatches={() => {
+              handleCloseSubView();
+              setCurrentView("likes");
+            }}
+          />
         </Overlay>
       )}
       {subView === "view-profile" && (
