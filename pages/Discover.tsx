@@ -66,10 +66,12 @@ export const Discover: React.FC<DiscoverProps> = ({
 
     useEffect(() => {
         const load = async () => {
+            console.log("[Discover] Loading profiles...");
             const [discoverData, picksData] = await Promise.all([
                 fetchDiscoverProfiles("me"),
                 fetchDailyPicks("me"),
             ]);
+            console.log("[Discover] Loaded profiles:", discoverData.length, "discover,", picksData.length, "picks");
             setProfiles(discoverData);
             setDailyPicks(picksData);
             setLoading(false);
@@ -224,7 +226,11 @@ export const Discover: React.FC<DiscoverProps> = ({
     }
 
     return (
-        <div className="absolute inset-0 flex flex-col bg-warm-white overflow-hidden">
+        <div className="absolute inset-0 flex flex-col bg-warm-white overflow-hidden" style={{background: '#f8f6f6'}}>
+            {/* DEBUG - Remove after testing */}
+            <div style={{padding: '20px', background: 'red', color: 'white', zIndex: 9999}}>
+                DEBUG: Discover loaded, profiles: {profiles.length}, current: {currentIndex}, hasProfiles: {hasProfiles ? 'yes' : 'no'}
+            </div>
             {/* Header - Fixed at top */}
             <div className="flex-shrink-0 sticky top-0 z-50 px-4 pt-4 pb-3 bg-warm-white/95 backdrop-blur-sm">
                 <div className="flex items-center justify-between">
