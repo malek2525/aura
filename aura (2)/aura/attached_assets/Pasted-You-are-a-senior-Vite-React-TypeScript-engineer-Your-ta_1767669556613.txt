@@ -1,0 +1,148 @@
+You are a senior Vite + React + TypeScript engineer.
+
+Your task is to fully fix ALL broken import paths in this project so it builds without errors.
+
+Project structure rules (VERY IMPORTANT)
+
+The project root contains a src/ directory.
+
+ALL frontend code lives inside src/.
+
+src/ is the module root — never include src in import paths.
+
+All imports inside src/ must use only:
+
+./ (same folder)
+
+../ (one level up)
+
+Never use:
+
+/src/...
+
+../src/...
+
+../../ unless the file is actually nested two folders deep (most are not).
+
+Actual folder tree (ground truth)
+src/
+  App.tsx
+  index.tsx
+  index.css
+  firebase.ts
+  types.ts
+
+  components/
+    LiveVoiceMode.tsx
+    MePanel.tsx
+    ProfileChips.tsx
+    ProfilePreviewPanel.tsx
+
+  context/
+    AuthContext.tsx
+
+  hooks/
+    useAuraVoice.ts
+    useVoice.ts
+
+  panels/
+    SkillsPanel.tsx
+    TwinsPanel.tsx
+
+  screens/
+    AuthScreen.tsx
+    DiscoverScreen.tsx
+    EditProfileScreen.tsx
+    MatchChatScreen.tsx
+    MatchesScreen.tsx
+    MatchTestScreen.tsx
+    NeuralLinkScreen.tsx
+    OnboardingScreen.tsx
+    ProfileScreen.tsx
+    TwinConversationScreen.tsx
+
+  services/
+    auraLLM.ts
+    chatService.ts
+    matching.ts
+    matchService.ts
+    voiceService.ts
+
+  storage/
+    profileStorage.ts
+
+Mandatory import rules by location
+From src/App.tsx
+
+Use:
+
+./screens/...
+./panels/...
+./hooks/...
+./storage/...
+./context/...
+./types
+
+From src/screens/*
+
+Use:
+
+../components/...
+../services/...
+../hooks/...
+../types
+
+From src/panels/*
+
+Use:
+
+../components/...
+../services/...
+../types
+
+From src/components/*
+
+Use:
+
+../services/...
+../types
+
+From src/services/*
+
+Use:
+
+../types
+
+What you must do
+
+Scan every .ts and .tsx file inside src/
+
+Fix all invalid import paths according to the rules above
+
+Fix case-sensitive filename mismatches (Linux filesystem)
+
+Ensure these specific files resolve correctly:
+
+services/auraLLM.ts
+
+services/matchService.ts
+
+screens/MatchChatScreen.tsx
+
+types.ts
+
+Do NOT change logic, UI, or functionality — ONLY imports
+
+Do NOT introduce path aliases
+
+Do NOT move files unless absolutely required to fix imports
+
+End state (success criteria)
+
+npm run dev starts with zero Vite import-analysis errors
+
+No Failed to resolve import messages
+
+App renders normally
+
+Proceed carefully, systematically, and fix everything.
